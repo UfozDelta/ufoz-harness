@@ -1,0 +1,76 @@
+{
+  "slug": "bench-plan",
+  "tasks": [
+    {
+      "id": "T1",
+      "brief": "items/T1.md",
+      "deps": [],
+      "files": [
+        "app/store.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t1.py",
+      "expect": "STORE OK"
+    },
+    {
+      "id": "T2",
+      "brief": "items/T2.md",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "app/routers/__init__.py",
+        "app/routers/items.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t2.py",
+      "expect": "ROUTER OK"
+    },
+    {
+      "id": "T3",
+      "brief": "items/T3.md",
+      "deps": [
+        "T2"
+      ],
+      "files": [
+        "app/main.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t3.py",
+      "expect": "MAIN OK"
+    },
+    {
+      "id": "T4",
+      "brief": "items/T4.md",
+      "deps": [
+        "T3"
+      ],
+      "files": [
+        "app/routers/items.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t4.py",
+      "expect": "PUT DELETE OK"
+    },
+    {
+      "id": "T5",
+      "brief": "items/T5.md",
+      "deps": [
+        "T4"
+      ],
+      "files": [
+        "app/routers/items.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t5.py",
+      "expect": "FILTERS OK"
+    },
+    {
+      "id": "T6",
+      "brief": "items/T6.md",
+      "deps": [
+        "T5"
+      ],
+      "files": [
+        "tests/test_items.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t6.py",
+      "expect": "TESTS OK"
+    }
+  ]
+}

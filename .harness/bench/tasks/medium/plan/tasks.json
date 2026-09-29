@@ -1,0 +1,52 @@
+{
+  "slug": "bench-plan",
+  "tasks": [
+    {
+      "id": "T1",
+      "brief": "items/T1.md",
+      "deps": [],
+      "files": [
+        "app/__init__.py",
+        "app/models.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t1.py",
+      "expect": "MODELS OK"
+    },
+    {
+      "id": "T2",
+      "brief": "items/T2.md",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "app/main.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t2.py",
+      "expect": "GET OK"
+    },
+    {
+      "id": "T3",
+      "brief": "items/T3.md",
+      "deps": [
+        "T2"
+      ],
+      "files": [
+        "app/main.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t3.py",
+      "expect": "POST OK"
+    },
+    {
+      "id": "T4",
+      "brief": "items/T4.md",
+      "deps": [
+        "T3"
+      ],
+      "files": [
+        "tests/test_items.py"
+      ],
+      "acceptance": "python -m pytest tests/test_items.py -q",
+      "expect": "passed"
+    }
+  ]
+}

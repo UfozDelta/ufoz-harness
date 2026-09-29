@@ -1,0 +1,28 @@
+{
+  "slug": "bench-plan",
+  "tasks": [
+    {
+      "id": "T1",
+      "brief": "items/T1.md",
+      "deps": [],
+      "files": [
+        "app/__init__.py",
+        "app/main.py"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t1.py",
+      "expect": "HEALTH OK"
+    },
+    {
+      "id": "T2",
+      "brief": "items/T2.md",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "tests/test_health.py"
+      ],
+      "acceptance": "python -m pytest tests/test_health.py -q",
+      "expect": "passed"
+    }
+  ]
+}

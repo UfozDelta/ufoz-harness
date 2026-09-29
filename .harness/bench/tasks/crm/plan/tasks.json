@@ -1,0 +1,53 @@
+{
+  "slug": "bench-plan",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": ["lib/pricing.ts", "tests/pricing.test.ts", "tsconfig.json"],
+      "acceptance": "node --test tests/pricing.test.ts"
+    },
+    {
+      "id": "T2",
+      "deps": ["T1"],
+      "files": ["lib/validate.ts", "tests/validate.test.ts"],
+      "acceptance": "node --test tests/validate.test.ts && node --test tests/pricing.test.ts"
+    },
+    {
+      "id": "T3",
+      "deps": ["T1"],
+      "files": ["lib/db.ts", "tests/db.test.ts"],
+      "acceptance": "node --test tests/db.test.ts && node --test tests/pricing.test.ts"
+    },
+    {
+      "id": "T4",
+      "deps": ["T2", "T3"],
+      "files": ["lib/handlers.ts", "tests/handlers.test.ts"],
+      "acceptance": "node --test tests/handlers.test.ts && node --test tests/db.test.ts tests/validate.test.ts tests/pricing.test.ts"
+    },
+    {
+      "id": "T5",
+      "deps": ["T4"],
+      "files": ["app/api/clients/route.ts", "app/api/clients/[id]/route.ts", "app/api/quote/route.ts", "tests/routes.test.ts"],
+      "acceptance": "node --test tests/routes.test.ts && npx tsc --noEmit"
+    },
+    {
+      "id": "T6",
+      "deps": ["T5"],
+      "files": ["app/globals.css", "app/layout.tsx", "tests/styles.test.ts"],
+      "acceptance": "node --test tests/styles.test.ts && npm run build"
+    },
+    {
+      "id": "T7",
+      "deps": ["T6"],
+      "files": ["app/page.tsx", "tests/dashboard.test.ts"],
+      "acceptance": "node --test tests/dashboard.test.ts && npm run build"
+    },
+    {
+      "id": "T8",
+      "deps": ["T7"],
+      "files": ["app/intake/page.tsx", "app/intake/IntakeForm.tsx", "tests/intake.test.ts"],
+      "acceptance": "node --test tests/intake.test.ts && npm run build"
+    }
+  ]
+}

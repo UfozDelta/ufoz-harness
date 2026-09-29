@@ -1,0 +1,14 @@
+{
+  "small": {
+    "candidate_1": "A",
+    "candidate_2": "C"
+  },
+  "medium": {
+    "candidate_2": "A",
+    "candidate_1": "C"
+  },
+  "large": {
+    "candidate_2": "A",
+    "candidate_1": "C"
+  }
+}

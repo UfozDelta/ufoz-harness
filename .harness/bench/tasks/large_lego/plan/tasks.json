@@ -1,0 +1,108 @@
+{
+  "slug": "bench-plan",
+  "tasks": [
+    {
+      "id": "T1",
+      "brief": "items/T1.md",
+      "deps": [],
+      "files": [
+        "storefront/package.json",
+        "storefront/tsconfig.json",
+        "storefront/next.config.mjs",
+        "storefront/.gitignore",
+        "storefront/.env.local"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t1.py",
+      "expect": "SCAFFOLD OK"
+    },
+    {
+      "id": "T2",
+      "brief": "items/T2.md",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "storefront/lib/products.ts",
+        "storefront/public/images/placeholder.svg"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t2.py",
+      "expect": "PRODUCTS OK"
+    },
+    {
+      "id": "T3",
+      "brief": "items/T3.md",
+      "deps": [
+        "T2"
+      ],
+      "files": [
+        "storefront/lib/analytics.ts",
+        "storefront/lib/utm.ts",
+        "storefront/components/AnalyticsScripts.tsx"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t3.py",
+      "expect": "ANALYTICS OK"
+    },
+    {
+      "id": "T4",
+      "brief": "items/T4.md",
+      "deps": [
+        "T3"
+      ],
+      "files": [
+        "storefront/lib/cart-context.tsx"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t4.py",
+      "expect": "CART OK"
+    },
+    {
+      "id": "T5",
+      "brief": "items/T5.md",
+      "deps": [
+        "T4"
+      ],
+      "files": [
+        "storefront/app/layout.tsx",
+        "storefront/app/globals.css",
+        "storefront/app/page.tsx"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t5.py",
+      "expect": "HOME OK"
+    },
+    {
+      "id": "T6",
+      "brief": "items/T6.md",
+      "deps": [
+        "T5"
+      ],
+      "files": [
+        "storefront/app/product/[slug]/page.tsx",
+        "storefront/components/AddToCartButton.tsx"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t6.py",
+      "expect": "PDP OK"
+    },
+    {
+      "id": "T7",
+      "brief": "items/T7.md",
+      "deps": [
+        "T6"
+      ],
+      "files": [
+        "storefront/app/cart/page.tsx",
+        "storefront/app/checkout/page.tsx"
+      ],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t7.py",
+      "expect": "CHECKOUT OK"
+    },
+    {
+      "id": "T8",
+      "brief": "items/T8.md",
+      "deps": [
+        "T7"
+      ],
+      "files": [],
+      "acceptance": "python .harness/plans/bench-plan/checks/check_t8.py",
+      "expect": "BUILD OK"
+    }
+  ]
+}

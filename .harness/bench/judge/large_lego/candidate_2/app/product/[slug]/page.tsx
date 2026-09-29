@@ -1,0 +1,25 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getProduct, products } from "../../../lib/products";
+import AddToCartButton from "../../../components/AddToCartButton";
+
+export function generateStaticParams() {
+  return products.map((p) => ({ slug: p.slug }));
+}
+
+export default function ProductPage({ params }: { params: { slug: string } }) {
+  const product = getProduct(params.slug);
+  if (!product) {
+    notFound();
+  }
+  return (
+    <main>
+      <Link href="/">Back</Link>
+      <img src={product.image} alt={product.name} width={300} height={300} />
+      <h1>{product.name}</h1>
+      <p>${product.price.toFixed(2)}</p>
+      <p>{product.description}</p>
+      <AddToCartButton product={product} />
+    </main>
+  );
+}

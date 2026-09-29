@@ -1,0 +1,49 @@
+{
+  "slug": "bench-plan",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [
+        "app/store.py",
+        "tests/test_store.py"
+      ],
+      "acceptance": "python -m pytest -q tests/test_store.py"
+    },
+    {
+      "id": "T2",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "app/routers/__init__.py",
+        "app/routers/items.py",
+        "app/main.py",
+        "tests/test_router_split.py"
+      ],
+      "acceptance": "python -m pytest -q tests/test_items.py tests/test_router_split.py"
+    },
+    {
+      "id": "T3",
+      "deps": [
+        "T2"
+      ],
+      "files": [
+        "app/routers/items.py",
+        "tests/test_put_delete.py"
+      ],
+      "acceptance": "python -m pytest -q tests/test_items.py tests/test_put_delete.py"
+    },
+    {
+      "id": "T4",
+      "deps": [
+        "T3"
+      ],
+      "files": [
+        "app/routers/items.py",
+        "tests/test_filters.py"
+      ],
+      "acceptance": "python -m pytest -q tests/test_items.py tests/test_filters.py"
+    }
+  ]
+}
