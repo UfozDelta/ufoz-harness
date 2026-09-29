@@ -1,0 +1,17 @@
+{
+  "bash": [
+    "git add",
+    "git commit",
+    "git push",
+    "git reset",
+    "git checkout",
+    "git switch",
+    "git restore",
+    "git stash",
+    "git clean",
+    "git rebase",
+    "git merge",
+    "git branch"
+  ],
+  "external_directory": "deny"
+}
