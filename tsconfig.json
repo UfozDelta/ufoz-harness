@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": false,
+    "incremental": true,
+    "tsBuildInfoFile": ".harness/tsc.tsbuildinfo"
+  },
+  "include": [".pi/extensions/**/*.ts"]
+}

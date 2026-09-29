@@ -1,0 +1,13 @@
+__pycache__/
+.pytest_cache/
+.harness/plans/*/logs/
+.harness/bench/runs/
+.harness/metrics.jsonl
+.harness/bench.csv
+.harness/.env
+packages/ufoz-harness/kit/
+*.tgz
+node_modules/
+.next/
+.pi_test_probe
+.harness/tsc.tsbuildinfo

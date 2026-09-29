@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "orchestrator": {
+      "description": "Harness main session: backend-neutral rules from .harness/MAIN.md",
+      "mode": "primary",
+      "prompt": "{file:.harness/MAIN.md}",
+      "model": "opencode/space-bunny-free"
+    }
+  }
+}
