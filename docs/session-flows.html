@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness Session Flows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="harness.css">
+</head>
+<body>
+<div class="wrap" id="root">
+  <header style="display:grid;gap:8px">
+    <nav class="pages" aria-label="Harness docs"><a href="session-flows.html" aria-current="page">Session flows</a><a href="flows.html">Every path</a></nav>
+    <span class="eyebrow">harness-test · plan → execute loop</span>
+    <h1>From opening the terminal to landing the code</h1>
+    <p class="lede">The same loop run from three main sessions. The main session decides, plans and reviews; the executor that writes code is pi on <code>opencode/space-bunny-free</code> in every case. Based on <code>CLAUDE.md</code>, <code>.harness/MAIN.md</code>, <code>docs/FLOWS.md</code> and <code>.harness/.env.example</code>.</p>
+  </header>
+
+  <div class="filters" role="group" aria-label="Show main sessions">
+    <span class="eyebrow">Show</span>
+    <button id="f-claude" data-t="claude" aria-pressed="true"><span class="dot d-claude"></span>Claude Code</button>
+    <button id="f-pi" data-t="pi" aria-pressed="true"><span class="dot d-pi"></span>pi</button>
+    <button id="f-oc" data-t="oc" aria-pressed="true"><span class="dot d-oc"></span>opencode</button>
+  </div>
+
+  <section class="summary">
+    <div class="sum t-claude" style="--c:var(--claude)">
+      <h2>Claude Code</h2>
+      <dl>
+        <dt>Rules</dt><dd><code>CLAUDE.md</code> + caveman hooks</dd>
+        <dt>Main</dt><dd><span class="badge paid">billed</span> Opus</dd>
+        <dt>Planner</dt><dd><span class="badge paid">billed</span> itself or <code>@planner</code> (sonnet)</dd>
+        <dt>Executor</dt><dd><span class="badge free">free</span> pi · Bunny</dd>
+      </dl>
+    </div>
+    <div class="sum t-pi" style="--c:var(--pi)">
+      <h2>pi</h2>
+      <dl>
+        <dt>Rules</dt><dd><code>.harness/MAIN.md</code></dd>
+        <dt>Main</dt><dd><span class="badge free">free</span> Bunny</dd>
+        <dt>Planner</dt><dd><span class="badge free">free</span> pi by default (<code>HARNESS_PLANNER</code>)</dd>
+        <dt>Executor</dt><dd><span class="badge free">free</span> pi · Bunny</dd>
+      </dl>
+    </div>
+    <div class="sum t-oc" style="--c:var(--oc)">
+      <h2>opencode</h2>
+      <dl>
+        <dt>Rules</dt><dd><code>MAIN.md</code> via <code>opencode.json</code></dd>
+        <dt>Main</dt><dd><span class="badge free">free</span> Bunny</dd>
+        <dt>Planner</dt><dd><span class="badge free">free</span> pi by default (<code>HARNESS_PLANNER</code>)</dd>
+        <dt>Executor</dt><dd><span class="badge free">free</span> pi · Bunny</dd>
+      </dl>
+    </div>
+  </section>
+
+  <figure class="fig">
+    <div class="scroll">
+    <svg class="dg" viewBox="0 0 980 380" role="img" aria-label="Harness data flow: you give the main session a task, the planner writes plan files, the runner drives the pi executor inside a worktree and checks it, reports flow back to the main session, and only you land the worktree into your main tree.">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+      </defs>
+      <!-- row A -->
+      <g class="box you"><rect x="20" y="40" width="130" height="64" rx="8"/><text x="85" y="67">You</text><text class="sub" x="85" y="86">decide · approve</text></g>
+      <g class="box swap"><rect x="250" y="40" width="190" height="64" rx="8"/><text x="345" y="67">Main session</text><text class="sub" x="345" y="86">Claude · pi · opencode</text></g>
+      <g class="box"><rect x="520" y="40" width="190" height="64" rx="8"/><text x="615" y="67">Planner</text><text class="sub" x="615" y="86">@planner or --plan</text></g>
+      <g class="box"><rect x="790" y="40" width="170" height="64" rx="8"/><text x="875" y="67">Plan</text><text class="sub" x="875" y="86">plan.md · tasks.json</text></g>
+      <!-- row B -->
+      <g class="box you"><rect x="20" y="250" width="130" height="64" rx="8"/><text x="85" y="277">Main tree</text><text class="sub" x="85" y="296">your repo</text></g>
+      <g class="box"><rect x="250" y="250" width="190" height="64" rx="8"/><text x="345" y="277">Worktree</text><text class="sub" x="345" y="296">.worktrees/&lt;slug&gt;</text></g>
+      <g class="box free"><rect x="520" y="250" width="190" height="64" rx="8"/><text x="615" y="277">Executor</text><text class="sub" x="615" y="296">pi · Bunny</text></g>
+      <g class="box"><rect x="790" y="250" width="170" height="64" rx="8"/><text x="875" y="277">Runner</text><text class="sub" x="875" y="296">guards · retries</text></g>
+      <!-- arrows -->
+      <g class="ar">
+        <line x1="150" y1="62" x2="248" y2="62" marker-end="url(#ah)"/>
+        <line x1="250" y1="86" x2="152" y2="86" marker-end="url(#ah)"/>
+        <line x1="440" y1="72" x2="518" y2="72" marker-end="url(#ah)"/>
+        <line x1="710" y1="72" x2="788" y2="72" marker-end="url(#ah)"/>
+        <line x1="875" y1="104" x2="875" y2="248" marker-end="url(#ah)"/>
+        <line x1="790" y1="282" x2="712" y2="282" marker-end="url(#ah)"/>
+        <line x1="520" y1="282" x2="442" y2="282" marker-end="url(#ah)"/>
+        <path d="M875 314V350H345V316" fill="none" marker-end="url(#ah)"/>
+        <line x1="345" y1="250" x2="345" y2="106" marker-end="url(#ah)"/>
+        <line class="land" x1="250" y1="282" x2="152" y2="282" marker-end="url(#ah)"/>
+      </g>
+      <g class="lbl">
+        <text x="199" y="55">task · go</text>
+        <text x="199" y="101">report</text>
+        <text x="479" y="64">spec</text>
+        <text x="749" y="64">writes</text>
+        <text x="867" y="180" text-anchor="end">run_plan.py &lt;slug&gt;</text>
+        <text x="751" y="274">brief T&lt;n&gt;</text>
+        <text x="481" y="274">edits files</text>
+        <text x="610" y="368">runs acceptance check, then retry or repair</text>
+        <text x="353" y="180" text-anchor="start">SUMMARY · reports · diff</text>
+        <text x="199" y="274">--land</text>
+        <text x="199" y="302">you only</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>The only box that changes between the three options is <b>Main session</b>. Everything to its right is the same runner, the same free pi executor and the same worktree. Green marks the free executor.</figcaption>
+  </figure>
+
+  <figure class="fig">
+    <div class="matrix" role="table" aria-label="Who runs each stage and whether it is billed">
+      <div class="mh" role="row">
+        <span role="columnheader"></span>
+        <span role="columnheader">Start</span><span role="columnheader">Decide</span><span role="columnheader">Plan</span><span role="columnheader">Approve</span><span role="columnheader">Execute</span><span role="columnheader">Verify</span><span role="columnheader">Report</span><span role="columnheader">Land</span>
+      </div>
+      <div class="mr t-claude" role="row"><span role="rowheader"><span class="dot d-claude"></span>Claude</span>
+        <i class="u" role="cell">you</i><i class="p" role="cell">Opus</i><i class="p" role="cell">sonnet</i><i class="p" role="cell">Opus</i><i class="f" role="cell">pi</i><i class="p" role="cell">Opus</i><i class="p" role="cell">Opus</i><i class="u" role="cell">you</i></div>
+      <div class="mr t-pi" role="row"><span role="rowheader"><span class="dot d-pi"></span>pi</span>
+        <i class="u" role="cell">you</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">Bunny</i><i class="u" role="cell">you</i></div>
+      <div class="mr t-oc" role="row"><span role="rowheader"><span class="dot d-oc"></span>opencode</span>
+        <i class="u" role="cell">you</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">Bunny</i><i class="u" role="cell">you</i></div>
+    </div>
+    <figcaption>Who does each stage, and whether it costs money. With the default <code>HARNESS_PLANNER=pi</code>, a pi or opencode session costs nothing; <code>HARNESS_PLANNER=claude</code> turns their Plan cell billed.</figcaption>
+  </figure>
+
+  <section class="flow" aria-label="Step by step flow">
+    <div class="head">
+      <div>Stage</div>
+      <div class="t-claude"><span class="dot d-claude"></span>Claude Code</div>
+      <div class="t-pi"><span class="dot d-pi"></span>pi</div>
+      <div class="t-oc"><span class="dot d-oc"></span>opencode</div>
+    </div>
+
+    <div class="row">
+      <div class="stage"><span class="n">0 · once</span><h2>Setup</h2><span class="who">you</span></div>
+      <div class="cell same">
+        <p>Copy <code>.harness/.env.example</code> to <code>.harness/.env</code> and uncomment what you change. Install pi (and opencode or the claude CLI if you use them), then check the setup with <code>python .harness/selftest.py</code> (one pi smoke task, $0).</p>
+        <p class="warn">The planner comes from <code>HARNESS_PLANNER</code>, default <code>pi</code> (free). Set it to <code>claude</code> and planning is billed even from a pi or opencode session.</p>
+      </div>
+    </div>
+
+    <div class="row you">
+      <div class="stage"><span class="n">1</span><h2>Open terminal, start session</h2><span class="who">you</span></div>
+      <div class="cell t-claude"><span class="tag"><span class="dot d-claude"></span>Claude Code</span>
+        <pre>cd ~/Desktop/harness-test
+claude</pre>
+        <p class="note">Loads <code>CLAUDE.md</code>, memory and the caveman hooks automatically.</p>
+      </div>
+      <div class="cell t-pi"><span class="tag"><span class="dot d-pi"></span>pi</span>
+        <pre>cd ~/Desktop/harness-test
+node "$env:USERPROFILE\.pi\agent\bin\pi-launcher.js" `
+  --no-context-files `
+  --append-system-prompt .harness/MAIN.md `
+  --model opencode/space-bunny-free</pre>
+        <p class="note"><code>--no-context-files</code> keeps the executor rules in <code>AGENTS.md</code> out of the main session.</p>
+      </div>
+      <div class="cell t-oc"><span class="tag"><span class="dot d-oc"></span>opencode</span>
+        <pre>cd ~/Desktop/harness-test
+opencode --agent orchestrator</pre>
+        <p class="note"><code>opencode.json</code> points the orchestrator agent at <code>MAIN.md</code>. <code>AGENTS.md</code> still auto-loads; MAIN.md only tells the model to ignore it.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="stage"><span class="n">2</span><h2>Decide</h2><span class="who">you + main session</span></div>
+      <div class="cell same">
+        <p>You describe the task. The main session states assumptions and success criteria and asks if anything is unclear. Nothing is written yet.</p>
+        <p class="note t-claude">Claude runs the <code>adhd</code> skill first for architecture or naming decisions.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="stage"><span class="n">3</span><h2>Plan</h2><span class="who">main session / planner</span></div>
+      <div class="cell t-claude"><span class="tag"><span class="dot d-claude"></span>Claude Code</span>
+        <ul>
+          <li><b>Small:</b> writes <code>plan.md</code> + <code>tasks.json</code> in <code>.harness/plans/&lt;slug&gt;/</code> itself.</li>
+          <li><b>Large:</b> refreshes the repo map, then calls <code>@planner</code> (sonnet), which lints its own plan.</li>
+        </ul>
+        <pre>python .harness/build_map.py --check || python .harness/build_map.py</pre>
+      </div>
+      <div class="cell t-pi"><span class="tag"><span class="dot d-pi"></span>pi</span>
+        <p>Writes <code>.harness/plans/&lt;slug&gt;/SPEC.md</code>, then hands it to the planner backend:</p>
+        <pre>python .harness/run_plan.py &lt;slug&gt; --plan .harness/plans/&lt;slug&gt;/SPEC.md</pre>
+        <p class="note">Writes and lints the plan, retrying twice on lint errors. Runs no tasks.</p>
+      </div>
+      <div class="cell t-oc"><span class="tag"><span class="dot d-oc"></span>opencode</span>
+        <p>Same as pi: <code>SPEC.md</code>, then <code>run_plan.py &lt;slug&gt; --plan</code>.</p>
+        <p class="note">Planner backend comes from <code>HARNESS_PLANNER</code>, not from which main session you use.</p>
+      </div>
+    </div>
+
+    <div class="row you">
+      <div class="stage"><span class="n">4</span><h2>Approve</h2><span class="who">you say go</span></div>
+      <div class="cell same">
+        <pre>python .harness/run_plan.py &lt;slug&gt; --lint     # must print: lint OK</pre>
+        <p>The main session shows the plan summary and its <code>Unverified:</code> list, then waits. Nothing runs until you say go.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="stage"><span class="n">5</span><h2>Execute</h2><span class="who">runner + pi executor</span></div>
+      <div class="cell same">
+        <pre>python .harness/run_plan.py &lt;slug&gt;</pre>
+        <ul>
+          <li>Runs in its own worktree <code>.worktrees/&lt;slug&gt;</code> (branch <code>harness/&lt;slug&gt;</code>); your tree is untouched.</li>
+          <li>Opens a live Windows Terminal tab so you can watch.</li>
+          <li>One warm pi session for the whole plan. Each task: lock check → attempt → acceptance command → pass, or feedback retry, then one repair pass.</li>
+          <li>Touching a file outside the task's <code>files</code> fails it at once. Stops at the first failed task.</li>
+        </ul>
+        <p class="note t-claude">Claude runs it in the background and is notified when it exits.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="stage"><span class="n">6</span><h2>Verify and fix</h2><span class="who">main session</span></div>
+      <div class="cell same">
+        <p>Reads <code>SUMMARY.md</code> and <code>items/T&lt;n&gt;.report.md</code> in <code>.worktrees/&lt;slug&gt;/.harness/plans/&lt;slug&gt;/</code>, then the diff:</p>
+        <pre>git -C .worktrees/&lt;slug&gt; diff</pre>
+        <ul>
+          <li>On a failure it rewrites the brief and reruns without asking; passed tasks are skipped.</li>
+          <li>It stops and asks you on a second failure of the same task, anything destructive, or a design question.</li>
+        </ul>
+        <p class="note t-pi t-oc">Under pi or opencode, Bunny does this review. It is a weaker judge of diffs than Claude, so read the diff yourself.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="stage"><span class="n">7</span><h2>Report</h2><span class="who">main session</span></div>
+      <div class="cell same">
+        <pre>Blocked on me: …
+Changed: …
+Found: …</pre>
+      </div>
+    </div>
+
+    <div class="row you">
+      <div class="stage"><span class="n">8</span><h2>Land and commit</h2><span class="who">you only</span></div>
+      <div class="cell same">
+        <pre>python .harness/run_plan.py &lt;slug&gt; --land</pre>
+        <p>Applies the worktree's changes to your main tree, copies reports and logs back, and removes the worktree and its branch. On a conflict nothing changes and <code>land.patch</code> is kept. No agent runs this or commits; you review and commit.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="diffs">
+    <div class="diff t-claude"><span class="eyebrow">Pick Claude Code when</span><p>The work needs judgment: design calls, unclear specs, or a careful review of what the executor wrote. You pay for the main session and planning.</p></div>
+    <div class="diff t-pi"><span class="eyebrow">Pick pi when</span><p>The task is well specified and you want it free. Fastest startup, and the executor rules are cleanly kept out of the main session.</p></div>
+    <div class="diff t-oc"><span class="eyebrow">Pick opencode when</span><p>You prefer the opencode UI. Same free model as pi, but <code>AGENTS.md</code> still loads, so the main session sees executor rules it has to ignore.</p></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var root=document.getElementById('root');
+  var saved={};
+  try{saved=JSON.parse(localStorage.getItem('flows-hidden')||'{}')}catch(e){}
+  document.querySelectorAll('.filters button').forEach(function(b){
+    var t=b.dataset.t;
+    function apply(on){
+      b.setAttribute('aria-pressed',on?'true':'false');
+      root.classList.toggle('hide-'+t,!on);
+      var visible=['claude','pi','oc'].filter(function(x){return !root.classList.contains('hide-'+x)}).length;
+      root.style.setProperty('--cols',Math.max(visible,1));
+    }
+    apply(!saved[t]);
+    b.addEventListener('click',function(){
+      var on=b.getAttribute('aria-pressed')!=='true';
+      apply(on);saved[t]=!on;
+      try{localStorage.setItem('flows-hidden',JSON.stringify(saved))}catch(e){}
+    });
+  });
+  document.querySelectorAll('pre').forEach(function(p){
+    var btn=document.createElement('button');
+    btn.className='copy';btn.type='button';btn.textContent='copy';
+    btn.addEventListener('click',function(){
+      var txt=p.firstChild.textContent;
+      if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){btn.textContent='copied'},function(){sel(p)})}else{sel(p)}
+      setTimeout(function(){btn.textContent='copy'},1500);
+    });
+    p.appendChild(btn);
+  });
+  function sel(el){var r=document.createRange();r.selectNodeContents(el);var s=getSelection();s.removeAllRanges();s.addRange(r)}
+})();
+</script>
+</body>
+</html>

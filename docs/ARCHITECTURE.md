@@ -8,11 +8,12 @@ diagram see [mermaid.md](mermaid.md).
 
 | Component | Process | Model | Writes | Trusted to grade? |
 |---|---|---|---|---|
-| Main session | Claude Code (interactive) | Opus | plans (small tasks), review notes | no, it reads runner output |
+| Main session | Claude Code (`CLAUDE.md`), or pi / opencode (`.harness/MAIN.md`) | Opus, or Bunny | plans (small tasks), review notes | no, it reads runner output |
 | `@planner` | Claude Code subagent | Sonnet (`.claude/agents/planner.md`) | only `.harness/plans/<slug>/` | no |
+| Planner (`--plan`) | one executor backend (`HARNESS_PLANNER`, default pi) | Bunny, or sonnet for claude | only `.harness/plans/<slug>/` | no |
 | Executor | `node ~/.pi/agent/bin/pi-launcher.js -p` | Bunny (`opencode/space-bunny-free`, OpenCode Zen; `.pi/executor.md`) | only the task's `files` | no |
 | Executor (cline) | `cline --json` (headless CLI) | first answering of `cline-free/deepseek-v4.1-flash` then the `FALLBACK_MODELS` probes, or `HARNESS_MODEL` | only the task's `files` | no |
-| Executor (cline-acp) | `cline --acp` (Agent Client Protocol over stdio) | `CLINE_MODEL` (ACP ignores `-m`); default `stealth/space-bunny-alpha`, verified before the first task | only the task's `files` | **yes** |
+| Executor (cline-acp) | `cline --acp` (Agent Client Protocol over stdio) | `CLINE_MODEL` (ACP ignores `-m`); default `stealth/space-bunny-alpha`, verified before the first task | only the task's `files` | no |
 | Executor (llama) | `pi-launcher.js -p` with `PI_CODING_AGENT_DIR` = a throwaway dir | local GGUF on a user-started `llama-server` router (`HARNESS_LLAMA_MODEL`) | only the task's `files` | no |
 | Runner | `python .harness/run_plan.py` | none | reports, feedback, logs, metrics | **yes**, the only grader |
 | Reviewer (optional) | `claude -p --model sonnet` | Sonnet | `REVIEW.md` | advisory only |
@@ -25,7 +26,8 @@ Git: no agent changes git state. `.pi/deny.json` plus `.pi/extensions/deny-list.
 deny `git add/commit/push/reset/checkout/switch/restore/stash/clean/rebase/merge/branch`,
 including chained, env-prefixed, `git -C`, and `bash -c` forms, as well as writes and
 edits outside cwd; reads outside cwd are allowed. `--executor claude` passes the same
-list as `--disallowedTools`. The runner only reads git (`git ls-files`).
+list as `--disallowedTools`. The runner reads git (`git ls-files`) and, for a real run, adds
+one worktree per plan (3.7); the user's index, HEAD and branches stay untouched.
 
 ## 2. Plan layout
 
@@ -57,8 +59,15 @@ OS shell (cmd.exe on Windows), so no `VAR=x cmd`, `/tmp`, `rm`, `test`.
 
 ```
 main()
-  parse args → load tasks.json
+  parse args
   --stats → print_stats(), exit
+  --land  → land.land(slug), exit          (the user's command)
+  --watch → follow the plan's logs, exit
+  --plan  → planner.run_planner(), exit    (3.6)
+  --parallel > 1 with a non-thread-safe executor → exit 1
+  real run in a git repo → worktree.ensure(slug), chdir into .worktrees/<slug>   (3.7)
+  take run.lock (a second run of the same plan exits); open the live window (Windows)
+  load tasks.json
   --lint  → lint(), exit
   lock: write plan.lock.json if missing or --relock; keep it in memory
   done = tasks whose report already says "RESULT: pass"   (reruns skip them)
@@ -227,17 +236,20 @@ with one of these — refused up front rather than racing two tasks on the same 
 - `cli.py` (flags), `plan.py` (tasks.json + briefs), `scheduler.py` (serial / `--parallel`),
   `task_runner.py` (the guard sequence of 3.1, one shared `_attempt()`), `report.py` (report
   text + metrics rows), `lint.py`, `stats.py`, `reviewer.py`, `acceptance.py`, `guards.py`
-  (snapshot/lock), `procs.py` (process tree, token keys, exit codes).
+  (snapshot/lock), `procs.py` (process tree, token keys, exit codes), `planner.py` (`--plan`),
+  `worktree.py` (per-plan worktree), `land.py` (`--land`), `watch.py` (`--watch` and the live
+  window).
 Who writes the code is pluggable: `executors/base.py` defines `ExecResult` and the
 `Executor` ABC (`run` — takes an optional `raw_prompt`, pi-only, bypasses the standard brief
 template — `probe`, `wait_for_quota`, `start`/`stop` via the context manager, class attrs
 `name`/`has_sessions`/`thread_safe`). `procs.zero_usage()` is the shared zero-token/zero-cost
 usage dict every executor returns on a hard failure.
 `executors/__init__.py` holds `REGISTRY = {pi, claude, opencode, cline, cline-acp, llama}` and `get(name, **opts)`;
-`pi.py`, `claude.py`, `opencode.py` and `cline.py` implement it (cline = one headless
-`cline --json` per task, no sessions, rules inlined when a `rules=` path is given;
-driven over HTTP+SSE; `.pi/executor.md` travels as the prompt's `system` field, and the
-throwaway `XDG_CONFIG_HOME` config is derived from the patterns in `.pi/deny.json`). Core modules only import `executors.get`, never a backend module.
+`pi.py`, `claude.py`, `opencode.py`, `cline.py`, `cline_acp.py` and `llama.py` implement it
+(cline = one headless `cline --json` per task, no sessions, rules inlined when a `rules=` path
+is given; opencode = one server driven over HTTP+SSE, `.pi/executor.md` travels as the
+prompt's `system` field, and the throwaway `XDG_CONFIG_HOME` config is derived from the
+patterns in `.pi/deny.json`). Core modules only import `executors.get`, never a backend module.
 
 **The claude executor** (`--executor claude`) runs `claude -p` per task with the same brief
 and the same guards as pi, so A/B comparisons only differ in who wrote the code. It carries
@@ -256,7 +268,8 @@ from a spec file without a main session: it writes `PLAN_REQUEST.md` (the spec p
 `## Layout` + `## Rules` sections of `.claude/agents/planner.md`, verbatim) and
 `planner_rules.md` (that contract without the YAML frontmatter, handed to the executor as its
 `rules=`), snapshots the tree, and runs one executor (`HARNESS_PLANNER`, default `pi`, model
-`HARNESS_PLANNER_MODEL`) with a 1800 s timeout. Only paths under `.harness/plans/<slug>/` may
+`HARNESS_PLANNER_MODEL`, else sonnet for claude and the backend's own default otherwise) with
+a 1800 s timeout. Only paths under `.harness/plans/<slug>/` may
 change; anything else fails the attempt. It then lints the plan; a lint failure is fed back
 into the same warm session (2 retries max) and the result is written to `planner.json`
 (`{backend, model, seconds, attempts, tokens, lint_ok}`). The CLI prints the plan path, exits
@@ -265,8 +278,27 @@ into the same warm session (2 retries max) and the result is written to `planner
 `Executor.run(..., rules=None)` is the one parameter that makes this backend-neutral: with a
 path, the executor uses its text instead of its default prompt (pi: `--append-system-prompt`;
 opencode: the `system` field; claude: `--append-system-prompt` without the `AGENTS.md`
-concatenation; cline: inlined into the prompt text, because `-s` would replace Cline's own system prompt)
-concatenation). Default `None` is every other call site's existing behavior.
+concatenation; cline: inlined into the prompt text, because `-s` would replace Cline's own system
+prompt). Default `None` is every other call site's existing behavior.
+
+### 3.7 Worktree, live window and `--land`
+
+A real run (not `--lint` / `--plan` / `--stats` / `--watch` / `--land`) goes through
+`worktree.py` unless `--no-worktree` or `HARNESS_WORKTREE=0`. `ensure(slug)` creates
+`.worktrees/<slug>` on branch `harness/<slug>`, based on a snapshot of the current tree
+(uncommitted and untracked, non-ignored files included) built with a temporary index, so the
+user's index, HEAD and branches never change. `.worktrees/` goes into `.git/info/exclude`;
+gitignored shared dirs (`node_modules`, `.venv`, `.opencode/node_modules`) are junctioned in,
+not copied. `sync_plan` copies the plan dir into the worktree, and everything after that runs
+there, so reports, logs and `SUMMARY.md` live in `.worktrees/<slug>/.harness/plans/<slug>/`.
+Outside a git repo the run stays in place. On Windows `watch.open_window` also opens one shared
+Windows Terminal window with a tab per plan (`--no-window` / `HARNESS_WINDOW=0` to skip).
+
+`--land` (`land.py`) is the user's command: it refuses while `run.lock` exists, writes the
+worktree's changes as a binary patch to `.harness/plans/<slug>/land.patch`, `git apply --check`s
+it, and on success applies it, copies the plan records back, and removes the junctions, the
+worktree and its branch. On a conflict it exits 1 and changes nothing; the patch, worktree and
+branch stay for a manual fix.
 
 ## 4. Lint (`--lint`)
 
@@ -288,14 +320,15 @@ It runs nothing but checks:
 - `--review` adds a row with `kind: review` and the exact `claude -p` cost.
 - `--stats` totals executor rows per slug, lists review rows, and reads planner /
   reviewer / validator subagent usage from `~/.claude/projects/<project>/*/subagents/`.
-  Those dollars are **estimates** from the `PRICES` table in `run_plan.py`: the last usage
+  Those dollars are **estimates** from the `PRICES` table in `runner/stats.py`: the last usage
   entry per request id, with cache writes at 1.25x (5 min) or 2x (1 h) input. Main-session
   tokens are not included.
 
 Token mapping is per backend: pi sums `message_end` deltas, claude sums stream-json deltas, and
 `--executor cline` sums `agent_event.usage` deltas with `run_result.aggregateUsage` as the
-total. The `mode` column reads `fresh` for a backend without sessions even when `--warm` is
-on, because `Executor.has_sessions` is false there.
+total. The `mode` column reads `fresh` for a backend without sessions even without `--fresh`,
+because `Executor.has_sessions` is false there. `--plan` and each run also add `kind: plan_event`
+rows (`created`, `run_start`, `run_end`) that carry no tokens.
 
 Where the money goes: the executor is free, so Claude cost = planner + main session
 (+ optional review). See `.harness/bench/RESULTS.md` for benchmark numbers.
@@ -312,20 +345,26 @@ Where the money goes: the executor is free, so Claude cost = planner + main sess
 | `HARNESS_VARIANT` | thinking / effort level for every executor, default `medium` |
 | `HARNESS_RUNNER_FLAGS` | extra `run_plan` flags in the bench, e.g. `--executor opencode` |
 | `HARNESS_ARM_LABEL` | bench arm name written into the rows and the run folder |
-| `HARNESS_PLANNER` | planner backend for `run_plan.py --plan` (pi, opencode, claude or cline), default `pi` |
-| `HARNESS_PLANNER_MODEL` | model for the planner backend, default `opencode/space-bunny-free`; cline resolves its own (probes `FALLBACK_MODELS`, since the free models are quota-capped) |
+| `HARNESS_PLANNER` | planner backend for `run_plan.py --plan` (pi, opencode, claude, cline or cline-acp), default `pi` |
+| `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (Bunny for pi/opencode); cline resolves its own (probes `FALLBACK_MODELS`, since the free models are quota-capped) |
 | `HARNESS_LLAMA_URL` | llama executor: `llama-server` router URL, default `http://127.0.0.1:8080` |
 | `HARNESS_LLAMA_MODEL` | llama executor: router model id; unset = the only model the router lists |
-| `HARNESS_MAIN_MODEL` | model for the pi main session launched by `.harness/main-pi.*`, default `opencode/space-bunny-free` |
+| `CLINE_MODEL` | cline-acp model, default `stealth/space-bunny-alpha` |
+| `HARNESS_WORKTREE` | `0` runs plans in place instead of in `.worktrees/<slug>` |
+| `HARNESS_WINDOW` | `0` skips the live Windows Terminal window |
+
+All of them can also be set in `.harness/.env` (template: `.harness/.env.example`), loaded by
+`.harness/envfile.py`; a variable already set in the shell wins.
 
 ## 7. Known limits
 
 - The suppression guard is text-based: it counts lines containing the three markers, and
   it can't tell a new comment that mentions `eslint-disable` from a real directive.
-- The build gate is opt-in per task (`build_gate`).
+- The build gate is opt-in per task (`build_gate`: last task only, needs `repair_check`).
 - The repair scope includes the failing task's files, every task listed before it, and
   that earlier set's transitive `deps` closure.
-- A `run.lock` prevents two runs of the same plan from overlapping.
+- A `run.lock` prevents two runs of the same plan from overlapping; a hard-killed run leaves
+  it behind, and the next run tells you to delete it.
 - The bench copies untracked files as well (`git ls-files -co`), so a stray file in the
   repo lands in every bench copy. It broke one K + pi rep's stage 1 (an untracked root
   `app/` file).

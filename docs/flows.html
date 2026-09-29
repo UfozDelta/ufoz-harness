@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness Flows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="harness.css">
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <nav class="pages" aria-label="Harness docs"><a href="session-flows.html">Session flows</a><a href="flows.html" aria-current="page">Every path</a></nav>
+    <span class="eyebrow">harness-test · docs/FLOWS.md as pictures</span>
+    <h1>Every path through the harness</h1>
+    <p class="lede">What the runner does with a plan, task by task, and what each result means for you. Commands run from the repo root; <code>run_plan.py</code> means <code>python .harness/run_plan.py</code>.</p>
+  </header>
+
+  <div class="keyrow" aria-label="Legend">
+    <span><i class="go"></i>continues</span>
+    <span><i class="loop"></i>loops back</span>
+    <span><i class="stop"></i>stops</span>
+  </div>
+
+  <section class="sec" id="loop">
+    <h2><span class="n">01</span>The loop</h2>
+    <p>Seven steps with the main session in the middle. A failed task sends you back to Execute with a new brief; discard ends the loop.</p>
+    <div class="card">
+      <div class="chain">
+        <div class="node end"><span class="n">1</span><b>Decide</b><span class="d">you + main session agree scope and success criteria</span></div>
+        <div class="down"></div>
+        <div class="node"><span class="n">2</span><b>Plan</b></div>
+        <div class="outs">
+          <div class="out go"><b>small</b>main session writes plan.md</div>
+          <div class="out go"><b>large</b>@planner writes it</div>
+          <div class="out go"><b>no Claude</b>--plan spec.md</div>
+        </div>
+        <div class="node ask"><span class="n">3</span><b>Approve</b><span class="d">--lint, summary + Unverified list, wait for your go</span></div>
+        <div class="down"></div>
+        <div class="node"><span class="n">4</span><b>Execute</b><span class="d">runner + executor, every task through the guards</span></div>
+        <div class="down"></div>
+        <div class="node"><span class="n">5</span><b>Verify</b><span class="d">SUMMARY.md, reports, git diff</span></div>
+        <div class="down"></div>
+        <div class="node ask"><span class="n">6</span><b>Decide</b></div>
+        <div class="outs">
+          <div class="out go"><b>accept</b>go to Report</div>
+          <div class="out loop"><b>re-brief</b>back to Execute</div>
+          <div class="out stop"><b>discard</b>stop</div>
+        </div>
+        <div class="node end"><span class="n">7</span><b>Report</b><span class="d">Blocked on me / Changed / Found, then you land and commit</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="guards">
+    <h2><span class="n">02</span>One task through the guards</h2>
+    <p>No model grades its own work: every step below is the runner, not the executor. Retries and one repair pass come before a task is marked failed.</p>
+    <div class="card">
+      <div class="chain">
+        <div class="node ask"><span class="n">1</span><b>Lock check</b><span class="d">tasks.json and checks/ hashes match the lock</span></div>
+        <div class="outs">
+          <div class="out go"><b>match</b>continue</div>
+          <div class="out stop"><b>mismatch</b>lock-mismatch</div>
+        </div>
+        <div class="node ask"><span class="n">2</span><b>Red-first</b><span class="d">only when red_first is on, first attempt</span></div>
+        <div class="outs">
+          <div class="out go"><b>check fails</b>continue</div>
+          <div class="out stop"><b>already passes</b>check-invalid</div>
+        </div>
+        <div class="node"><span class="n">3</span><b>Baseline</b><span class="d">RESULT: running, file-tree snapshot, suppression counts</span></div>
+        <div class="down"></div>
+        <div class="node"><span class="n">4</span><b>Attempt</b><span class="d">executor runs the brief</span></div>
+        <div class="outs">
+          <div class="out go"><b>done</b>grade it</div>
+          <div class="out loop"><b>exit 75</b>rate limit, wait, rerun uncounted</div>
+          <div class="out loop"><b>exit 124</b>timeout, fresh session retry</div>
+          <div class="out stop"><b>stray file</b>fail at once</div>
+        </div>
+        <div class="node ask"><span class="n">5</span><b>Grade</b><span class="d">acceptance ok, exit 0, no stray file, no new suppression</span></div>
+        <div class="outs">
+          <div class="out go"><b>pass</b>next task</div>
+          <div class="out loop"><b>fail</b>feedback.md, retry once</div>
+        </div>
+        <div class="node"><span class="n">6</span><b>Repair</b><span class="d">after retries run out: one pass, this task + earlier tasks' files in scope</span></div>
+        <div class="outs">
+          <div class="out go"><b>pass</b>REPAIRED</div>
+          <div class="out stop"><b>fail</b>plan stops</div>
+        </div>
+        <div class="node end"><span class="n">7</span><b>Report</b><span class="d">items/T&lt;n&gt;.report.md + metrics row</span></div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3 style="margin:0 0 10px;font-size:.95rem">A task fails if</h3>
+        <ul class="ladder">
+          <li><b>check</b><span>Its acceptance command exits non-zero.</span></li>
+          <li><b>scope</b><span>It touched a file outside its <code>files</code> list.</span></li>
+          <li><b>silenced</b><span>It added <code>@ts-ignore</code>, <code>@ts-nocheck</code> or <code>eslint-disable</code>.</span></li>
+          <li><b>lock</b><span>It edited <code>tasks.json</code> or a check script.</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 10px;font-size:.95rem">The build</h3>
+        <p style="font-size:.9rem">The full build runs once, in the last task, and never fails it. <code>SUMMARY.md</code> records <code>BUILD: pass</code> or <code>BUILD: fail &lt;first error&gt;</code> so you see it at review.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="endstates">
+    <h2><span class="n">03</span>End states</h2>
+    <div class="card">
+      <table>
+        <tr><th>Result</th><th>Meaning</th><th>What to do</th></tr>
+        <tr><td><span class="pill ok">pass</span></td><td>graded ok, maybe REPAIRED</td><td>review the diff</td></tr>
+        <tr><td><span class="pill fail">fail</span></td><td>check, exit code, stray file or suppression after retries + repair</td><td>fix the brief and rerun (passed tasks are skipped); a second fail of the same task means stop and investigate read-only</td></tr>
+        <tr><td><span class="pill warn">check-invalid</span></td><td>the check passed before any work</td><td>tighten the check, rerun with <code>--relock</code></td></tr>
+        <tr><td><span class="pill warn">lock-mismatch</span></td><td><code>tasks.json</code> or a check changed</td><td>your edit: <code>--relock</code>; the executor's edit: discard it</td></tr>
+        <tr><td><span class="pill info">running</span></td><td>the runner crashed mid-task</td><td>rerun; counts as a failed attempt, no red-first</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="executors">
+    <h2><span class="n">04</span>Executors</h2>
+    <p>Pick one with <code>--executor</code>; pi is the default. Planner backends (<code>--planner</code>, <code>HARNESS_PLANNER</code>): pi, opencode, claude, cline, cline-acp.</p>
+    <div class="execs">
+      <div class="exec default"><h3>pi <span class="pill ok">default</span></h3><dl>
+        <dt>transport</dt><dd>pi-launcher.js -p per task</dd><dt>model</dt><dd>space-bunny-free</dd>
+        <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>allowed</dd><dt>cost</dt><dd><span class="badge free">free</span></dd></dl></div>
+      <div class="exec"><h3>opencode</h3><dl>
+        <dt>transport</dt><dd>one opencode serve, HTTP+SSE</dd><dt>model</dt><dd>same as pi</dd>
+        <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>allowed</dd><dt>cost</dt><dd><span class="badge free">free</span></dd></dl></div>
+      <div class="exec"><h3>claude</h3><dl>
+        <dt>transport</dt><dd>claude -p, --resume</dd><dt>model</dt><dd>sonnet</dd>
+        <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>allowed</dd><dt>cost</dt><dd><span class="badge paid">billed</span></dd></dl></div>
+      <div class="exec"><h3>cline</h3><dl>
+        <dt>transport</dt><dd>cline --json per task</dd><dt>model</dt><dd>deepseek-v4.1-flash, then fallbacks</dd>
+        <dt>warm</dt><dd>no, fresh per task</dd><dt>parallel</dt><dd>refused</dd><dt>cost</dt><dd><span class="badge free">free</span> daily cap</dd></dl></div>
+      <div class="exec"><h3>cline-acp</h3><dl>
+        <dt>transport</dt><dd>one cline --acp process</dd><dt>model</dt><dd>space-bunny-alpha</dd>
+        <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>refused</dd><dt>cost</dt><dd><span class="badge free">free</span></dd></dl></div>
+      <div class="exec"><h3>llama</h3><dl>
+        <dt>transport</dt><dd>pi on a local llama-server</dd><dt>model</dt><dd>the router's only model</dd>
+        <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>refused</dd><dt>cost</dt><dd><span class="badge free">free</span> local</dd></dl></div>
+    </div>
+  </section>
+
+  <section class="sec" id="commands">
+    <h2><span class="n">05</span>Commands</h2>
+    <div class="card">
+      <table>
+        <tr><th>Command</th><th>Runs executor?</th><th>Writes</th><th>Exit</th></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt;</td><td>yes, every task not already pass</td><td>reports, logs, metrics, lock</td><td>0 all pass, 1 any fail</td></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt; --only T2</td><td>yes, T2 only</td><td>same, for T2</td><td>same</td></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt; --lint</td><td>no</td><td>nothing</td><td>lint result</td></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt; --relock</td><td>yes, it runs the plan too</td><td>re-records plan.lock.json first</td><td>same as a run</td></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt; --review</td><td>yes, then a sonnet review</td><td>+ REVIEW.md</td><td>same as a run</td></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt; --plan spec.md</td><td>no, planner only</td><td>plan files</td><td>0 lint ok, 1 not</td></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt; --land</td><td>no, you run it</td><td>applies the worktree to your tree</td><td>0 landed, 1 not (conflict keeps land.patch)</td></tr>
+        <tr><td class="key">run_plan.py --stats</td><td>no</td><td>nothing</td><td>0</td></tr>
+        <tr><td class="key">selftest.py</td><td>yes, one pi smoke plan</td><td>temp copy</td><td>0 ok</td></tr>
+        <tr><td class="key">selftest.py --bench</td><td>yes, pi and claude arms</td><td>.harness/bench.csv</td><td>0 ok</td></tr>
+        <tr><td class="key">build_map.py [--check]</td><td>no</td><td>repo map</td><td>0 fresh</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="edge">
+    <h2><span class="n">06</span>Edge flows</h2>
+    <div class="card">
+      <table>
+        <tr><th>Situation</th><th>What happens</th></tr>
+        <tr><td class="key">--session with --fresh or --parallel &gt; 1</td><td>exits 1 before anything runs</td></tr>
+        <tr><td class="key">--parallel &gt; 1 with cline, cline-acp or llama</td><td>exits 1 before the run lock</td></tr>
+        <tr><td>Second run of the same plan while one runs</td><td>refused by run.lock</td></tr>
+        <tr><td class="key">--session &lt;id&gt; with cline</td><td>task fails with code 1 (no sessions)</td></tr>
+        <tr><td>llama: server down</td><td>exits with the llama-server start command</td></tr>
+        <tr><td>llama: several models, none chosen</td><td>exits listing the model ids</td></tr>
+        <tr><td>llama: model unloaded</td><td>POST /models/load, waits up to 300 s</td></tr>
+        <tr><td>Executor claims DONE: but the check fails</td><td>ignored; only the runner's grade counts</td></tr>
+        <tr><td>Last task</td><td>writes SUMMARY.md and runs the build smoke</td></tr>
+      </table>
+    </div>
+  </section>
+</div>
+</body>
+</html>

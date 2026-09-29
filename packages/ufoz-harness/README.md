@@ -1,12 +1,13 @@
 # ufoz-harness
 
-Installer for the Claude plan/execute harness. Copies the planner and reviewer
-agents, the pi executor, the Python runner, and skills into a project.
+Installer for the plan/execute harness. Copies the planner and reviewer agents, the
+main-session rules (`CLAUDE.md` for Claude Code, `.harness/MAIN.md` + `opencode.json` for pi
+or opencode), the pi executor, the Python runner, and skills into a project.
 
 Plans are lean: one `plan.md` with a section per task plus a short `tasks.json`.
-Build tasks are checked by one-line smoke commands; the last task writes and runs the
-spec tests. The free executor (`space-bunny-free`, effort `medium`) works through the
-whole plan in one warm session.
+Every task is checked by a one-line smoke command; the last task writes `SUMMARY.md` and
+records the build result. The free executor (`space-bunny-free`, effort `medium`) works
+through the whole plan in one warm session, in its own git worktree.
 
 ## Usage
 

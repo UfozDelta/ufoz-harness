@@ -16,7 +16,7 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 | 4 Execute | runner + executor | runs every task through the guards (section 4) | reports, logs, metrics, `SUMMARY.md` | 5 |
 | 5 Verify | main session | reads `SUMMARY.md`, reports, `git diff` | verdict | 6 |
 | 6 Decide | main session | accept, re-brief + rerun, or discard | — | 7 or 4 |
-| 7 Report | main session | `Blocked on me:` / `Changed:` / `Found:` | 3 lines | you commit |
+| 7 Report | main session | `Blocked on me:` / `Changed:` / `Found:` | 3 lines | you run `--land`, then commit |
 
 ## 2. Commands
 
@@ -28,6 +28,8 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 | `run_plan.py <slug> --relock` | yes (it runs the plan too) | re-records `plan.lock.json` first | same as a run |
 | `run_plan.py <slug> --review` | yes, then a sonnet review after a fresh full pass | + `REVIEW.md` | same as a run |
 | `run_plan.py <slug> --plan spec.md` | no (planner only) | plan files | 0 lint ok, 1 not |
+| `run_plan.py <slug> --land` | no (you run it) | applies the worktree to your tree, removes it | 0 landed, 1 conflict or run in progress |
+| `run_plan.py <slug> --watch` | no | nothing (follows the logs) | 0 |
 | `run_plan.py --stats` | no | nothing | 0 |
 | `python .harness/selftest.py` | yes, one pi smoke plan | temp copy | 0 ok |
 | `python .harness/selftest.py --bench` | yes, pi and claude arms | `.harness/bench.csv` | 0 ok |
@@ -88,3 +90,6 @@ Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `
 | `llama`: model unloaded | `POST /models/load`, waits up to 300 s |
 | Executor claims `DONE:` but check fails | ignored; only the runner's grade counts |
 | Last task | writes `SUMMARY.md` and runs the build smoke |
+| Not a git repo | the run stays in place (`not a git repo: running in place`) |
+| `--land` while the run is still going | refused by `run.lock` |
+| `--land` hits a conflict | nothing changes; `land.patch`, the worktree and its branch stay |

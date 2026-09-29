@@ -7,8 +7,8 @@ This repo is where the harness is built and tested. It has one job:
 
 ## What the harness is
 
-A plan/execute harness for Claude Code. Claude plans and reviews; one of six
-executors (pi, claude, opencode, cline, cline-acp, llama) writes the code; a Python runner checks
+A plan/execute harness. A main session (Claude Code, or pi / opencode with
+`.harness/MAIN.md`) plans and reviews; one of six executors (pi, claude, opencode, cline, cline-acp, llama) writes the code; a Python runner checks
 every task with shell commands, so no model decides whether work passed.
 
 - **pi** (default) writes code with Bunny (`opencode/space-bunny-free`, an OpenCode Zen
@@ -44,6 +44,13 @@ invocation, metrics. Read both before changing harness internals.
 
 ## How it works
 
+![Harness data flow](docs/harness-flow.svg)
+
+The main session is the only part that changes between Claude Code, pi and opencode.
+Open these in a browser (GitHub shows `.html` as source):
+[session-flows.html](docs/session-flows.html) walks from opening the terminal to `--land` for
+each main session; [flows.html](docs/flows.html) draws every path in `docs/FLOWS.md`.
+
 Diagram: [mermaid.md](docs/mermaid.md).
 
 ```
@@ -57,6 +64,7 @@ main session (Claude)          decides with you, approves plans, reviews results
    │
    ▼
 python .harness/run_plan.py <slug>
+   │  runs in its own worktree .worktrees/<slug>, one run.lock per plan
    │  first run: hashes tasks.json + checks/ into plan.lock.json
    │  per task, in order:
    │    lock unchanged?            else RESULT: lock-mismatch
@@ -71,7 +79,7 @@ python .harness/run_plan.py <slug>
    │    writes items/T<n>.report.md (result, seconds, tokens, cost)
    │  --review: one Sonnet pass over touched files → REVIEW.md
    ▼
-you read the reports and the diff. Nobody in this chain commits.
+you read the reports and the diff, then run --land. Nobody in this chain commits.
 ```
 
 ## Using it
@@ -125,6 +133,10 @@ you read the reports and the diff. Nobody in this chain commits.
 | `--executor-model` | model override for `--executor` claude/pi/opencode/cline/llama (llama: the router's model id; each has its own default; for bench comparisons only) |
 | `--stats` | cost and time totals (see below) |
 | `--timeout S` | per-task executor timeout, default 900 |
+| `--fresh` | a new executor session per task instead of one warm session for the plan |
+| `--session ID` | continue an existing executor session (refused with `--fresh` or `--parallel > 1`) |
+| `--plan SPEC.md` | have the planner backend write and lint the plan for `<slug>`; runs no tasks (see below) |
+| `--planner` / `--planner-model` | planner backend and model for `--plan` (default `HARNESS_PLANNER`, else pi) |
 | `--parallel N` | run up to N tasks at once (DAG scheduler, no shared files); refused for `cline`, `cline-acp` and `llama` (single shared session/settings file or one local model slot, not thread-safe) |
 | `--worktree` / `--no-worktree` | run the plan in its own git worktree (on by default for a real run; `HARNESS_WORKTREE=0` opts out globally), see below |
 
@@ -197,22 +209,24 @@ shell always wins over the same key in that file.
 
 | Var | Default | Effect |
 |---|---|---|
-| `HARNESS_PLANNER` | `pi` | planner backend for `--plan`: `pi`, `opencode`, `claude` or `cline` |
-| `HARNESS_PLANNER_MODEL` | unset | model for the planner backend; falls back to the backend's own default |
-| `HARNESS_MODEL` | `opencode/space-bunny-free` | model for the opencode / space-bunny-free executor |
+| `HARNESS_PLANNER` | `pi` | planner backend for `--plan`: `pi`, `opencode`, `claude`, `cline` or `cline-acp` |
+| `HARNESS_PLANNER_MODEL` | unset | model for the planner backend; falls back to sonnet for claude, else the backend's own default |
+| `HARNESS_MODEL` | `opencode/space-bunny-free` | executor model for pi, opencode and cline |
 | `CLINE_MODEL` | unset | model for the cline-acp executor; its `DEFAULT_MODEL` is `stealth/space-bunny-alpha` |
 | `HARNESS_PI` | unset | path to pi; falls back to `~/.pi/agent/bin/pi-launcher.js` |
 | `HARNESS_CLINE` | unset | path to the cline binary; falls back to `cline` on `PATH` |
 | `HARNESS_CLINE_DATA` | unset | cline data dir; falls back to `~/.cline/data` |
 | `HARNESS_CLINE_PROVIDER` | unset | provider id passed to cline-acp |
-| `HARNESS_VARIANT` | `medium` | task variant the bench harness runs |
+| `HARNESS_VARIANT` | `medium` | reasoning effort for every executor (pi `--thinking`, opencode `variant`, claude `--effort`) |
+| `HARNESS_WORKTREE` | on | `0` runs every plan in place instead of in `.worktrees/<slug>` |
+| `HARNESS_WINDOW` | on | `0` skips the live Windows Terminal window |
 | `HARNESS_RUNNER_FLAGS` | empty | bench only: extra flags appended to `run_plan.py` |
 | `HARNESS_ARM_LABEL` | unset | bench only: cosmetic arm label written into the results csv |
 | `HARNESS_LLAMA_URL` | `http://127.0.0.1:8080` | llama executor: the `llama-server` router to attach to |
 | `HARNESS_LLAMA_MODEL` | unset | llama executor: router model id; unset = the only model the router lists |
 
-Claude Code stays the default path: `CLAUDE.md` and `.claude/agents/planner.md` are
-unchanged.
+Under Claude Code the main session follows `CLAUDE.md` and plans with `@planner`
+(`.claude/agents/planner.md`); `--plan` reuses that file's layout and rules.
 
 ## Test and measure
 
@@ -257,8 +271,8 @@ unchanged.
   is denied git state commands and writes/edits outside cwd, and runs with the rules in
   `AGENTS.md`: only the brief's files, never `.harness/`, finish with `DONE:` or
   `BLOCKED:`. Reads outside cwd are not blocked.
-- `.claude/settings.json` is present and denies `git add/commit/push/reset/checkout/stash/clean/rebase`
-  for Claude too. You commit from your own terminal.
+- `.claude/settings.json` denies `git add/commit/push/reset/checkout/switch/restore/stash/clean/rebase/merge/branch/worktree`
+  and `run_plan.py ... --land` for Claude too. You land and commit from your own terminal.
 - Claude's own reports are never taken as proof; reports come from the runner.
 
 ## Files
@@ -269,30 +283,40 @@ AGENTS.md                    executor rules (~10 lines on purpose; add a line on
 docs/mermaid.md              the plan → execute flow as a diagram
 docs/FLOWS.md                every path through the harness in tables (commands, executors, results)
 docs/ARCHITECTURE.md         runner internals: guards, retry/repair, executor calls, metrics
+docs/session-flows.html      start-to-finish flow for Claude Code, pi and opencode
+docs/flows.html              FLOWS.md as pictures
+docs/harness-flow.svg        the data-flow diagram shown above
+docs/harness.css             shared style for the docs pages
 .claude/settings.json        allow the runner; deny git state changes
 .claude/agents/planner.md    plan writer (sonnet)
 .claude/agents/reviewer.md   post-run checklist reviewer (sonnet), used by --review
 .claude/agents/validator.md  blind A/B code-quality judge (opus), used by the lab bench
 .claude/skills/              caveman, adhd, animation/design skills
- .pi/executor.md              pi executor (Bunny, free)
- .pi/deny.json                pi deny list
- .pi/extensions/deny-list.ts  pi deny-list extension
- .pi/extensions/deny-match.ts pi deny matcher (pure helper; exports a no-op default so
-                              bare `pi` can auto-load it as an extension too)
+.pi/executor.md              pi executor (Bunny, free)
+.pi/deny.json                pi deny list
+.pi/extensions/deny-list.ts  pi deny-list extension
+.pi/extensions/deny-match.ts pi deny matcher (pure helper; exports a no-op default so
+                             bare `pi` can auto-load it as an extension too)
+opencode.json                opencode `orchestrator` agent: MAIN.md as the main session
+.harness/MAIN.md             backend-neutral main-session rules (pi / opencode)
+.harness/.env.example        every env var, commented out; copy to .harness/.env
+.harness/envfile.py          loads .harness/.env (a real env var wins)
 .harness/run_plan.py         the runner
 .harness/runner/             the runner package; run_plan.py is its shim
-harness-speed-test/latency.py executor startup/latency measurement
 .harness/selftest.py         doctor, smoke test, --bench
+.harness/build_map.py        writes .harness/context/REPO_MAP.md for the planner
 .harness/CHECK_PATTERNS.md   reusable check shapes (the planner reads it)
 .harness/plans/<slug>/       one plan: plan.md, tasks.json, plan.lock.json, items/, checks/, logs/, REVIEW.md
 .harness/metrics.jsonl       per-task metrics (gitignored)
 .harness/bench.csv           --bench results (gitignored)
 .harness/bench/              lab benchmark on larger frozen tasks
+harness-speed-test/          executor duel and startup latency (duel.py, latency.py)
+packages/ufoz-harness/       npm package that installs the kit into another project
 ```
 
 ## Requirements
 
-- Claude Code, Python 3 (stdlib only), git.
+- Python 3 (stdlib only), git, Node (for pi), and a main session: Claude Code, pi or opencode.
 - pi installed with its `~/.pi/agent/bin/pi-launcher.js` (or `pi` on PATH), using Bunny.
   Override per run with `HARNESS_MODEL=provider/model`. The cline executor has no single default it
   can trust: it probes `cline-free/deepseek-v4.1-flash` and then `FALLBACK_MODELS` in
@@ -306,7 +330,3 @@ harness-speed-test/latency.py executor startup/latency measurement
   model itself. A small model on CPU is slow and weak: Qwen3-1.7B ran the pipeline end to end
   but failed a one-function task (it garbled file paths).
   Full form: `--executor pi|claude|opencode|cline|cline-acp|llama` (pi is the default).
-
-## Next
-
-- Add a run lock to `run_plan.py` so two runs of one plan can't overlap.

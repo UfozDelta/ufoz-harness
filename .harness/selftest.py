@@ -29,14 +29,15 @@ import envfile  # noqa: E402
 envfile.load_env()
 
 import run_plan  # noqa: E402  (reuses its Claude-log cost reader)
-COPY = [".harness/run_plan.py", ".pi/deny.json", ".pi/executor.md",
+COPY = [".harness/run_plan.py", ".harness/envfile.py", ".pi/deny.json", ".pi/executor.md",
         ".pi/extensions/deny-list.ts", ".pi/extensions/deny-match.ts", "AGENTS.md", ".gitignore",
         # the runner package the shim imports
         ".harness/runner/__init__.py", ".harness/runner/acceptance.py", ".harness/runner/cli.py",
-        ".harness/runner/guards.py", ".harness/runner/lint.py", ".harness/runner/plan.py",
-        ".harness/runner/planner.py",
+        ".harness/runner/guards.py", ".harness/runner/land.py", ".harness/runner/lint.py",
+        ".harness/runner/plan.py", ".harness/runner/planner.py",
         ".harness/runner/procs.py", ".harness/runner/report.py", ".harness/runner/reviewer.py",
         ".harness/runner/scheduler.py", ".harness/runner/stats.py", ".harness/runner/task_runner.py",
+        ".harness/runner/watch.py", ".harness/runner/worktree.py",
         ".harness/runner/executors/__init__.py", ".harness/runner/executors/base.py",
         ".harness/runner/executors/cline_acp.py",
         ".harness/runner/executors/claude.py", ".harness/runner/executors/cline.py",
@@ -187,6 +188,8 @@ def run_arm(executor, plan_src=None, review=False):
         r = json.loads(row)
         if r.get("kind") == "review":
             review_cost += r["tokens"].get("cost", 0)
+            continue
+        if r.get("kind") == "plan_event":  # lifecycle rows carry no tokens
             continue
         for k, v in r["tokens"].items():
             tok[k] = tok.get(k, 0) + v

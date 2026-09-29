@@ -4,7 +4,7 @@
 flowchart TD
     A[You + main session<br/>agree scope and success criteria] --> B["@planner subagent<br/>writes plan.md + tasks.json<br/>--lint rejects node TS loads and missing tsc"]
     B --> C[Main session shows plan summary<br/>+ Unverified list]
-    C -->|you say go| D["run_plan.py<br/>one warm executor session<br/>pi (default) / opencode / claude / cline / cline-acp / llama"]
+    C -->|you say go| D["run_plan.py in .worktrees/slug<br/>one warm executor session<br/>pi (default) / opencode / claude / cline / cline-acp / llama"]
 
     subgraph Task["Per task, in order"]
         D --> E[Executor does the task]
@@ -22,7 +22,7 @@ flowchart TD
     G --> S[Last task: SUMMARY.md<br/>runs build, writes BUILD: pass / fail]
     G2 --> S
     S --> V[Main session reads SUMMARY, reports, git diff]
-    V --> Y[You review and commit]
+    V --> Y[You run --land, review and commit]
 ```
 
 - Claude cost: planner call(s) + a thin main session. The executor is free with pi or
