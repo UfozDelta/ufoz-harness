@@ -1,11 +1,53 @@
-# harness-test: the ufoz-harness lab
+<div align="center">
 
-This repo is where the harness is built and tested. It has one job:
+<img src="docs/hero.svg" alt="ufoz-harness: Claude plans, a free model writes the code, a runner checks every task" width="100%">
 
-1. **Source of truth.** The harness lives here and gets improved here: `CLAUDE.md`, the
-   agents, the skills, `run_plan.py`, `selftest.py`, the benchmarks.
+![executor cost](https://img.shields.io/badge/executor-%240-1f7a45)
+![main session](https://img.shields.io/badge/main%20session-Claude%20%7C%20pi%20%7C%20opencode-1f6f5c)
+![executors](https://img.shields.io/badge/executors-6-5d6864)
+![python](https://img.shields.io/badge/python-3%20stdlib%20only-5d6864)
 
-## What the harness is
+[Why](#why) · [Quick start](#quick-start) · [How it works](#how-it-works) · [Flags](#runner-flags) · [Architecture](docs/ARCHITECTURE.md)
+
+</div>
+
+This repo is the lab where the harness is built and tested: `CLAUDE.md`, the agents,
+the skills, `run_plan.py`, `selftest.py` and the benchmarks live and improve here.
+`packages/ufoz-harness` ships it to other projects (`npx ufoz-harness`).
+
+## Why
+
+Coding agents are expensive when the smart model types every line, and unreliable when
+the same model decides its own work is done. The harness splits those jobs.
+
+- **No model grades its own work.** A Python runner runs each task's acceptance command,
+  hashes the file tree, and writes the verdict. An executor's "done" is ignored.
+- **The expensive model only thinks.** Claude (or any main session) plans and reviews; a
+  free model writes the code. On the staged benchmark that cut the bill 2–3x.
+- **Mistakes stay contained.** Each run gets its own git worktree, a task that touches a
+  file outside its list fails, and no agent can commit. You land the result with one command.
+- **Nothing is locked in.** Three main sessions (Claude Code, pi, opencode) and six
+  executors, all behind the same brief and the same checks.
+
+<img src="docs/bench-cost.svg" alt="Staged shop bench: pure Sonnet $3.39 in 13.6 min, harness + opencode $1.18 in 22.1 min, harness + pi $1.47 in 26.4 min" width="100%">
+
+The trade-off is time: a free model is slower, so a run takes longer than one Sonnet session.
+Details and more runs in [Test and measure](#test-and-measure).
+
+## Quick start
+
+```
+python .harness/selftest.py                          # checks the setup, one $0 smoke task
+cp .harness/.env.example .harness/.env               # optional: pick planner, models
+claude                                               # or pi / opencode, see below
+# describe the task, approve the plan, then:
+python .harness/run_plan.py <slug> --land            # bring the finished run into your tree
+```
+
+The main session writes the plan, runs `run_plan.py <slug>` after your go, and reviews
+the reports. You review the diff and commit.
+
+## Executors
 
 A plan/execute harness. A main session (Claude Code, or pi / opencode with
 `.harness/MAIN.md`) plans and reviews; one of six executors (pi, claude, opencode, cline, cline-acp, llama) writes the code; a Python runner checks
@@ -286,6 +328,7 @@ docs/ARCHITECTURE.md         runner internals: guards, retry/repair, executor ca
 docs/session-flows.html      start-to-finish flow for Claude Code, pi and opencode
 docs/flows.html              FLOWS.md as pictures
 docs/harness-flow.svg        the data-flow diagram shown above
+docs/hero.svg, bench-cost.svg README banner and benchmark chart
 docs/harness.css             shared style for the docs pages
 .claude/settings.json        allow the runner; deny git state changes
 .claude/agents/planner.md    plan writer (sonnet)

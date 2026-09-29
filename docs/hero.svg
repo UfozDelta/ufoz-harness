@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" width="960" height="300" role="img" aria-label="ufoz-harness: a main session plans, a free model writes the code, a runner checks every task, and you land the result.">
+  <style>
+    svg{--bg:#f5f6f4;--panel:#ffffff;--ink:#1c2321;--muted:#5d6864;--line:#dde2df;--accent:#1f6f5c;--free:#1f7a45;--free-bg:#e3f2e8;--grid:#e6eae7;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+    @media (prefers-color-scheme: dark){svg{--bg:#131816;--panel:#1b2220;--ink:#e4e9e6;--muted:#9aa6a1;--line:#2c3531;--accent:#5cc0a3;--free:#7fd4a0;--free-bg:#1d3226;--grid:#1c2320}}
+    .bg{fill:var(--bg)}
+    .grid{stroke:var(--grid);stroke-width:1}
+    .title{fill:var(--ink);font-size:46px;font-weight:700;letter-spacing:-1px}
+    .title tspan{fill:var(--accent)}
+    .tag{fill:var(--muted);font-size:17px}
+    .mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+    .prompt{fill:var(--muted);font-size:13px}
+    .chip rect{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+    .chip text{fill:var(--ink);font-size:14px;font-weight:600;text-anchor:middle}
+    .chip text.s{fill:var(--muted);font-size:11px;font-weight:400}
+    .chip.free rect{fill:var(--free-bg);stroke:var(--free)}
+    .chip.you rect{stroke:var(--accent);stroke-width:2}
+    .wire{stroke:var(--muted);stroke-width:1.5;fill:none;stroke-dasharray:4 5;animation:flow 1.2s linear infinite}
+    .pulse{fill:var(--accent);animation:run 4s ease-in-out infinite}
+    @keyframes flow{to{stroke-dashoffset:-18}}
+    @keyframes run{0%{transform:translateX(0)}100%{transform:translateX(672px)}}
+    @media (prefers-reduced-motion: reduce){.wire,.pulse{animation:none}}
+  </style>
+  <rect class="bg" width="960" height="300" rx="14"/>
+  <g class="grid">
+    <line x1="0" y1="60" x2="960" y2="60"/><line x1="0" y1="120" x2="960" y2="120"/>
+    <line x1="0" y1="180" x2="960" y2="180"/><line x1="0" y1="240" x2="960" y2="240"/>
+    <line x1="120" y1="0" x2="120" y2="300"/><line x1="360" y1="0" x2="360" y2="300"/>
+    <line x1="600" y1="0" x2="600" y2="300"/><line x1="840" y1="0" x2="840" y2="300"/>
+  </g>
+  <text class="prompt mono" x="60" y="62">$ python .harness/run_plan.py &lt;slug&gt;</text>
+  <text class="title" x="58" y="112">ufoz<tspan>-</tspan>harness</text>
+  <text class="tag" x="60" y="142">Claude plans. A free model writes the code. A runner checks every task.</text>
+
+  <path class="wire" d="M190 226H290M410 226H510M630 226H730"/>
+  <g class="chip"><rect x="60" y="198" width="130" height="56" rx="10"/><text x="125" y="223">Plan</text><text class="s mono" x="125" y="241">plan.md · tasks.json</text></g>
+  <g class="chip free"><rect x="290" y="198" width="120" height="56" rx="10"/><text x="350" y="223">Execute</text><text class="s mono" x="350" y="241">pi · $0</text></g>
+  <g class="chip"><rect x="510" y="198" width="120" height="56" rx="10"/><text x="570" y="223">Check</text><text class="s mono" x="570" y="241">runner grades</text></g>
+  <g class="chip you"><rect x="730" y="198" width="170" height="56" rx="10"/><text x="815" y="223">Land</text><text class="s mono" x="815" y="241">you review, you commit</text></g>
+  <circle class="pulse" cx="125" cy="270" r="4"/>
+</svg>
