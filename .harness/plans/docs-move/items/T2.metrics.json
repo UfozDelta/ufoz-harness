@@ -1,0 +1,17 @@
+{
+  "slug": "docs-move",
+  "task": "T2",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 7.4,
+  "accept_s": 0.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 123,
+    "output": 393,
+    "reasoning": 96,
+    "cache_read": 64096,
+    "cost": 0.0
+  }
+}

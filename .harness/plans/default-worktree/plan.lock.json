@@ -1,0 +1,7 @@
+{
+  ".harness/plans/default-worktree/tasks.json": "1792edfb17b0c62d76619511682c1c61027836a72b6fce77291d1c0128a3ccec",
+  ".harness/plans/default-worktree/checks/check_t1.py": "3fe39c634aec4ee3abab942967644998582f9978e6502c18cc14316490f7fb46",
+  ".harness/plans/default-worktree/checks/check_t2.py": "a7f7aee4229078fd750cc00148723f636597ddf000288718eb8bb5ece4cd4ed3",
+  ".harness/plans/default-worktree/checks/check_t3.py": "0b40234a5da20cc13b003b4058444bcecaa2d9d409aad78a67664f55d60abb3a",
+  ".harness/plans/default-worktree/checks/check_t4.py": "4c047a74dff89c9dda0c7e64753a0bb8a2cea53b120296f7b65868c3ec767ac0"
+}

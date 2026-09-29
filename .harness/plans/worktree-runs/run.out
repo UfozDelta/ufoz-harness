@@ -1,0 +1,4 @@
+T1 PASS (pi exit 0, attempts 1, 17.7s, 5362 tokens)
+T2 PASS (pi exit 0, attempts 1, 105.3s, 10979 tokens)
+T3 PASS (pi exit 0, attempts 1, 14.9s, 3032 tokens)
+T4 PASS (pi exit 0, attempts 1, 28.3s, 3725 tokens)

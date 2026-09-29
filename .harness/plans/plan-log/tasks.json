@@ -1,0 +1,19 @@
+{
+  "slug": "plan-log",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [".harness/runner/report.py", ".harness/runner/cli.py", ".harness/runner/planner.py"],
+      "acceptance": "python .harness/plans/plan-log/checks/check_t1.py",
+      "red_first": true
+    },
+    {
+      "id": "T2",
+      "deps": ["T1"],
+      "files": [".harness/runner/stats.py", ".harness/plans/plan-log/SUMMARY.md"],
+      "acceptance": "python .harness/plans/plan-log/checks/check_t2.py",
+      "red_first": true
+    }
+  ]
+}

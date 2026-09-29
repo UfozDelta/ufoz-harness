@@ -1,0 +1,17 @@
+{
+  "slug": "land",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 22.5,
+  "accept_s": 3.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 5548,
+    "output": 1387,
+    "reasoning": 280,
+    "cache_read": 25981,
+    "cost": 0.0
+  }
+}

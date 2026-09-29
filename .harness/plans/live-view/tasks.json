@@ -1,0 +1,15 @@
+{
+  "slug": "live-view",
+  "tasks": [
+    {"id": "T1", "deps": [], "files": [".harness/runner/watch.py"],
+     "acceptance": "python .harness/plans/live-view/checks/check_t1.py",
+     "red_first": false, "red_first_reason": "lean smoke check"},
+    {"id": "T2", "deps": ["T1"], "files": [".harness/runner/cli.py"],
+     "acceptance": "python .harness/plans/live-view/checks/check_t2.py",
+     "red_first": false, "red_first_reason": "lean smoke check"},
+    {"id": "T3", "deps": ["T2"],
+     "files": ["README.md", "CLAUDE.md", ".harness/MAIN.md", ".harness/plans/live-view/SUMMARY.md"],
+     "acceptance": "python .harness/plans/live-view/checks/check_t3.py",
+     "red_first": false, "red_first_reason": "lean smoke check"}
+  ]
+}

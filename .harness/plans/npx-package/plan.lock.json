@@ -1,0 +1,5 @@
+{
+  ".harness/plans/npx-package/tasks.json": "d472bb6695aa12a9ce70c4f99981a2b6b71b2bbae1d786da010c9136531ef68d",
+  ".harness/plans/npx-package/checks/check_t1.py": "b64b458ba5a5f3169665923a6811b3b30fa60e405d2603ca851cef3e97c4bb6d",
+  ".harness/plans/npx-package/checks/check_t2.py": "1bc10292e5b8015bc67d938d1bd85fa1a26c074f689402cf37d43263233154da"
+}

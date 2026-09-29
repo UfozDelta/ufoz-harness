@@ -1,0 +1,17 @@
+{
+  "slug": "default-worktree",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 16.0,
+  "accept_s": 1.6,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 5506,
+    "output": 1100,
+    "reasoning": 337,
+    "cache_read": 19326,
+    "cost": 0.0
+  }
+}

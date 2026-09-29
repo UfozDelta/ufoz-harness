@@ -1,0 +1,5 @@
+{
+  ".harness/plans/plan-log/tasks.json": "b480de6f26c6be88c980cbc24f02a3506ff3214d294434204c01a21e87c4898d",
+  ".harness/plans/plan-log/checks/check_t1.py": "b03c18861fd67643f8d1a40bcb47485edc5aa53723176eb862499eb33d792ffe",
+  ".harness/plans/plan-log/checks/check_t2.py": "49390b44dcc852a3925633290d97e3b4643018b70511ce00c12c934eb2cb34a0"
+}

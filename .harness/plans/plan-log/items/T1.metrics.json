@@ -1,0 +1,17 @@
+{
+  "slug": "plan-log",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 19.6,
+  "accept_s": 0.7,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 12492,
+    "output": 1438,
+    "reasoning": 55,
+    "cache_read": 60970,
+    "cost": 0.0
+  }
+}

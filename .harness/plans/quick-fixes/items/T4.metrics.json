@@ -1,0 +1,17 @@
+{
+  "slug": "quick-fixes",
+  "task": "T4",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 98.3,
+  "accept_s": 2.7,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 5941,
+    "output": 5823,
+    "reasoning": 3065,
+    "cache_read": 288344,
+    "cost": 0.0
+  }
+}

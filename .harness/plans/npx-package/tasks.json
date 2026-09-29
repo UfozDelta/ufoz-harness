@@ -1,0 +1,20 @@
+{
+  "slug": "npx-package",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": ["packages/ufoz-harness/export_kit.py", "packages/ufoz-harness/package.json",
+                "packages/ufoz-harness/index.js", "packages/ufoz-harness/test/install.test.js"],
+      "acceptance": "python .harness/plans/npx-package/checks/check_t1.py"
+    },
+    {
+      "id": "T2",
+      "deps": ["T1"],
+      "files": ["packages/ufoz-harness/README.md", "packages/ufoz-harness/kit_readme.md",
+                "packages/ufoz-harness/THIRD_PARTY_NOTICES.md",
+                ".harness/plans/npx-package/SUMMARY.md"],
+      "acceptance": "python .harness/plans/npx-package/checks/check_t2.py"
+    }
+  ]
+}

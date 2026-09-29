@@ -1,0 +1,17 @@
+{
+  "slug": "live-view",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 13.7,
+  "accept_s": 0.2,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 12014,
+    "output": 529,
+    "reasoning": 189,
+    "cache_read": 14618,
+    "cost": 0.0
+  }
+}

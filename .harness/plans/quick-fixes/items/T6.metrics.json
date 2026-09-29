@@ -1,0 +1,17 @@
+{
+  "slug": "quick-fixes",
+  "task": "T6",
+  "result": "pass",
+  "attempts": 2,
+  "repairs": 0,
+  "exec_s": 2828.8,
+  "accept_s": 0.7,
+  "retry_s": 42.1,
+  "tokens": {
+    "input": 7893,
+    "output": 4761,
+    "reasoning": 575,
+    "cache_read": 314502,
+    "cost": 0.0
+  }
+}

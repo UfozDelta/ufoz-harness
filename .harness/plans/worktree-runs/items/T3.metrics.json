@@ -1,0 +1,17 @@
+{
+  "slug": "worktree-runs",
+  "task": "T3",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 13.6,
+  "accept_s": 0.6,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 2154,
+    "output": 878,
+    "reasoning": 196,
+    "cache_read": 71477,
+    "cost": 0.0
+  }
+}

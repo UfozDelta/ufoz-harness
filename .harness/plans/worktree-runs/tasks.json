@@ -1,0 +1,18 @@
+{
+  "slug": "worktree-runs",
+  "tasks": [
+    {"id": "T1", "deps": [], "files": [".harness/runner/guards.py"],
+     "acceptance": "python .harness/plans/worktree-runs/checks/check_t1.py",
+     "red_first": false, "red_first_reason": "lean smoke check"},
+    {"id": "T2", "deps": [], "files": [".harness/runner/worktree.py"],
+     "acceptance": "python .harness/plans/worktree-runs/checks/check_t2.py",
+     "red_first": false, "red_first_reason": "lean smoke check"},
+    {"id": "T3", "deps": ["T2"], "files": [".harness/runner/cli.py"],
+     "acceptance": "python .harness/plans/worktree-runs/checks/check_t3.py",
+     "red_first": false, "red_first_reason": "lean smoke check"},
+    {"id": "T4", "deps": ["T1", "T3"],
+     "files": ["README.md", "CLAUDE.md", ".harness/MAIN.md", ".harness/plans/worktree-runs/SUMMARY.md"],
+     "acceptance": "python .harness/plans/worktree-runs/checks/check_t4.py",
+     "red_first": false, "red_first_reason": "lean smoke check"}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "slug": "worktree-runs",
+  "task": "T4",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 27.9,
+  "accept_s": 0.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 2325,
+    "output": 1400,
+    "reasoning": 42,
+    "cache_read": 190493,
+    "cost": 0.0
+  }
+}

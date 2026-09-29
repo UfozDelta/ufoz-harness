@@ -1,0 +1,6 @@
+{"slug": "docs-move", "tasks": [
+  {"id": "T1", "deps": [], "files": ["FLOWS.md", "ARCHITECTURE.md", "mermaid.md", "docs/FLOWS.md", "docs/ARCHITECTURE.md", "docs/mermaid.md", "README.md", ".harness/plans/docs-move/checks/check_t1.py"], "acceptance": "python .harness/plans/docs-move/checks/check_t1.py",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T2", "deps": ["T1"], "files": [".harness/plans/docs-move/SUMMARY.md"], "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/docs-move/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false, "red_first_reason": "lean smoke check"}
+]}

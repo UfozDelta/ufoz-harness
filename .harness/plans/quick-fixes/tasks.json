@@ -1,0 +1,49 @@
+{
+  "slug": "quick-fixes",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [".harness/run_plan.py"],
+      "acceptance": "python .harness/plans/quick-fixes/checks/check_t1.py",
+      "red_first": true
+    },
+    {
+      "id": "T2",
+      "deps": [],
+      "files": [".harness/MAIN.md"],
+      "acceptance": "python -c \"s=open('.harness/MAIN.md',encoding='utf-8').read(); assert '.harness/plans/<slug>/SPEC.md' in s\"",
+      "red_first": true
+    },
+    {
+      "id": "T3",
+      "deps": [],
+      "files": [".claude/agents/planner.md"],
+      "acceptance": "python -c \"s=open('.claude/agents/planner.md',encoding='utf-8').read(); assert 'never' in s.lower() and 'check_t' in s and s.lower().count('checks') >= 2\"",
+      "red_first": true
+    },
+    {
+      "id": "T4",
+      "deps": [],
+      "files": [".pi/extensions/deny-match.ts", ".pi/extensions/deny-list.ts", ".pi/extensions/deny-match.test.mjs"],
+      "acceptance": "node .pi/extensions/deny-match.test.mjs && npx tsc --noEmit --incremental --tsBuildInfoFile .harness/tsc.tsbuildinfo",
+      "red_first": false,
+      "red_first_reason": "existing test suite and tsc already pass; new isChecksPath cases are additive"
+    },
+    {
+      "id": "T5",
+      "deps": ["T2"],
+      "files": [".harness/MAIN.md"],
+      "acceptance": "python -c \"s=open('.harness/MAIN.md',encoding='utf-8').read(); assert 'narrat' in s.lower()\"",
+      "red_first": true
+    },
+    {
+      "id": "T6",
+      "deps": ["T1", "T2", "T3", "T4", "T5"],
+      "files": [".harness/plans/quick-fixes/SUMMARY.md"],
+      "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/quick-fixes/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    }
+  ]
+}

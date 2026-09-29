@@ -1,0 +1,14 @@
+{
+  "backend": "claude",
+  "model": "sonnet",
+  "seconds": 73.4,
+  "attempts": 1,
+  "tokens": {
+    "input": 44763,
+    "output": 4653,
+    "reasoning": 1312,
+    "cache_read": 404930,
+    "cost": 0.307507
+  },
+  "lint_ok": true
+}
