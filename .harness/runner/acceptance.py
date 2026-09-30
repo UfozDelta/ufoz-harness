@@ -1,7 +1,10 @@
 """Acceptance runs and compiler/test error extraction."""
+import contextlib
 import os
 import re
 import subprocess
+
+from .procs import stop_process_tree
 
 
 def parse_errors(text):
@@ -29,10 +32,19 @@ def parse_errors(text):
 def run_acceptance(cmd, expect, timeout=300):
     # scripts run from a plan dir get that dir on sys.path, not the project root
     env = dict(os.environ, PYTHONPATH=os.pathsep.join(filter(None, [os.getcwd(), os.environ.get("PYTHONPATH")])))
+    # utf-8 + replace: the Windows default codepage (cp1252) cannot decode tool output
+    # such as vitest's check marks, which left stdout None and crashed the run
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding="utf-8", errors="replace",
+                            stdin=subprocess.DEVNULL, env=env)
     try:
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True,
-                           stdin=subprocess.DEVNULL, timeout=timeout, env=env)
+        stdout, _ = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
+        # a grandchild inheriting the pipe keeps communicate() blocked long after the
+        # shell itself is gone: kill the tree and stop waiting for the output
+        stop_process_tree(proc)
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            proc.communicate(timeout=5)
         return False, "acceptance command timed out"
-    out = r.stdout + r.stderr
-    return r.returncode == 0 and (expect is None or expect in out), out[-2000:]
+    out = stdout or ""
+    return proc.returncode == 0 and (expect is None or expect in out), out[-2000:]
