@@ -17,6 +17,7 @@ SKIP_DIRS = {
     ".venv",
     "venv",
     ".harness",
+    ".worktrees",
     ".claude",
     ".opencode",
     ".pytest_cache",
