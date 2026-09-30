@@ -1,9 +1,28 @@
 # Repo map
-fingerprint: 409f883bd1a4
+fingerprint: b79992574bba
 Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before exploring.
 
 ## Routes
-- none
+- `/` -> .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/app/page.tsx
+- `/` -> .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/web/app/page.tsx
+- `/` -> .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/app/page.tsx
+- `/api/todos` -> .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/solution/app/api/todos/route.ts
+- `/` -> .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/solution/app/page.tsx
+- `/` -> .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/app/page.tsx
+- `/` -> .worktrees/oc-speed/harness-suite/fixtures/large/solution/web/app/page.tsx
+- `/` -> .worktrees/oc-speed/harness-suite/fixtures/medium/seed/app/page.tsx
+- `/api/todos` -> .worktrees/oc-speed/harness-suite/fixtures/medium/solution/app/api/todos/route.ts
+- `/` -> .worktrees/oc-speed/harness-suite/fixtures/medium/solution/app/page.tsx
+- `/` -> .worktrees/skills-list/harness-suite/fixtures/large/seed/web/app/page.tsx
+- `/` -> .worktrees/skills-list/harness-suite/fixtures/large/solution/web/app/page.tsx
+- `/` -> .worktrees/skills-list/harness-suite/fixtures/medium/seed/app/page.tsx
+- `/api/todos` -> .worktrees/skills-list/harness-suite/fixtures/medium/solution/app/api/todos/route.ts
+- `/` -> .worktrees/skills-list/harness-suite/fixtures/medium/solution/app/page.tsx
+- `/` -> harness-suite/fixtures/large/seed/web/app/page.tsx
+- `/` -> harness-suite/fixtures/large/solution/web/app/page.tsx
+- `/` -> harness-suite/fixtures/medium/seed/app/page.tsx
+- `/api/todos` -> harness-suite/fixtures/medium/solution/app/api/todos/route.ts
+- `/` -> harness-suite/fixtures/medium/solution/app/page.tsx
 
 ## Files
 - .agents/skills/animate-expo/RECIPES.md
@@ -33,12 +52,667 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - .pi/executor.md
 - .pi/extensions/deny-list.ts
 - .pi/extensions/deny-match.test.mjs
-- .pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside
+- .pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
+- .pi/extensions/pi-coding-agent.d.ts
+- .worktrees/map-skip-worktrees/.agents/skills/animate-expo/RECIPES.md
+- .worktrees/map-skip-worktrees/.agents/skills/animate-expo/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/animate/RECIPES.md
+- .worktrees/map-skip-worktrees/.agents/skills/animate/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/animation-vocabulary/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/apple-design/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/ask-sonner/API.md
+- .worktrees/map-skip-worktrees/.agents/skills/ask-sonner/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/emil-design-eng/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/find-animation-opportunities/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/frontend-design/LICENSE.txt
+- .worktrees/map-skip-worktrees/.agents/skills/frontend-design/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/improve-animations/AUDIT.md
+- .worktrees/map-skip-worktrees/.agents/skills/improve-animations/PLAN-TEMPLATE.md
+- .worktrees/map-skip-worktrees/.agents/skills/improve-animations/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/mobile-native/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/pick-ui-library/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/prototype/PICKER.md
+- .worktrees/map-skip-worktrees/.agents/skills/prototype/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/review-animations/SKILL.md
+- .worktrees/map-skip-worktrees/.agents/skills/review-animations/STANDARDS.md
+- .worktrees/map-skip-worktrees/.agents/skills/write-swift/SKILL.md
+- .worktrees/map-skip-worktrees/.git
+- .worktrees/map-skip-worktrees/.gitignore
+- .worktrees/map-skip-worktrees/.pi/deny.json
+- .worktrees/map-skip-worktrees/.pi/executor.md
+- .worktrees/map-skip-worktrees/.pi/extensions/deny-list.ts
+- .worktrees/map-skip-worktrees/.pi/extensions/deny-match.test.mjs
+- .worktrees/map-skip-worktrees/.pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
+- .worktrees/map-skip-worktrees/.pi/extensions/pi-coding-agent.d.ts
+- .worktrees/map-skip-worktrees/AGENTS.md
+- .worktrees/map-skip-worktrees/CLAUDE.md
+- .worktrees/map-skip-worktrees/README.md
+- .worktrees/map-skip-worktrees/docs/ARCHITECTURE.md
+- .worktrees/map-skip-worktrees/docs/FLOWS.md
+- .worktrees/map-skip-worktrees/docs/bench-cost.svg
+- .worktrees/map-skip-worktrees/docs/flows.html
+- .worktrees/map-skip-worktrees/docs/harness-flow.svg
+- .worktrees/map-skip-worktrees/docs/harness.css
+- .worktrees/map-skip-worktrees/docs/hero.svg
+- .worktrees/map-skip-worktrees/docs/mermaid.md
+- .worktrees/map-skip-worktrees/docs/session-flows.html
+- .worktrees/map-skip-worktrees/findings.md
+- .worktrees/map-skip-worktrees/harness-speed-test/LATENCY.md
+- .worktrees/map-skip-worktrees/harness-speed-test/README.md
+- .worktrees/map-skip-worktrees/harness-speed-test/RESULTS.md
+- .worktrees/map-skip-worktrees/harness-speed-test/duel.py: parse_models, model_for, cline_binary, parse, task_prompt, acp_run, command_for, display_command, test_result, append_result, ...
+- .worktrees/map-skip-worktrees/harness-speed-test/fixtures/opencode.jsonl
+- .worktrees/map-skip-worktrees/harness-speed-test/fixtures/pi.jsonl
+- .worktrees/map-skip-worktrees/harness-speed-test/latency.py: pi_command, opencode_command, build_opencode_config, append_rows, summarize_trace, summarize_opencode_trace, harness_rows, run_startup, run_direct, task_prompt, ...
+- .worktrees/map-skip-worktrees/harness-speed-test/report.py: number, display, table, build_report, main
+- .worktrees/map-skip-worktrees/harness-speed-test/results.csv
+- .worktrees/map-skip-worktrees/harness-speed-test/run.log
+- .worktrees/map-skip-worktrees/harness-suite/README.md
+- .worktrees/map-skip-worktrees/harness-suite/RESULTS.md
+- .worktrees/map-skip-worktrees/harness-suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
+- .worktrees/map-skip-worktrees/harness-suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, check_size, main
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/hidden_tests/vitest.config.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/hidden_tests/web/api-client.test.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/hidden_tests/web/itemdetail.test.tsx
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/hidden_tests/web/itemlist.test.tsx
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/hidden_tests/web/page.test.tsx
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/plan/plan.md
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/plan/tasks.json
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/backend/app/__init__.py
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/backend/app/main.py: health
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/app/layout.tsx: metadata, RootLayout
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/app/page.tsx: HomePage
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/lib/format.ts: pluralItems
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/next-env.d.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/next.config.mjs
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/package.json
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/tsconfig.json
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/seed/web/vitest.config.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/backend/app/__init__.py
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/backend/app/items_router.py: list_items, create_item, get_item, update_item, delete_item
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/backend/app/main.py: create_app
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/backend/app/stats.py: search_items, item_stats
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/backend/tests/test_openapi.py: test_every_route_is_documented, test_every_operation_is_documented, test_schemas_are_published, test_item_schema_properties, test_item_create_schema_has_no_id, test_search_result_wraps_a_list_of_items, test_post_items_documents_201_and_409, test_delete_item_documents_204
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/web/app/page.tsx: HomePage
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/web/components/ItemDetail.tsx: ItemDetailProps, ItemDetail
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/web/components/ItemList.tsx: ItemListProps, ItemList
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/solution/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/large/spec.md
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/hidden_tests/todo-list.test.tsx
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/hidden_tests/todos-route.test.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/hidden_tests/todos-store.test.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/hidden_tests/validate.test.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/plan/plan.md
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/plan/tasks.json
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/app/layout.tsx: metadata, RootLayout
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/app/page.tsx: Page
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/lib/format.ts: formatCount
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/next-env.d.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/next.config.mjs
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/package.json
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/tsconfig.json
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/seed/vitest.config.ts
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/solution/app/api/todos/route.ts: GET, POST
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/solution/app/page.tsx: Page
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/solution/components/TodoList.tsx: TodoListProps, TodoList
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/solution/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/solution/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/medium/spec.md
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/plan/plan.md
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/plan/tasks.json
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/seed/app/__init__.py
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/seed/app/main.py: reset_store, health, list_items, get_item, create_item
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/seed/app/models.py: ItemCreate, Item
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/seed/tests/test_items.py: test_health, test_list_items_empty, test_create_item, test_create_then_list, test_get_item, test_get_missing_item_404, test_create_invalid_returns_422, test_store_is_isolated_between_tests
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/solution/app/item_query.py: filter_items, count_filtered, select_items
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/solution/app/main.py: reset_store, health, list_items, get_item, create_item
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/solution/app/routers/__init__.py
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
+- .worktrees/map-skip-worktrees/harness-suite/fixtures/small/spec.md
+- .worktrees/map-skip-worktrees/harness-suite/report.py: load_rows, wilson_ci, build_report, main
+- .worktrees/map-skip-worktrees/harness-suite/results-oc-agent-rep1.csv
+- .worktrees/map-skip-worktrees/harness-suite/results-oc-agent-rep2.csv
+- .worktrees/map-skip-worktrees/harness-suite/results-oc-default-rep1.csv
+- .worktrees/map-skip-worktrees/harness-suite/results-oc-default-rep2.csv
+- .worktrees/map-skip-worktrees/harness-suite/results-oc-tools-rep1.csv
+- .worktrees/map-skip-worktrees/harness-suite/results-oc-tools-rep2.csv
+- .worktrees/map-skip-worktrees/harness-suite/results-rep1-buggy.csv
+- .worktrees/map-skip-worktrees/harness-suite/results-rep1-clean-partial.csv
+- .worktrees/map-skip-worktrees/harness-suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-multi-claude-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-multi-cline-acp-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-multi-cline-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-multi-opencode-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-multi-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-parallel-opencode-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-parallel-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-serial-claude-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-serial-cline-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-serial-opencode-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-large-serial-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-multi-claude-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-multi-cline-acp-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-multi-cline-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-multi-opencode-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-multi-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-parallel-claude-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-serial-cline-acp-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-serial-opencode-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-medium-serial-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-multi-claude-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-multi-cline-acp-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-multi-cline-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-multi-opencode-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-multi-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-parallel-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-serial-cline-acp-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-serial-opencode-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-serial-opencode-r2.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-serial-pi-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-window-cline-r1.log
+- .worktrees/map-skip-worktrees/harness-suite/work/_logs/suite-small-window-pi-r1.log
+- .worktrees/map-skip-worktrees/log.md
+- .worktrees/map-skip-worktrees/opencode.json
+- .worktrees/map-skip-worktrees/package.json
+- .worktrees/map-skip-worktrees/packages/ufoz-harness/README.md
+- .worktrees/map-skip-worktrees/packages/ufoz-harness/THIRD_PARTY_NOTICES.md
+- .worktrees/map-skip-worktrees/packages/ufoz-harness/export_kit.py: fail_missing, rel_of, copy_file, copy_skills, copy_runner, export, main
+- .worktrees/map-skip-worktrees/packages/ufoz-harness/index.js
+- .worktrees/map-skip-worktrees/packages/ufoz-harness/kit_readme.md
+- .worktrees/map-skip-worktrees/packages/ufoz-harness/package.json
+- .worktrees/map-skip-worktrees/packages/ufoz-harness/test/install.test.js
+- .worktrees/map-skip-worktrees/skills-lock.json
+- .worktrees/map-skip-worktrees/tests/test_acceptance.py: test_non_codepage_output_does_not_crash, test_timeout_with_held_grandchild_pipe_returns_fast
+- .worktrees/map-skip-worktrees/tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
+- .worktrees/map-skip-worktrees/tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
+- .worktrees/map-skip-worktrees/tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
+- .worktrees/map-skip-worktrees/tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
+- .worktrees/map-skip-worktrees/tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
+- .worktrees/map-skip-worktrees/tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
+- .worktrees/map-skip-worktrees/tests/test_log_fixes.py: test_shared_files_ordered_through_a_dep_chain_do_not_warn, test_shared_files_without_any_dep_path_still_warn, test_module_shadowing_a_harness_package_warns, test_lint_outside_a_plans_dir_does_not_write_metrics, test_markers_inside_string_literals_are_not_suppressions, test_a_stray_quote_cannot_hide_a_real_suppression, test_relock_only_writes_the_lock_and_runs_nothing, test_worktree_can_exclude_paths_and_drop_main_history
+- .worktrees/map-skip-worktrees/tests/test_opencode_executor.py: quiet_executor, test_idle_watchdog_aborts_a_silent_session, test_saw_event_is_set_for_matching_events
+- .worktrees/map-skip-worktrees/tests/test_scope.py: test_in_scope_exact_and_directory_entries, test_overlaps_is_prefix_aware, test_lint_accepts_a_narrow_directory_entry, test_lint_rejects_broad_directory_entries, test_lint_directory_without_trailing_slash_is_an_error, test_written_paths_reads_every_executor_log_format, test_attribute_splits_own_strays_from_unattributed, test_lint_rejects_a_directory_holding_many_tracked_files
+- .worktrees/map-skip-worktrees/tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
+- .worktrees/map-skip-worktrees/tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed
+- .worktrees/map-skip-worktrees/tests/test_worktree.py: test_exclude_worktrees_writes_common_info_exclude_in_linked_worktree, test_link_sources_shared_dir_from_main_worktree, test_link_keeps_existing_target_dir
+- .worktrees/map-skip-worktrees/tsconfig.json
+- .worktrees/oc-speed/.agents/skills/animate-expo/RECIPES.md
+- .worktrees/oc-speed/.agents/skills/animate-expo/SKILL.md
+- .worktrees/oc-speed/.agents/skills/animate/RECIPES.md
+- .worktrees/oc-speed/.agents/skills/animate/SKILL.md
+- .worktrees/oc-speed/.agents/skills/animation-vocabulary/SKILL.md
+- .worktrees/oc-speed/.agents/skills/apple-design/SKILL.md
+- .worktrees/oc-speed/.agents/skills/ask-sonner/API.md
+- .worktrees/oc-speed/.agents/skills/ask-sonner/SKILL.md
+- .worktrees/oc-speed/.agents/skills/emil-design-eng/SKILL.md
+- .worktrees/oc-speed/.agents/skills/find-animation-opportunities/SKILL.md
+- .worktrees/oc-speed/.agents/skills/frontend-design/LICENSE.txt
+- .worktrees/oc-speed/.agents/skills/frontend-design/SKILL.md
+- .worktrees/oc-speed/.agents/skills/improve-animations/AUDIT.md
+- .worktrees/oc-speed/.agents/skills/improve-animations/PLAN-TEMPLATE.md
+- .worktrees/oc-speed/.agents/skills/improve-animations/SKILL.md
+- .worktrees/oc-speed/.agents/skills/mobile-native/SKILL.md
+- .worktrees/oc-speed/.agents/skills/pick-ui-library/SKILL.md
+- .worktrees/oc-speed/.agents/skills/prototype/PICKER.md
+- .worktrees/oc-speed/.agents/skills/prototype/SKILL.md
+- .worktrees/oc-speed/.agents/skills/review-animations/SKILL.md
+- .worktrees/oc-speed/.agents/skills/review-animations/STANDARDS.md
+- .worktrees/oc-speed/.agents/skills/write-swift/SKILL.md
+- .worktrees/oc-speed/.git
+- .worktrees/oc-speed/.gitignore
+- .worktrees/oc-speed/.pi/deny.json
+- .worktrees/oc-speed/.pi/executor.md
+- .worktrees/oc-speed/.pi/extensions/deny-list.ts
+- .worktrees/oc-speed/.pi/extensions/deny-match.test.mjs
+- .worktrees/oc-speed/.pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
+- .worktrees/oc-speed/.pi/extensions/pi-coding-agent.d.ts
+- .worktrees/oc-speed/AGENTS.md
+- .worktrees/oc-speed/CLAUDE.md
+- .worktrees/oc-speed/README.md
+- .worktrees/oc-speed/docs/ARCHITECTURE.md
+- .worktrees/oc-speed/docs/FLOWS.md
+- .worktrees/oc-speed/docs/bench-cost.svg
+- .worktrees/oc-speed/docs/flows.html
+- .worktrees/oc-speed/docs/harness-flow.svg
+- .worktrees/oc-speed/docs/harness.css
+- .worktrees/oc-speed/docs/hero.svg
+- .worktrees/oc-speed/docs/mermaid.md
+- .worktrees/oc-speed/docs/session-flows.html
+- .worktrees/oc-speed/harness-speed-test/LATENCY.md
+- .worktrees/oc-speed/harness-speed-test/README.md
+- .worktrees/oc-speed/harness-speed-test/RESULTS.md
+- .worktrees/oc-speed/harness-speed-test/ctx_probe.py: probe
+- .worktrees/oc-speed/harness-speed-test/duel.py: parse_models, model_for, cline_binary, parse, task_prompt, acp_run, command_for, display_command, test_result, append_result, ...
+- .worktrees/oc-speed/harness-speed-test/fixtures/opencode.jsonl
+- .worktrees/oc-speed/harness-speed-test/fixtures/pi.jsonl
+- .worktrees/oc-speed/harness-speed-test/latency.py: pi_command, opencode_command, build_opencode_config, append_rows, summarize_trace, summarize_opencode_trace, harness_rows, run_startup, run_direct, task_prompt, ...
+- .worktrees/oc-speed/harness-speed-test/report.py: number, display, table, build_report, main
+- .worktrees/oc-speed/harness-speed-test/results.csv
+- .worktrees/oc-speed/harness-speed-test/run.log
+- .worktrees/oc-speed/harness-suite/README.md
+- .worktrees/oc-speed/harness-suite/RESULTS.md
+- .worktrees/oc-speed/harness-suite/ab.sh
+- .worktrees/oc-speed/harness-suite/ab2.sh
+- .worktrees/oc-speed/harness-suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
+- .worktrees/oc-speed/harness-suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, check_size, main
+- .worktrees/oc-speed/harness-suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
+- .worktrees/oc-speed/harness-suite/fixtures/large/hidden_tests/vitest.config.ts
+- .worktrees/oc-speed/harness-suite/fixtures/large/hidden_tests/web/api-client.test.ts
+- .worktrees/oc-speed/harness-suite/fixtures/large/hidden_tests/web/itemdetail.test.tsx
+- .worktrees/oc-speed/harness-suite/fixtures/large/hidden_tests/web/itemlist.test.tsx
+- .worktrees/oc-speed/harness-suite/fixtures/large/hidden_tests/web/page.test.tsx
+- .worktrees/oc-speed/harness-suite/fixtures/large/plan/plan.md
+- .worktrees/oc-speed/harness-suite/fixtures/large/plan/tasks.json
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/backend/app/__init__.py
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/backend/app/main.py: health
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/app/layout.tsx: metadata, RootLayout
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/app/page.tsx: HomePage
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/lib/format.ts: pluralItems
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/next-env.d.ts
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/next.config.mjs
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/package.json
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/tsconfig.json
+- .worktrees/oc-speed/harness-suite/fixtures/large/seed/web/vitest.config.ts
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/backend/app/__init__.py
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/backend/app/items_router.py: list_items, create_item, get_item, update_item, delete_item
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/backend/app/main.py: create_app
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/backend/app/stats.py: search_items, item_stats
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/backend/tests/test_openapi.py: test_every_route_is_documented, test_every_operation_is_documented, test_schemas_are_published, test_item_schema_properties, test_item_create_schema_has_no_id, test_search_result_wraps_a_list_of_items, test_post_items_documents_201_and_409, test_delete_item_documents_204
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/web/app/page.tsx: HomePage
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/web/components/ItemDetail.tsx: ItemDetailProps, ItemDetail
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/web/components/ItemList.tsx: ItemListProps, ItemList
+- .worktrees/oc-speed/harness-suite/fixtures/large/solution/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- .worktrees/oc-speed/harness-suite/fixtures/large/spec.md
+- .worktrees/oc-speed/harness-suite/fixtures/medium/hidden_tests/todo-list.test.tsx
+- .worktrees/oc-speed/harness-suite/fixtures/medium/hidden_tests/todos-route.test.ts
+- .worktrees/oc-speed/harness-suite/fixtures/medium/hidden_tests/todos-store.test.ts
+- .worktrees/oc-speed/harness-suite/fixtures/medium/hidden_tests/validate.test.ts
+- .worktrees/oc-speed/harness-suite/fixtures/medium/plan/plan.md
+- .worktrees/oc-speed/harness-suite/fixtures/medium/plan/tasks.json
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/app/layout.tsx: metadata, RootLayout
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/app/page.tsx: Page
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/lib/format.ts: formatCount
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/next-env.d.ts
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/next.config.mjs
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/package.json
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/tsconfig.json
+- .worktrees/oc-speed/harness-suite/fixtures/medium/seed/vitest.config.ts
+- .worktrees/oc-speed/harness-suite/fixtures/medium/solution/app/api/todos/route.ts: GET, POST
+- .worktrees/oc-speed/harness-suite/fixtures/medium/solution/app/page.tsx: Page
+- .worktrees/oc-speed/harness-suite/fixtures/medium/solution/components/TodoList.tsx: TodoListProps, TodoList
+- .worktrees/oc-speed/harness-suite/fixtures/medium/solution/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- .worktrees/oc-speed/harness-suite/fixtures/medium/solution/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- .worktrees/oc-speed/harness-suite/fixtures/medium/spec.md
+- .worktrees/oc-speed/harness-suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
+- .worktrees/oc-speed/harness-suite/fixtures/small/plan/plan.md
+- .worktrees/oc-speed/harness-suite/fixtures/small/plan/tasks.json
+- .worktrees/oc-speed/harness-suite/fixtures/small/seed/app/__init__.py
+- .worktrees/oc-speed/harness-suite/fixtures/small/seed/app/main.py: reset_store, health, list_items, get_item, create_item
+- .worktrees/oc-speed/harness-suite/fixtures/small/seed/app/models.py: ItemCreate, Item
+- .worktrees/oc-speed/harness-suite/fixtures/small/seed/tests/test_items.py: test_health, test_list_items_empty, test_create_item, test_create_then_list, test_get_item, test_get_missing_item_404, test_create_invalid_returns_422, test_store_is_isolated_between_tests
+- .worktrees/oc-speed/harness-suite/fixtures/small/solution/app/item_query.py: filter_items, count_filtered, select_items
+- .worktrees/oc-speed/harness-suite/fixtures/small/solution/app/main.py: reset_store, health, list_items, get_item, create_item
+- .worktrees/oc-speed/harness-suite/fixtures/small/solution/app/routers/__init__.py
+- .worktrees/oc-speed/harness-suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
+- .worktrees/oc-speed/harness-suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
+- .worktrees/oc-speed/harness-suite/fixtures/small/spec.md
+- .worktrees/oc-speed/harness-suite/report.py: load_rows, wilson_ci, build_report, main
+- .worktrees/oc-speed/harness-suite/results-oc-agent-rep1.csv
+- .worktrees/oc-speed/harness-suite/results-oc-agent-rep2.csv
+- .worktrees/oc-speed/harness-suite/results-oc-default-rep1.csv
+- .worktrees/oc-speed/harness-suite/results-oc-default-rep2.csv
+- .worktrees/oc-speed/harness-suite/results-oc-tools-rep1.csv
+- .worktrees/oc-speed/harness-suite/results-oc-tools-rep2.csv
+- .worktrees/oc-speed/harness-suite/results-rep1-buggy.csv
+- .worktrees/oc-speed/harness-suite/results-rep1-clean-partial.csv
+- .worktrees/oc-speed/harness-suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-multi-claude-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-multi-cline-acp-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-multi-cline-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-multi-opencode-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-multi-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-parallel-opencode-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-parallel-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-serial-claude-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-serial-cline-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-serial-opencode-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-large-serial-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-multi-claude-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-multi-cline-acp-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-multi-cline-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-multi-opencode-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-multi-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-parallel-claude-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-serial-cline-acp-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-serial-opencode-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-medium-serial-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-multi-claude-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-multi-cline-acp-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-multi-cline-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-multi-opencode-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-multi-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-parallel-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-serial-cline-acp-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-serial-opencode-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-serial-opencode-r2.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-serial-pi-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-window-cline-r1.log
+- .worktrees/oc-speed/harness-suite/work/_logs/suite-small-window-pi-r1.log
+- .worktrees/oc-speed/log.md
+- .worktrees/oc-speed/opencode.json
+- .worktrees/oc-speed/package.json
+- .worktrees/oc-speed/packages/ufoz-harness/README.md
+- .worktrees/oc-speed/packages/ufoz-harness/THIRD_PARTY_NOTICES.md
+- .worktrees/oc-speed/packages/ufoz-harness/export_kit.py: fail_missing, rel_of, copy_file, copy_skills, copy_runner, export, main
+- .worktrees/oc-speed/packages/ufoz-harness/index.js
+- .worktrees/oc-speed/packages/ufoz-harness/kit_readme.md
+- .worktrees/oc-speed/packages/ufoz-harness/package.json
+- .worktrees/oc-speed/packages/ufoz-harness/test/install.test.js
+- .worktrees/oc-speed/skills-lock.json
+- .worktrees/oc-speed/tests/test_acceptance.py: test_non_codepage_output_does_not_crash
+- .worktrees/oc-speed/tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
+- .worktrees/oc-speed/tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
+- .worktrees/oc-speed/tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
+- .worktrees/oc-speed/tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
+- .worktrees/oc-speed/tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
+- .worktrees/oc-speed/tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
+- .worktrees/oc-speed/tests/test_log_fixes.py: test_shared_files_ordered_through_a_dep_chain_do_not_warn, test_shared_files_without_any_dep_path_still_warn, test_module_shadowing_a_harness_package_warns, test_lint_outside_a_plans_dir_does_not_write_metrics, test_markers_inside_string_literals_are_not_suppressions, test_a_stray_quote_cannot_hide_a_real_suppression, test_relock_only_writes_the_lock_and_runs_nothing, test_worktree_can_exclude_paths_and_drop_main_history
+- .worktrees/oc-speed/tests/test_scope.py: test_in_scope_exact_and_directory_entries, test_overlaps_is_prefix_aware, test_lint_accepts_a_narrow_directory_entry, test_lint_rejects_broad_directory_entries, test_lint_directory_without_trailing_slash_is_an_error, test_written_paths_reads_every_executor_log_format, test_attribute_splits_own_strays_from_unattributed, test_lint_rejects_a_directory_holding_many_tracked_files
+- .worktrees/oc-speed/tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
+- .worktrees/oc-speed/tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed
+- .worktrees/oc-speed/tsconfig.json
+- .worktrees/skills-list/.agents/skills/animate-expo/RECIPES.md
+- .worktrees/skills-list/.agents/skills/animate-expo/SKILL.md
+- .worktrees/skills-list/.agents/skills/animate/RECIPES.md
+- .worktrees/skills-list/.agents/skills/animate/SKILL.md
+- .worktrees/skills-list/.agents/skills/animation-vocabulary/SKILL.md
+- .worktrees/skills-list/.agents/skills/apple-design/SKILL.md
+- .worktrees/skills-list/.agents/skills/ask-sonner/API.md
+- .worktrees/skills-list/.agents/skills/ask-sonner/SKILL.md
+- .worktrees/skills-list/.agents/skills/emil-design-eng/SKILL.md
+- .worktrees/skills-list/.agents/skills/find-animation-opportunities/SKILL.md
+- .worktrees/skills-list/.agents/skills/frontend-design/LICENSE.txt
+- .worktrees/skills-list/.agents/skills/frontend-design/SKILL.md
+- .worktrees/skills-list/.agents/skills/improve-animations/AUDIT.md
+- .worktrees/skills-list/.agents/skills/improve-animations/PLAN-TEMPLATE.md
+- .worktrees/skills-list/.agents/skills/improve-animations/SKILL.md
+- .worktrees/skills-list/.agents/skills/mobile-native/SKILL.md
+- .worktrees/skills-list/.agents/skills/pick-ui-library/SKILL.md
+- .worktrees/skills-list/.agents/skills/prototype/PICKER.md
+- .worktrees/skills-list/.agents/skills/prototype/SKILL.md
+- .worktrees/skills-list/.agents/skills/review-animations/SKILL.md
+- .worktrees/skills-list/.agents/skills/review-animations/STANDARDS.md
+- .worktrees/skills-list/.agents/skills/write-swift/SKILL.md
+- .worktrees/skills-list/.git
+- .worktrees/skills-list/.gitignore
+- .worktrees/skills-list/.pi/deny.json
+- .worktrees/skills-list/.pi/executor.md
+- .worktrees/skills-list/.pi/extensions/deny-list.ts
+- .worktrees/skills-list/.pi/extensions/deny-match.test.mjs
+- .worktrees/skills-list/.pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
+- .worktrees/skills-list/.pi/extensions/pi-coding-agent.d.ts
+- .worktrees/skills-list/AGENTS.md
+- .worktrees/skills-list/CLAUDE.md
+- .worktrees/skills-list/README.md
+- .worktrees/skills-list/docs/ARCHITECTURE.md
+- .worktrees/skills-list/docs/FLOWS.md
+- .worktrees/skills-list/docs/bench-cost.svg
+- .worktrees/skills-list/docs/flows.html
+- .worktrees/skills-list/docs/harness-flow.svg
+- .worktrees/skills-list/docs/harness.css
+- .worktrees/skills-list/docs/hero.svg
+- .worktrees/skills-list/docs/mermaid.md
+- .worktrees/skills-list/docs/session-flows.html
+- .worktrees/skills-list/findings.md
+- .worktrees/skills-list/harness-speed-test/LATENCY.md
+- .worktrees/skills-list/harness-speed-test/README.md
+- .worktrees/skills-list/harness-speed-test/RESULTS.md
+- .worktrees/skills-list/harness-speed-test/duel.py: parse_models, model_for, cline_binary, parse, task_prompt, acp_run, command_for, display_command, test_result, append_result, ...
+- .worktrees/skills-list/harness-speed-test/fixtures/opencode.jsonl
+- .worktrees/skills-list/harness-speed-test/fixtures/pi.jsonl
+- .worktrees/skills-list/harness-speed-test/latency.py: pi_command, opencode_command, build_opencode_config, append_rows, summarize_trace, summarize_opencode_trace, harness_rows, run_startup, run_direct, task_prompt, ...
+- .worktrees/skills-list/harness-speed-test/report.py: number, display, table, build_report, main
+- .worktrees/skills-list/harness-speed-test/results.csv
+- .worktrees/skills-list/harness-speed-test/run.log
+- .worktrees/skills-list/harness-suite/README.md
+- .worktrees/skills-list/harness-suite/RESULTS.md
+- .worktrees/skills-list/harness-suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
+- .worktrees/skills-list/harness-suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, check_size, main
+- .worktrees/skills-list/harness-suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
+- .worktrees/skills-list/harness-suite/fixtures/large/hidden_tests/vitest.config.ts
+- .worktrees/skills-list/harness-suite/fixtures/large/hidden_tests/web/api-client.test.ts
+- .worktrees/skills-list/harness-suite/fixtures/large/hidden_tests/web/itemdetail.test.tsx
+- .worktrees/skills-list/harness-suite/fixtures/large/hidden_tests/web/itemlist.test.tsx
+- .worktrees/skills-list/harness-suite/fixtures/large/hidden_tests/web/page.test.tsx
+- .worktrees/skills-list/harness-suite/fixtures/large/plan/plan.md
+- .worktrees/skills-list/harness-suite/fixtures/large/plan/tasks.json
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/backend/app/__init__.py
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/backend/app/main.py: health
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/app/layout.tsx: metadata, RootLayout
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/app/page.tsx: HomePage
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/lib/format.ts: pluralItems
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/next-env.d.ts
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/next.config.mjs
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/package.json
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/tsconfig.json
+- .worktrees/skills-list/harness-suite/fixtures/large/seed/web/vitest.config.ts
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/backend/app/__init__.py
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/backend/app/items_router.py: list_items, create_item, get_item, update_item, delete_item
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/backend/app/main.py: create_app
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/backend/app/stats.py: search_items, item_stats
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/backend/tests/test_openapi.py: test_every_route_is_documented, test_every_operation_is_documented, test_schemas_are_published, test_item_schema_properties, test_item_create_schema_has_no_id, test_search_result_wraps_a_list_of_items, test_post_items_documents_201_and_409, test_delete_item_documents_204
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/web/app/page.tsx: HomePage
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/web/components/ItemDetail.tsx: ItemDetailProps, ItemDetail
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/web/components/ItemList.tsx: ItemListProps, ItemList
+- .worktrees/skills-list/harness-suite/fixtures/large/solution/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- .worktrees/skills-list/harness-suite/fixtures/large/spec.md
+- .worktrees/skills-list/harness-suite/fixtures/medium/hidden_tests/todo-list.test.tsx
+- .worktrees/skills-list/harness-suite/fixtures/medium/hidden_tests/todos-route.test.ts
+- .worktrees/skills-list/harness-suite/fixtures/medium/hidden_tests/todos-store.test.ts
+- .worktrees/skills-list/harness-suite/fixtures/medium/hidden_tests/validate.test.ts
+- .worktrees/skills-list/harness-suite/fixtures/medium/plan/plan.md
+- .worktrees/skills-list/harness-suite/fixtures/medium/plan/tasks.json
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/app/layout.tsx: metadata, RootLayout
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/app/page.tsx: Page
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/lib/format.ts: formatCount
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/next-env.d.ts
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/next.config.mjs
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/package.json
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/tsconfig.json
+- .worktrees/skills-list/harness-suite/fixtures/medium/seed/vitest.config.ts
+- .worktrees/skills-list/harness-suite/fixtures/medium/solution/app/api/todos/route.ts: GET, POST
+- .worktrees/skills-list/harness-suite/fixtures/medium/solution/app/page.tsx: Page
+- .worktrees/skills-list/harness-suite/fixtures/medium/solution/components/TodoList.tsx: TodoListProps, TodoList
+- .worktrees/skills-list/harness-suite/fixtures/medium/solution/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- .worktrees/skills-list/harness-suite/fixtures/medium/solution/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- .worktrees/skills-list/harness-suite/fixtures/medium/spec.md
+- .worktrees/skills-list/harness-suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
+- .worktrees/skills-list/harness-suite/fixtures/small/plan/plan.md
+- .worktrees/skills-list/harness-suite/fixtures/small/plan/tasks.json
+- .worktrees/skills-list/harness-suite/fixtures/small/seed/app/__init__.py
+- .worktrees/skills-list/harness-suite/fixtures/small/seed/app/main.py: reset_store, health, list_items, get_item, create_item
+- .worktrees/skills-list/harness-suite/fixtures/small/seed/app/models.py: ItemCreate, Item
+- .worktrees/skills-list/harness-suite/fixtures/small/seed/tests/test_items.py: test_health, test_list_items_empty, test_create_item, test_create_then_list, test_get_item, test_get_missing_item_404, test_create_invalid_returns_422, test_store_is_isolated_between_tests
+- .worktrees/skills-list/harness-suite/fixtures/small/solution/app/item_query.py: filter_items, count_filtered, select_items
+- .worktrees/skills-list/harness-suite/fixtures/small/solution/app/main.py: reset_store, health, list_items, get_item, create_item
+- .worktrees/skills-list/harness-suite/fixtures/small/solution/app/routers/__init__.py
+- .worktrees/skills-list/harness-suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
+- .worktrees/skills-list/harness-suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
+- .worktrees/skills-list/harness-suite/fixtures/small/spec.md
+- .worktrees/skills-list/harness-suite/report.py: load_rows, wilson_ci, build_report, main
+- .worktrees/skills-list/harness-suite/results-oc-agent-rep1.csv
+- .worktrees/skills-list/harness-suite/results-oc-agent-rep2.csv
+- .worktrees/skills-list/harness-suite/results-oc-default-rep1.csv
+- .worktrees/skills-list/harness-suite/results-oc-default-rep2.csv
+- .worktrees/skills-list/harness-suite/results-oc-tools-rep1.csv
+- .worktrees/skills-list/harness-suite/results-oc-tools-rep2.csv
+- .worktrees/skills-list/harness-suite/results-rep1-buggy.csv
+- .worktrees/skills-list/harness-suite/results-rep1-clean-partial.csv
+- .worktrees/skills-list/harness-suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-multi-claude-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-multi-cline-acp-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-multi-cline-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-multi-opencode-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-multi-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-parallel-opencode-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-parallel-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-serial-claude-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-serial-cline-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-serial-opencode-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-large-serial-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-multi-claude-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-multi-cline-acp-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-multi-cline-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-multi-opencode-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-multi-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-parallel-claude-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-serial-cline-acp-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-serial-opencode-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-medium-serial-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-multi-claude-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-multi-cline-acp-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-multi-cline-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-multi-opencode-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-multi-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-parallel-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-serial-cline-acp-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-serial-opencode-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-serial-opencode-r2.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-serial-pi-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-window-cline-r1.log
+- .worktrees/skills-list/harness-suite/work/_logs/suite-small-window-pi-r1.log
+- .worktrees/skills-list/log.md
+- .worktrees/skills-list/opencode.json
+- .worktrees/skills-list/package.json
+- .worktrees/skills-list/packages/ufoz-harness/README.md
+- .worktrees/skills-list/packages/ufoz-harness/THIRD_PARTY_NOTICES.md
+- .worktrees/skills-list/packages/ufoz-harness/export_kit.py: fail_missing, rel_of, copy_file, copy_skills, copy_runner, export, main
+- .worktrees/skills-list/packages/ufoz-harness/index.js
+- .worktrees/skills-list/packages/ufoz-harness/kit_readme.md
+- .worktrees/skills-list/packages/ufoz-harness/package.json
+- .worktrees/skills-list/packages/ufoz-harness/test/install.test.js
+- .worktrees/skills-list/skills-lock.json
+- .worktrees/skills-list/tests/test_acceptance.py: test_non_codepage_output_does_not_crash, test_timeout_with_held_grandchild_pipe_returns_fast
+- .worktrees/skills-list/tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
+- .worktrees/skills-list/tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
+- .worktrees/skills-list/tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
+- .worktrees/skills-list/tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
+- .worktrees/skills-list/tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
+- .worktrees/skills-list/tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
+- .worktrees/skills-list/tests/test_log_fixes.py: test_shared_files_ordered_through_a_dep_chain_do_not_warn, test_shared_files_without_any_dep_path_still_warn, test_module_shadowing_a_harness_package_warns, test_lint_outside_a_plans_dir_does_not_write_metrics, test_markers_inside_string_literals_are_not_suppressions, test_a_stray_quote_cannot_hide_a_real_suppression, test_relock_only_writes_the_lock_and_runs_nothing, test_worktree_can_exclude_paths_and_drop_main_history
+- .worktrees/skills-list/tests/test_opencode_executor.py: quiet_executor, test_idle_watchdog_aborts_a_silent_session, test_saw_event_is_set_for_matching_events
+- .worktrees/skills-list/tests/test_scope.py: test_in_scope_exact_and_directory_entries, test_overlaps_is_prefix_aware, test_lint_accepts_a_narrow_directory_entry, test_lint_rejects_broad_directory_entries, test_lint_directory_without_trailing_slash_is_an_error, test_written_paths_reads_every_executor_log_format, test_attribute_splits_own_strays_from_unattributed, test_lint_rejects_a_directory_holding_many_tracked_files
+- .worktrees/skills-list/tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
+- .worktrees/skills-list/tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed
+- .worktrees/skills-list/tests/test_worktree.py: test_exclude_worktrees_writes_common_info_exclude_in_linked_worktree, test_link_sources_shared_dir_from_main_worktree, test_link_keeps_existing_target_dir
+- .worktrees/skills-list/tsconfig.json
+- .worktrees/usability-goal/.agents/skills/animate-expo/RECIPES.md
+- .worktrees/usability-goal/.agents/skills/animate-expo/SKILL.md
+- .worktrees/usability-goal/.agents/skills/animate/RECIPES.md
+- .worktrees/usability-goal/.agents/skills/animate/SKILL.md
+- .worktrees/usability-goal/.agents/skills/animation-vocabulary/SKILL.md
+- .worktrees/usability-goal/.agents/skills/apple-design/SKILL.md
+- .worktrees/usability-goal/.agents/skills/ask-sonner/API.md
+- .worktrees/usability-goal/.agents/skills/ask-sonner/SKILL.md
+- .worktrees/usability-goal/.agents/skills/emil-design-eng/SKILL.md
+- .worktrees/usability-goal/.agents/skills/find-animation-opportunities/SKILL.md
+- .worktrees/usability-goal/.agents/skills/frontend-design/LICENSE.txt
+- .worktrees/usability-goal/.agents/skills/frontend-design/SKILL.md
+- .worktrees/usability-goal/.agents/skills/improve-animations/AUDIT.md
+- .worktrees/usability-goal/.agents/skills/improve-animations/PLAN-TEMPLATE.md
+- .worktrees/usability-goal/.agents/skills/improve-animations/SKILL.md
+- .worktrees/usability-goal/.agents/skills/mobile-native/SKILL.md
+- .worktrees/usability-goal/.agents/skills/pick-ui-library/SKILL.md
+- .worktrees/usability-goal/.agents/skills/prototype/PICKER.md
+- .worktrees/usability-goal/.agents/skills/prototype/SKILL.md
+- .worktrees/usability-goal/.agents/skills/review-animations/SKILL.md
+- .worktrees/usability-goal/.agents/skills/review-animations/STANDARDS.md
+- .worktrees/usability-goal/.agents/skills/write-swift/SKILL.md
+- .worktrees/usability-goal/.git
+- .worktrees/usability-goal/.gitignore
+- .worktrees/usability-goal/.pi/deny.json
+- .worktrees/usability-goal/.pi/executor.md
+- .worktrees/usability-goal/.pi/extensions/deny-list.ts
+- .worktrees/usability-goal/.pi/extensions/deny-match.test.mjs
+- .worktrees/usability-goal/.pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
+- .worktrees/usability-goal/.pi/extensions/pi-coding-agent.d.ts
+- .worktrees/usability-goal/AGENTS.md
+- .worktrees/usability-goal/CLAUDE.md
+- .worktrees/usability-goal/README.md
+- .worktrees/usability-goal/docs/ARCHITECTURE.md
+- .worktrees/usability-goal/docs/FLOWS.md
+- .worktrees/usability-goal/docs/bench-cost.svg
+- .worktrees/usability-goal/docs/flows.html
+- .worktrees/usability-goal/docs/harness-flow.svg
+- .worktrees/usability-goal/docs/harness.css
+- .worktrees/usability-goal/docs/hero.svg
+- .worktrees/usability-goal/docs/mermaid.md
+- .worktrees/usability-goal/docs/session-flows.html
+- .worktrees/usability-goal/harness-speed-test/LATENCY.md
+- .worktrees/usability-goal/harness-speed-test/README.md
+- .worktrees/usability-goal/harness-speed-test/RESULTS.md
+- .worktrees/usability-goal/harness-speed-test/duel.py: parse_models, model_for, cline_binary, parse, task_prompt, acp_run, command_for, display_command, test_result, append_result, ...
+- .worktrees/usability-goal/harness-speed-test/fixtures/opencode.jsonl
+- .worktrees/usability-goal/harness-speed-test/fixtures/pi.jsonl
+- .worktrees/usability-goal/harness-speed-test/latency.py: pi_command, opencode_command, build_opencode_config, append_rows, summarize_trace, summarize_opencode_trace, harness_rows, run_startup, run_direct, task_prompt, ...
+- .worktrees/usability-goal/harness-speed-test/report.py: number, display, table, build_report, main
+- .worktrees/usability-goal/harness-speed-test/results.csv
+- .worktrees/usability-goal/harness-speed-test/run.log
+- .worktrees/usability-goal/opencode.json
+- .worktrees/usability-goal/package.json
+- .worktrees/usability-goal/packages/ufoz-harness/README.md
+- .worktrees/usability-goal/packages/ufoz-harness/THIRD_PARTY_NOTICES.md
+- .worktrees/usability-goal/packages/ufoz-harness/export_kit.py: fail_missing, rel_of, copy_file, copy_skills, copy_runner, export, main
+- .worktrees/usability-goal/packages/ufoz-harness/index.js
+- .worktrees/usability-goal/packages/ufoz-harness/kit_readme.md
+- .worktrees/usability-goal/packages/ufoz-harness/package.json
+- .worktrees/usability-goal/packages/ufoz-harness/test/install.test.js
+- .worktrees/usability-goal/skills-lock.json
+- .worktrees/usability-goal/tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
+- .worktrees/usability-goal/tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
+- .worktrees/usability-goal/tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
+- .worktrees/usability-goal/tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
+- .worktrees/usability-goal/tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
+- .worktrees/usability-goal/tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
+- .worktrees/usability-goal/tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok
+- .worktrees/usability-goal/tsconfig.json
 - AGENTS.md
-- ARCHITECTURE.md
 - CLAUDE.md
-- FLOWS.md
 - README.md
+- docs/ARCHITECTURE.md
+- docs/FLOWS.md
+- docs/bench-cost.svg
+- docs/flows.html
+- docs/harness-flow.svg
+- docs/harness.css
+- docs/hero.svg
+- docs/mermaid.md
+- docs/session-flows.html
+- findings.md
 - harness-speed-test/LATENCY.md
 - harness-speed-test/README.md
 - harness-speed-test/RESULTS.md
@@ -49,29 +723,176 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - harness-speed-test/report.py: number, display, table, build_report, main
 - harness-speed-test/results.csv
 - harness-speed-test/run.log
-- mermaid.md
+- harness-suite/README.md
+- harness-suite/RESULTS.md
+- harness-suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
+- harness-suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, check_size, main
+- harness-suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
+- harness-suite/fixtures/large/hidden_tests/vitest.config.ts
+- harness-suite/fixtures/large/hidden_tests/web/api-client.test.ts
+- harness-suite/fixtures/large/hidden_tests/web/itemdetail.test.tsx
+- harness-suite/fixtures/large/hidden_tests/web/itemlist.test.tsx
+- harness-suite/fixtures/large/hidden_tests/web/page.test.tsx
+- harness-suite/fixtures/large/plan/plan.md
+- harness-suite/fixtures/large/plan/tasks.json
+- harness-suite/fixtures/large/seed/backend/app/__init__.py
+- harness-suite/fixtures/large/seed/backend/app/main.py: health
+- harness-suite/fixtures/large/seed/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- harness-suite/fixtures/large/seed/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- harness-suite/fixtures/large/seed/web/app/layout.tsx: metadata, RootLayout
+- harness-suite/fixtures/large/seed/web/app/page.tsx: HomePage
+- harness-suite/fixtures/large/seed/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- harness-suite/fixtures/large/seed/web/lib/format.ts: pluralItems
+- harness-suite/fixtures/large/seed/web/next-env.d.ts
+- harness-suite/fixtures/large/seed/web/next.config.mjs
+- harness-suite/fixtures/large/seed/web/package.json
+- harness-suite/fixtures/large/seed/web/tsconfig.json
+- harness-suite/fixtures/large/seed/web/vitest.config.ts
+- harness-suite/fixtures/large/solution/backend/app/__init__.py
+- harness-suite/fixtures/large/solution/backend/app/items_router.py: list_items, create_item, get_item, update_item, delete_item
+- harness-suite/fixtures/large/solution/backend/app/main.py: create_app
+- harness-suite/fixtures/large/solution/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- harness-suite/fixtures/large/solution/backend/app/stats.py: search_items, item_stats
+- harness-suite/fixtures/large/solution/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- harness-suite/fixtures/large/solution/backend/tests/test_openapi.py: test_every_route_is_documented, test_every_operation_is_documented, test_schemas_are_published, test_item_schema_properties, test_item_create_schema_has_no_id, test_search_result_wraps_a_list_of_items, test_post_items_documents_201_and_409, test_delete_item_documents_204
+- harness-suite/fixtures/large/solution/web/app/page.tsx: HomePage
+- harness-suite/fixtures/large/solution/web/components/ItemDetail.tsx: ItemDetailProps, ItemDetail
+- harness-suite/fixtures/large/solution/web/components/ItemList.tsx: ItemListProps, ItemList
+- harness-suite/fixtures/large/solution/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- harness-suite/fixtures/large/spec.md
+- harness-suite/fixtures/medium/hidden_tests/todo-list.test.tsx
+- harness-suite/fixtures/medium/hidden_tests/todos-route.test.ts
+- harness-suite/fixtures/medium/hidden_tests/todos-store.test.ts
+- harness-suite/fixtures/medium/hidden_tests/validate.test.ts
+- harness-suite/fixtures/medium/plan/plan.md
+- harness-suite/fixtures/medium/plan/tasks.json
+- harness-suite/fixtures/medium/seed/app/layout.tsx: metadata, RootLayout
+- harness-suite/fixtures/medium/seed/app/page.tsx: Page
+- harness-suite/fixtures/medium/seed/lib/format.ts: formatCount
+- harness-suite/fixtures/medium/seed/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- harness-suite/fixtures/medium/seed/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- harness-suite/fixtures/medium/seed/next-env.d.ts
+- harness-suite/fixtures/medium/seed/next.config.mjs
+- harness-suite/fixtures/medium/seed/package.json
+- harness-suite/fixtures/medium/seed/tsconfig.json
+- harness-suite/fixtures/medium/seed/vitest.config.ts
+- harness-suite/fixtures/medium/solution/app/api/todos/route.ts: GET, POST
+- harness-suite/fixtures/medium/solution/app/page.tsx: Page
+- harness-suite/fixtures/medium/solution/components/TodoList.tsx: TodoListProps, TodoList
+- harness-suite/fixtures/medium/solution/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- harness-suite/fixtures/medium/solution/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- harness-suite/fixtures/medium/spec.md
+- harness-suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
+- harness-suite/fixtures/small/plan/plan.md
+- harness-suite/fixtures/small/plan/tasks.json
+- harness-suite/fixtures/small/seed/app/__init__.py
+- harness-suite/fixtures/small/seed/app/main.py: reset_store, health, list_items, get_item, create_item
+- harness-suite/fixtures/small/seed/app/models.py: ItemCreate, Item
+- harness-suite/fixtures/small/seed/tests/test_items.py: test_health, test_list_items_empty, test_create_item, test_create_then_list, test_get_item, test_get_missing_item_404, test_create_invalid_returns_422, test_store_is_isolated_between_tests
+- harness-suite/fixtures/small/solution/app/item_query.py: filter_items, count_filtered, select_items
+- harness-suite/fixtures/small/solution/app/main.py: reset_store, health, list_items, get_item, create_item
+- harness-suite/fixtures/small/solution/app/routers/__init__.py
+- harness-suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
+- harness-suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
+- harness-suite/fixtures/small/spec.md
+- harness-suite/report.py: load_rows, wilson_ci, build_report, main
+- harness-suite/results-oc-agent-rep1.csv
+- harness-suite/results-oc-agent-rep2.csv
+- harness-suite/results-oc-default-rep1.csv
+- harness-suite/results-oc-default-rep2.csv
+- harness-suite/results-oc-tools-rep1.csv
+- harness-suite/results-oc-tools-rep2.csv
+- harness-suite/results-rep1-buggy.csv
+- harness-suite/results-rep1-clean-partial.csv
+- harness-suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
+- harness-suite/work/_logs/suite-large-multi-claude-r1.log
+- harness-suite/work/_logs/suite-large-multi-cline-acp-r1.log
+- harness-suite/work/_logs/suite-large-multi-cline-r1.log
+- harness-suite/work/_logs/suite-large-multi-opencode-r1.log
+- harness-suite/work/_logs/suite-large-multi-pi-r1.log
+- harness-suite/work/_logs/suite-large-parallel-opencode-r1.log
+- harness-suite/work/_logs/suite-large-parallel-pi-r1.log
+- harness-suite/work/_logs/suite-large-serial-claude-r1.log
+- harness-suite/work/_logs/suite-large-serial-cline-r1.log
+- harness-suite/work/_logs/suite-large-serial-opencode-r1.log
+- harness-suite/work/_logs/suite-large-serial-pi-r1.log
+- harness-suite/work/_logs/suite-medium-multi-claude-r1.log
+- harness-suite/work/_logs/suite-medium-multi-cline-acp-r1.log
+- harness-suite/work/_logs/suite-medium-multi-cline-r1.log
+- harness-suite/work/_logs/suite-medium-multi-opencode-r1.log
+- harness-suite/work/_logs/suite-medium-multi-pi-r1.log
+- harness-suite/work/_logs/suite-medium-parallel-claude-r1.log
+- harness-suite/work/_logs/suite-medium-serial-cline-acp-r1.log
+- harness-suite/work/_logs/suite-medium-serial-opencode-r1.log
+- harness-suite/work/_logs/suite-medium-serial-pi-r1.log
+- harness-suite/work/_logs/suite-small-multi-claude-r1.log
+- harness-suite/work/_logs/suite-small-multi-cline-acp-r1.log
+- harness-suite/work/_logs/suite-small-multi-cline-r1.log
+- harness-suite/work/_logs/suite-small-multi-opencode-r1.log
+- harness-suite/work/_logs/suite-small-multi-pi-r1.log
+- harness-suite/work/_logs/suite-small-parallel-pi-r1.log
+- harness-suite/work/_logs/suite-small-serial-cline-acp-r1.log
+- harness-suite/work/_logs/suite-small-serial-opencode-r1.log
+- harness-suite/work/_logs/suite-small-serial-opencode-r2.log
+- harness-suite/work/_logs/suite-small-serial-pi-r1.log
+- harness-suite/work/_logs/suite-small-window-cline-r1.log
+- harness-suite/work/_logs/suite-small-window-pi-r1.log
+- log.md
 - opencode.json
+- package.json
 - packages/ufoz-harness/README.md
 - packages/ufoz-harness/THIRD_PARTY_NOTICES.md
-- packages/ufoz-harness/export_kit.py: fail_missing, copy_file, export, main
+- packages/ufoz-harness/export_kit.py: fail_missing, rel_of, copy_file, copy_skills, copy_runner, export, main
 - packages/ufoz-harness/index.js
+- packages/ufoz-harness/kit/.agents/skills/animate-expo/RECIPES.md
+- packages/ufoz-harness/kit/.agents/skills/animate-expo/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/animate/RECIPES.md
+- packages/ufoz-harness/kit/.agents/skills/animate/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/animation-vocabulary/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/apple-design/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/ask-sonner/API.md
+- packages/ufoz-harness/kit/.agents/skills/ask-sonner/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/emil-design-eng/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/find-animation-opportunities/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/frontend-design/LICENSE.txt
+- packages/ufoz-harness/kit/.agents/skills/frontend-design/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/improve-animations/AUDIT.md
+- packages/ufoz-harness/kit/.agents/skills/improve-animations/PLAN-TEMPLATE.md
+- packages/ufoz-harness/kit/.agents/skills/improve-animations/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/mobile-native/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/pick-ui-library/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/prototype/PICKER.md
+- packages/ufoz-harness/kit/.agents/skills/prototype/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/review-animations/SKILL.md
+- packages/ufoz-harness/kit/.agents/skills/review-animations/STANDARDS.md
+- packages/ufoz-harness/kit/.agents/skills/write-swift/SKILL.md
 - packages/ufoz-harness/kit/.pi/deny.json
 - packages/ufoz-harness/kit/.pi/executor.md
 - packages/ufoz-harness/kit/.pi/extensions/deny-list.ts
-- packages/ufoz-harness/kit/.pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside
+- packages/ufoz-harness/kit/.pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
 - packages/ufoz-harness/kit/AGENTS.md
 - packages/ufoz-harness/kit/CLAUDE.md
+- packages/ufoz-harness/kit/opencode.json
+- packages/ufoz-harness/kit/skills-lock.json
 - packages/ufoz-harness/kit_readme.md
 - packages/ufoz-harness/package.json
 - packages/ufoz-harness/test/install.test.js
 - skills-lock.json
+- tests/test_acceptance.py: test_non_codepage_output_does_not_crash, test_timeout_with_held_grandchild_pipe_returns_fast
 - tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
 - tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
 - tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
+- tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
 - tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
 - tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
+- tests/test_log_fixes.py: test_shared_files_ordered_through_a_dep_chain_do_not_warn, test_shared_files_without_any_dep_path_still_warn, test_module_shadowing_a_harness_package_warns, test_lint_outside_a_plans_dir_does_not_write_metrics, test_markers_inside_string_literals_are_not_suppressions, test_a_stray_quote_cannot_hide_a_real_suppression, test_relock_only_writes_the_lock_and_runs_nothing, test_worktree_can_exclude_paths_and_drop_main_history
+- tests/test_opencode_executor.py: quiet_executor, test_idle_watchdog_aborts_a_silent_session, test_saw_event_is_set_for_matching_events
+- tests/test_scope.py: test_in_scope_exact_and_directory_entries, test_overlaps_is_prefix_aware, test_lint_accepts_a_narrow_directory_entry, test_lint_rejects_broad_directory_entries, test_lint_directory_without_trailing_slash_is_an_error, test_written_paths_reads_every_executor_log_format, test_attribute_splits_own_strays_from_unattributed, test_lint_rejects_a_directory_holding_many_tracked_files
 - tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
-- tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok
+- tests/test_status.py: make_plan, write_report, test_states_first_failure_tail_and_next_command, test_all_pass_nexts_the_land_command, test_lock_mismatch_nexts_the_relock_only_command
+- tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed
+- tests/test_worktree.py: test_exclude_worktrees_writes_common_info_exclude_in_linked_worktree, test_link_sources_shared_dir_from_main_worktree, test_link_keeps_existing_target_dir
+- tsconfig.json
 
 ## Notes
 - (main session: add decisions/conventions here)

@@ -55,7 +55,10 @@ list. Task sections reference them with `TEST: python .harness/plans/<slug>/chec
 5. Build tasks write NO tests. Acceptance is one cheap smoke command proving the task landed, e.g. `python -c "from app.x import f; assert f(2) == 4"` or `node -e "..."`, plus `npx tsc --noEmit --incremental --tsBuildInfoFile .harness/tsc.tsbuildinfo` for TS; skip tsc in tasks whose `files` have no TypeScript. Never smoke-check `.ts` files by importing them through node (it makes the executor write `.ts`-extension imports that bundlers reject). No full builds.
 6. Every task has `"red_first": false` with reason `"lean smoke check"`. Acceptance runs through the OS shell (Windows
    cmd.exe here): no `VAR=value cmd`, `/tmp`, `rm` or `test`; set env vars and temp paths inside `python -c`/`node -e`.
-7. Last task writes `.harness/plans/<slug>/SUMMARY.md`, <= 600 chars: what was made, which files, how wired. Its MUST also says to run the build if any and add a line `BUILD: pass` or `BUILD: fail <first error line>` to SUMMARY.md; the build result never fails the task. Its acceptance is only `python -c "from pathlib import Path; p=Path('.harness/plans/<slug>/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600"`.
+7. The last task's SUMMARY/BUILD instruction is the one in Layout (`## T<last> write summary`); do not restate it here.
 8. Side effects (analytics, storage, events): a MUST that it fires exactly once.
 9. Run `python .harness/run_plan.py <slug> --lint` until `lint OK`.
-10. Reply in <= 8 lines: lint result, plan path, task ids + titles, open questions, top 2 risks. Never paste the plan.
+10. Revising an existing plan: change only the sections you were asked to change; keep every other line verbatim (diff before writing).
+11. Never pin a dependency version from memory: check it first (`npm view <pkg> version`, `pip index versions <pkg>`).
+12. A task that adds tests for a fix must name them in its acceptance (e.g. `pytest -k <new_test_name>`), so acceptance cannot pass on the existing tests before the work is done.
+13. Reply in <= 8 lines: lint result, plan path, task ids + titles, open questions, top 2 risks. Never paste the plan.

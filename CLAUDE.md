@@ -92,7 +92,6 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
 1. **Decide.** State assumptions, success criteria; settle design with the user.
 2. **Plan.** Small task: write `.harness/plans/<slug>/` yourself. Large or exploratory task: call `@planner`
    (it runs `--lint` itself; check its plan.md `Unverified:` list at approval).
-   Before calling `@planner` for large/multi-file work, run `python .harness/build_map.py --check || python .harness/build_map.py`.
    Layout: `plan.md` (Decisions + one `## T<n>` section per task: FILES / MUST / TEST), `tasks.json`
    (id, deps, files, acceptance). Contract plan, <= ~1.5k tokens: Decisions, interfaces, tasks; do not solve the task
    in the plan. Every task is checked by a one-line smoke command (no tests, red-first off); the LAST task writes
@@ -105,15 +104,18 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
    A real run defaults to its own git worktree (`.worktrees/<slug>`, so plans can run in parallel) and to a
    live window; `--no-worktree` / `--no-window` (or `HARNESS_WORKTREE=0` / `HARNESS_WINDOW=0`) opt out.
    It keeps ONE warm pi session for the whole plan (`--fresh` = new session per task), runs the acceptance
-   command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards: a red-first check that
-   passes before the executor runs is `check-invalid`;
-   touching a file outside `files` fails; tasks.json (+ checks/ if any) are hash-locked (`--relock` after YOU edit them);
+   command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards:
+   touching a file outside `files` fails; tasks.json (+ checks/ if any) are hash-locked (after YOU edit them, relock with
+   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing; `--relock` relocks AND runs the plan, so use it
+   only after the user said go);
    a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then receives one repair pass. The full trace is in `.worktrees/<slug>/.harness/plans/<slug>/logs/T<n>.pi.log`
    (the user can `tail -f` it). Do not read logs unless a task failed, and then only the tail.
 5. **Verify.** Read `SUMMARY.md` and the reports (short) in `.worktrees/<slug>/.harness/plans/<slug>/`, and review with
    `git -C .worktrees/<slug> diff` if in a repo. Never trust a claim of success without them.
    Health check: `python .harness/selftest.py` ($0). Cost comparison, only when asked: `--bench`. Totals: `run_plan.py --stats`.
-6. **Decide.** Accept, fix the brief and re-run (`run_plan.py` skips passed tasks), or discard.
+   If the plan touches side effects (analytics, storage, events) or client state, run `@reviewer` with the plan goal and
+   the touched files.
+6. **Decide.** Accept, fix the plan section and re-run (`run_plan.py` skips passed tasks), or discard.
    `--land` is the user's command; never run it yourself: tell the user to run
    `python .harness/run_plan.py <slug> --land` to bring the worktree's changes into the main tree.
    After the user's go, keep going without asking: run the whole plan, rebrief and rerun failures yourself.
@@ -128,6 +130,9 @@ or pi hangs waiting on it.
 - Report lists out-of-scope files: discard those changes and re-brief with tighter FILES.
 - A task fails twice after re-briefing: stop, investigate read-only, then re-brief with the diagnosis.
 - pi exit 124 (timeout) or empty log: check stdin is closed and the model is reachable before retrying.
+- Any harness/tool/process quirk that SHOULD be fixed: append it to `log.md` as `what → fix (or Open)`
+  under a `## <YYYY-MM-DD> <slug or topic>` heading. At Verify, copy each `items/T<n>.quirks.md` line there too.
+- Unlanded worktrees: `python .harness/run_plan.py --pending`
 
 # Explain Decisions
 For architecture or naming decisions, invoke the adhd skill first.

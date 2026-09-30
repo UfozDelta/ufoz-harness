@@ -30,7 +30,8 @@ really done.
 executor backend (`opencode/space-bunny-free`, free, effort `medium`) writes the code, driven by
 `.harness/run_plan.py`; `--executor cline` swaps in the free Cline CLI (cold: a fresh session per
 task), `--executor cline-acp` the same CLI over ACP (warm: one process for the whole plan, model
-pinned with `CLINE_MODEL`), `--executor opencode` a warm `opencode serve`, `--executor claude`
+pinned with `CLINE_MODEL`), `--executor opencode` a warm `opencode serve`, `--executor llama` a local
+llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model), `--executor claude`
 `claude -p`. The main session never writes code for delegable work. Nobody commits: no agent
 runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews commits separately.
 
@@ -65,15 +66,16 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
    `HARNESS_WINDOW=0`) opt out. It keeps ONE warm executor session for the whole plan (`--fresh` = new session per task; the
    cline arm is always fresh), runs
    the acceptance command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards:
-   touching a file outside `files` fails; tasks.json (+ `checks/` if any) are hash-locked (`--relock`
-   after YOU edit them); a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then
+   touching a file outside `files` fails; tasks.json (+ `checks/` if any) are hash-locked (after YOU edit them, relock with
+   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing; `--relock` relocks AND runs the plan, so use it
+   only after the user said go); a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then
    gets one repair pass. The full trace is in `.worktrees/<slug>/.harness/plans/<slug>/logs/T<n>.pi.log`;
    do not read logs unless a task failed, and then only the tail.
 5. **Verify.** Read `SUMMARY.md` and the reports (short) in `.worktrees/<slug>/.harness/plans/<slug>/`, and review with
    `git -C .worktrees/<slug> diff` if in a repo. Never trust a claim of
    success without them. Health check: `python .harness/selftest.py` ($0). Cost comparison, only when
    asked: `--bench`. Totals: `run_plan.py --stats`.
-6. **Decide.** Accept, fix the brief and re-run (`run_plan.py` skips passed tasks), or discard.
+6. **Decide.** Accept, fix the plan section and re-run (`run_plan.py` skips passed tasks), or discard.
    `--land` is the user's command; never run it yourself: point the user at
    `python .harness/run_plan.py <slug> --land` to land the worktree into the main tree. After the
    user's go, keep going without asking: run the whole plan, rebrief and rerun failures yourself. Stop and
@@ -86,6 +88,9 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
 - Report lists out-of-scope files: discard those changes and re-brief with tighter FILES.
 - A task fails twice after re-briefing: stop, investigate read-only, then re-brief with the diagnosis.
 - Executor exit 124 (timeout) or empty log: check stdin is closed and the model is reachable before retrying.
+- Any harness/tool/process quirk that SHOULD be fixed: append it to `log.md` as `what → fix (or Open)`
+  under a `## <YYYY-MM-DD> <slug or topic>` heading. At Verify, copy each `items/T<n>.quirks.md` line there too.
+- Unlanded worktrees: `python .harness/run_plan.py --pending`
 
 ## Output style
 
