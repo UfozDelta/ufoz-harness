@@ -1,0 +1,26 @@
+{
+  "slug": "suite-small",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [
+        "{work}/app/item_query.py",
+        "{work}/app/main.py"
+      ],
+      "acceptance": "cd {work} && python -c \"from app.item_query import select_items, count_filtered; from app.models import Item; items = [Item(id=1, name='Widget', price=9.5), Item(id=2, name='gadget', price=3.0), Item(id=3, name='Big Widget', price=100.0)]; assert [i.id for i in select_items(items)] == [1, 2, 3]; assert [i.id for i in select_items(items, min_price=9.5)] == [1, 3]; assert [i.id for i in select_items(items, name_contains='wIdG')] == [1, 3]; assert select_items(items, limit=2)[-1].id == 2; assert [i.id for i in select_items(items, limit=2, offset=2)] == [3]; assert select_items(items, offset=99) == []; assert count_filtered(items, max_price=9.5) == 2; print('FILTERS OK')\"",
+      "expect": "FILTERS OK"
+    },
+    {
+      "id": "T2",
+      "deps": [],
+      "files": [
+        "{work}/app/routers/__init__.py",
+        "{work}/app/tag_store.py",
+        "{work}/app/routers/tags.py"
+      ],
+      "acceptance": "cd {work} && python -c \"from app.tag_store import add_tag, attach_item, find_by_name, get_tag, reset_tag_store, tags; from app.routers.tags import router; paths = {getattr(r, 'path', '') for r in router.routes}; assert {'/tags', '/tags/{tag_id}', '/tags/{tag_id}/items/{item_id}'} <= paths, paths; reset_tag_store(); tag = add_tag('urgent'); assert (tag.id, tag.name, tag.item_ids) == (1, 'urgent', []); assert attach_item(1, 7).item_ids == [7]; assert attach_item(1, 7).item_ids == [7]; assert get_tag(99) is None; assert find_by_name('urgent').id == 1; assert [t.name for t in tags()] == ['urgent']; reset_tag_store(); assert tags() == []; print('TAGS OK')\"",
+      "expect": "TAGS OK"
+    }
+  ]
+}

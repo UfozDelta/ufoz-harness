@@ -1,0 +1,95 @@
+{
+  "slug": "suite-items-fullstack",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [
+        "{work}/backend/app/models.py"
+      ],
+      "acceptance": "cd {work}/backend && python -c \"from app.models import NAME_MAX, SKU_MAX, Item, ItemCreate, ItemStats, ItemUpdate, SearchResult; assert set(Item.model_fields) == {'id', 'name', 'sku', 'price', 'quantity'}; assert set(ItemCreate.model_fields) == {'name', 'sku', 'price', 'quantity'}; assert set(ItemUpdate.model_fields) == {'name', 'price', 'quantity'}; assert set(SearchResult.model_fields) == {'query', 'count', 'items'}; assert set(ItemStats.model_fields) == {'total', 'total_quantity', 'total_value', 'avg_price'}; assert issubclass(Item, ItemCreate); assert ItemCreate(name='n', sku='s', price=1.0).quantity == 0; assert ItemUpdate().model_dump(exclude_unset=True) == {}; assert ItemUpdate(name='x').model_dump()['price'] is None; assert (NAME_MAX, SKU_MAX) == (60, 32); print('MODELS OK')\"",
+      "expect": "MODELS OK"
+    },
+    {
+      "id": "T2",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "{work}/backend/app/store.py"
+      ],
+      "acceptance": "cd {work}/backend && python -c \"from app.models import ItemCreate, ItemUpdate; from app.store import DuplicateSku, ItemStore, get_store, reset_store; assert issubclass(DuplicateSku, ValueError); s = ItemStore(); assert s.list_items() == []; a = s.create_item(ItemCreate(name='  Widget  ', sku='W-1', price=9.5, quantity=4)); assert (a.id, a.name, a.sku, a.price, a.quantity) == (1, 'Widget', 'W-1', 9.5, 4); b = s.create_item(ItemCreate(name='Gadget', sku='G-2', price=3.0)); assert (b.id, b.quantity) == (2, 0); assert [i.sku for i in s.list_items()] == ['W-1', 'G-2']; assert s.get_item(1).name == 'Widget' and s.get_item(99) is None; assert s.update_item(1, ItemUpdate(price=12.0)).price == 12.0 and s.get_item(1).name == 'Widget'; assert s.update_item(1, ItemUpdate(quantity=0)).quantity == 0; assert s.update_item(99, ItemUpdate(price=1.0)) is None; assert s.delete_item(1) is True and s.delete_item(1) is False; assert s.create_item(ItemCreate(name='Fresh', sku='F-3', price=1.0)).id == 3; s.reset(); assert s.list_items() == [] and s.create_item(ItemCreate(name='Again', sku='A-1', price=1.0)).id == 1; assert get_store() is get_store(); reset_store(); print('STORE OK')\"",
+      "expect": "STORE OK"
+    },
+    {
+      "id": "T3",
+      "deps": [
+        "T1",
+        "T2"
+      ],
+      "files": [
+        "{work}/backend/app/items_router.py"
+      ],
+      "acceptance": "cd {work}/backend && python -c \"from fastapi import FastAPI; from fastapi.testclient import TestClient; from app.items_router import router; from app.store import reset_store; app = FastAPI(); app.include_router(router); c = TestClient(app); reset_store(); assert set(r.path for r in router.routes) == {'/items', '/items/{item_id}'}; assert c.get('/items').json() == []; created = c.post('/items', json={'name': 'Widget', 'sku': 'W-1', 'price': 9.5, 'quantity': 4}); assert created.status_code == 201 and created.json() == {'id': 1, 'name': 'Widget', 'sku': 'W-1', 'price': 9.5, 'quantity': 4}; assert c.get('/items/1').json() == created.json(); assert c.get('/items/99').json() == {'detail': 'Item not found'}; assert c.get('/items/abc').status_code == 422; assert c.post('/items', json={'name': 'Other', 'sku': 'W-1', 'price': 1.0}).status_code == 409; assert c.post('/items', json={'name': '', 'sku': 'X', 'price': 1.0}).status_code == 422; assert c.patch('/items/1', json={'price': 12.0}).json()['price'] == 12.0; assert c.patch('/items/1', json={'price': 12.0}).json()['name'] == 'Widget'; assert c.patch('/items/99', json={'price': 1.0}).status_code == 404; assert c.delete('/items/1').status_code == 204; assert c.get('/items').json() == []; assert c.delete('/items/1').status_code == 404; print('ITEMS OK')\"",
+      "expect": "ITEMS OK"
+    },
+    {
+      "id": "T4",
+      "deps": [
+        "T1",
+        "T2"
+      ],
+      "files": [
+        "{work}/backend/app/stats.py"
+      ],
+      "acceptance": "cd {work}/backend && python -c \"from fastapi import FastAPI; from fastapi.testclient import TestClient; from app.models import ItemCreate; from app.stats import router; from app.store import get_store, reset_store; app = FastAPI(); app.include_router(router); c = TestClient(app); reset_store(); assert c.get('/stats').json() == {'total': 0, 'total_quantity': 0, 'total_value': 0.0, 'avg_price': 0.0}; assert c.get('/search').json() == {'query': '', 'count': 0, 'items': []}; s = get_store(); s.create_item(ItemCreate(name='Big Widget', sku='A-1', price=10.0, quantity=2)); s.create_item(ItemCreate(name='gadget', sku='B-2', price=4.0, quantity=3)); found = c.get('/search', params={'q': '  wIdG '}).json(); assert found['query'] == '  wIdG ' and found['count'] == 1 and [i['sku'] for i in found['items']] == ['A-1']; assert [i['sku'] for i in c.get('/search', params={'q': 'b-2'}).json()['items']] == ['B-2']; assert c.get('/search', params={'q': 'zzz'}).json() == {'query': 'zzz', 'count': 0, 'items': []}; assert c.get('/search', params={'q': 'x' * 81}).status_code == 422; stats = c.get('/stats').json(); assert stats['total'] == 2 and stats['total_quantity'] == 5 and stats['total_value'] == 32.0 and stats['avg_price'] == 16.0; print('STATS OK')\"",
+      "expect": "STATS OK"
+    },
+    {
+      "id": "T5",
+      "deps": [],
+      "files": [
+        "{work}/web/lib/api-client.ts"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --strict --noUncheckedIndexedAccess --jsx react-jsx --module esnext --moduleResolution bundler --target es2022 --lib dom,dom.iterable,es2022 web/lib/api-client.ts && node --input-type=module -e \"import { readFileSync } from 'node:fs'; const src = readFileSync('web/lib/api-client.ts', 'utf8'); if (/not implemented/.test(src)) throw new Error('web/lib/api-client.ts is still a stub'); for (const n of ['ApiError', 'ApiClient', 'createApiClient']) { if (!src.includes(n)) throw new Error('missing ' + n); } console.log('CLIENT OK');\"",
+      "expect": "CLIENT OK"
+    },
+    {
+      "id": "T6",
+      "deps": [],
+      "files": [
+        "{work}/web/components/ItemList.tsx",
+        "{work}/web/components/ItemDetail.tsx"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --strict --noUncheckedIndexedAccess --jsx react-jsx --module esnext --moduleResolution bundler --target es2022 --lib dom,dom.iterable,es2022 web/components/ItemList.tsx web/components/ItemDetail.tsx && node --input-type=module -e \"import { readFileSync } from 'node:fs'; for (const file of ['web/components/ItemList.tsx', 'web/components/ItemDetail.tsx']) { const src = readFileSync(file, 'utf8'); if (!/export default/.test(src)) throw new Error(file + ': needs a default export'); if (!/export function/.test(src)) throw new Error(file + ': needs a named export'); if (src.includes('@/')) throw new Error(file + ': use relative imports'); } console.log('COMPONENTS OK');\"",
+      "expect": "COMPONENTS OK"
+    },
+    {
+      "id": "T7",
+      "deps": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ],
+      "files": [
+        "{work}/backend/app/main.py",
+        "{work}/backend/tests/test_openapi.py"
+      ],
+      "acceptance": "cd {work}/backend && python -m pytest -q tests/test_openapi.py && echo OPENAPI OK",
+      "expect": "OPENAPI OK"
+    },
+    {
+      "id": "T8",
+      "deps": [
+        "T5",
+        "T6"
+      ],
+      "files": [
+        "{work}/web/app/page.tsx"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --strict --noUncheckedIndexedAccess --jsx preserve --module esnext --moduleResolution bundler --target es2022 --lib dom,dom.iterable,es2022 web/app/page.tsx && node --input-type=module -e \"import { readFileSync } from 'node:fs'; const src = readFileSync('web/app/page.tsx', 'utf8'); for (const name of ['../lib/api-client', '../components/ItemList', '../lib/format', 'item-count', 'await']) { if (!src.includes(name)) throw new Error('missing ' + name); } if (!/export default async function/.test(src)) throw new Error('page must be an async default export'); if (src.includes('use client')) throw new Error('server component only'); console.log('PAGE OK');\"",
+      "expect": "PAGE OK"
+    }
+  ]
+}

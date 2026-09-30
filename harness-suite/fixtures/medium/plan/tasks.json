@@ -1,0 +1,50 @@
+{
+  "slug": "suite-medium",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [
+        "{work}/app/api/todos/route.ts"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --incremental && node -e \"const fs=require('fs');const p='app/api/todos/route.ts';if(!fs.existsSync(p))process.exit(1);const s=fs.readFileSync(p,'utf8');if(!/export async function GET/.test(s))process.exit(1);if(!/export async function POST/.test(s))process.exit(1);console.log('T1 OK')\"",
+      "expect": "T1 OK"
+    },
+    {
+      "id": "T2",
+      "deps": [],
+      "files": [
+        "{work}/lib/todos-store.ts"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --incremental && node -e \"const fs=require('fs');const s=fs.readFileSync('lib/todos-store.ts','utf8');if(/not implemented/.test(s))process.exit(1);for(const n of ['resetTodos','listTodos','getTodo','addTodo','toggleTodo','removeTodo']){if(!s.includes('export function '+n))process.exit(1);}console.log('T2 OK')\"",
+      "expect": "T2 OK"
+    },
+    {
+      "id": "T3",
+      "deps": [],
+      "files": [
+        "{work}/lib/validate.ts"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --incremental && node -e \"const fs=require('fs');const p='lib/validate.ts';if(!fs.existsSync(p))process.exit(1);const s=fs.readFileSync(p,'utf8');if(/not implemented/.test(s))process.exit(1);if(!/export function validateTitle/.test(s))process.exit(1);if(!/export function isValidTitle/.test(s))process.exit(1);console.log('T3 OK')\"",
+      "expect": "T3 OK"
+    },
+    {
+      "id": "T4",
+      "deps": [],
+      "files": [
+        "{work}/components/TodoList.tsx"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --incremental && node -e \"const fs=require('fs');const p='components/TodoList.tsx';if(!fs.existsSync(p))process.exit(1);const s=fs.readFileSync(p,'utf8');if(!/export default function TodoList/.test(s))process.exit(1);console.log('T4 OK')\"",
+      "expect": "T4 OK"
+    },
+    {
+      "id": "T5",
+      "deps": ["T1", "T2", "T3", "T4"],
+      "files": [
+        "{work}/app/page.tsx"
+      ],
+      "acceptance": "cd {work} && npx --no-install tsc --noEmit --incremental && node -e \"const fs=require('fs');const s=fs.readFileSync('app/page.tsx','utf8');if(!s.includes('TodoList'))process.exit(1);if(!s.includes('listTodos'))process.exit(1);if(!s.includes('isValidTitle'))process.exit(1);console.log('T5 OK')\"",
+      "expect": "T5 OK"
+    }
+  ]
+}

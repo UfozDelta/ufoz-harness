@@ -11,3 +11,5 @@ node_modules/
 .next/
 .pi_test_probe
 .harness/tsc.tsbuildinfo
+harness-suite/.check-tmp/
+harness-suite/failed/
