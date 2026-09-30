@@ -1,0 +1,10 @@
+{
+  "slug": "opencode-lean",
+  "tasks": [
+    {"id": "T1", "deps": [], "files": [".harness/runner/executors/opencode.py"],
+     "acceptance": "python -m pytest .harness/plans/opencode-lean/checks/test_profiles.py -q"},
+    {"id": "T2", "deps": ["T1"], "files": [".harness/plans/opencode-lean/SUMMARY.md"],
+     "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/opencode-lean/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+     "red_first": false, "red_first_reason": "summary existence check"}
+  ]
+}

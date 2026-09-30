@@ -1,0 +1,17 @@
+{
+  "slug": "suite-robust",
+  "task": "T5",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 59.8,
+  "accept_s": 0.8,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 4924,
+    "output": 2250,
+    "reasoning": 184,
+    "cache_read": 366586,
+    "cost": 0.0
+  }
+}

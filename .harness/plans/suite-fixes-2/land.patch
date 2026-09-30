@@ -1,0 +1,166 @@
+diff --git a/harness-suite/cells.py b/harness-suite/cells.py
+index 5acb213..7e0573f 100644
+--- a/harness-suite/cells.py
++++ b/harness-suite/cells.py
+@@ -25,6 +25,13 @@ from runner import worktree  # noqa: E402
+ SUITE_DIR = "harness-suite"
+ WORK_PREFIX = f"{SUITE_DIR}/work"
+ SIZES = ("small", "medium", "large")
++# only names build_matrix makes; plans like `suite-fixes` share the prefix and must never match
++CELL_SLUG = re.compile(r"^suite-(small|medium|large)-(serial|parallel|multi|window)-[a-z][a-z-]*-r\d+$")
++
++
++def is_cell_slug(name):
++    return bool(CELL_SLUG.match(name))
++
+ WINDOW_POLL_S = 15
+ TEST_TIMEOUT = 900
+ TAMPER_SENSITIVE = ("tsconfig.json", "package.json", "package-lock.json",
+@@ -199,6 +206,12 @@ def prepare_cell(cell, repo_root=REPO_ROOT):
+             for item in plan_src.iterdir():
+                 if item.is_file():
+                     shutil.copy2(item, dst / item.name)
++    # the fixture plan may say "Work dir: `{work}`"; both copies get the real path
++    for root in (wt, repo_root):
++        plan_md = _plan_dir(root, slug) / "plan.md"
++        if plan_md.is_file():
++            plan_md.write_text(plan_md.read_text(encoding="utf-8").replace("{work}", work_rel),
++                               encoding="utf-8")
+     tasks_json = _plan_dir(wt, slug) / "tasks.json"
+     if tasks_json.is_file():
+         data = json.loads(tasks_json.read_text(encoding="utf-8").replace("{work}", work_rel))
+@@ -578,7 +591,8 @@ def _run_multi(cell, repo_root, cell_timeout, keep=False):
+             timed_out = {size for size, (_, _, _, p) in running.items() if p.poll() is None}
+             break
+         with contextlib.suppress(OSError):
+-            peak = max(peak, len(list((Path(repo_root) / ".worktrees").glob("suite-*"))))
++            peak = max(peak, sum(1 for p in (Path(repo_root) / ".worktrees").glob("suite-*")
++                                     if is_cell_slug(p.name)))
+         time.sleep(1)
+     for _, _, _, proc in running.values():
+         if proc.poll() is None:
+@@ -650,14 +664,14 @@ def cleanup_cell(cell, repo_root=REPO_ROOT):
+     worktree path directly: node_modules is a junction into the root tree."""
+     repo_root = Path(repo_root)
+     slug = cell["slug"]
+-    if not slug.startswith("suite-"):  # only ever delete what the suite created
++    if not is_cell_slug(slug):  # only ever delete what the suite created
+         raise ValueError(f"cleanup_cell: refusing non-suite slug {slug!r}")
+     _git("worktree", "remove", "--force", f".worktrees/{slug}", cwd=repo_root)
+     _remove_leftover(Path(repo_root) / ".worktrees" / slug)
+     _git("worktree", "prune", cwd=repo_root)
+     _git("branch", "-D", f"harness/{slug}", cwd=repo_root)
+     plan = _plan_dir(repo_root, slug)
+-    if plan.is_dir() and plan.name.startswith("suite-"):
++    if plan.is_dir() and is_cell_slug(plan.name):
+         shutil.rmtree(plan, ignore_errors=True)
+     work = _work_dir(repo_root, slug)
+     if work.is_dir() and work.parent.name == "work":
+diff --git a/harness-suite/fixtures/large/plan/plan.md b/harness-suite/fixtures/large/plan/plan.md
+index 4488ea1..b4cfcb9 100644
+--- a/harness-suite/fixtures/large/plan/plan.md
++++ b/harness-suite/fixtures/large/plan/plan.md
+@@ -1,5 +1,7 @@
+ # Plan: suite-items-fullstack (backend + web items app)
+ 
++Work dir: `{work}` - every path in this plan is relative to it; cd there before running anything.
++
+ Slim plan: each task brief is the `## T<n>` section of this file. Work dir is `{work}`; the backend lives
+ in `{work}/backend` and the web app in `{work}/web`, so every path below is relative to `{work}`.
+ 
+@@ -256,7 +258,7 @@ file; no new dependencies; never run git commands that change state; every netwo
+ `request`.
+ 
+ ACCEPTANCE (run from the project root; the file must typecheck cleanly, then the command must print `CLIENT OK` and exit 0; runtime behaviour is covered by the hidden vitest specs, which stub `fetch` and assert every URL, header and body):
+-`cd {work} && npx --no-install tsc --noEmit --strict --noUncheckedIndexedAccess --jsx react-jsx --module esnext --moduleResolution bundler --target es2022 --lib dom,dom.iterable,es2022 web/lib/api-client.ts && echo CLIENT OK`
++`cd {work} && npx --no-install tsc --noEmit --strict --noUncheckedIndexedAccess --jsx react-jsx --module esnext --moduleResolution bundler --target es2022 --lib dom,dom.iterable,es2022 web/lib/api-client.ts && node --input-type=module -e "import { readFileSync } from 'node:fs'; const src = readFileSync('web/lib/api-client.ts', 'utf8'); if (/not implemented/.test(src)) throw new Error('web/lib/api-client.ts is still a stub'); for (const n of ['ApiError', 'ApiClient', 'createApiClient']) { if (!src.includes(n)) throw new Error('missing ' + n); } console.log('CLIENT OK');"`
+ 
+ ## T6
+ GOAL: create `web/components/ItemList.tsx` and `web/components/ItemDetail.tsx`, the two presentational views.
+diff --git a/harness-suite/fixtures/large/plan/tasks.json b/harness-suite/fixtures/large/plan/tasks.json
+index 40eae8a..a52e5ef 100644
+--- a/harness-suite/fixtures/large/plan/tasks.json
++++ b/harness-suite/fixtures/large/plan/tasks.json
+@@ -51,7 +51,7 @@
+       "files": [
+         "{work}/web/lib/api-client.ts"
+       ],
+-      "acceptance": "cd {work} && npx --no-install tsc --noEmit --strict --noUncheckedIndexedAccess --jsx react-jsx --module esnext --moduleResolution bundler --target es2022 --lib dom,dom.iterable,es2022 web/lib/api-client.ts && echo CLIENT OK",
++      "acceptance": "cd {work} && npx --no-install tsc --noEmit --strict --noUncheckedIndexedAccess --jsx react-jsx --module esnext --moduleResolution bundler --target es2022 --lib dom,dom.iterable,es2022 web/lib/api-client.ts && node --input-type=module -e \"import { readFileSync } from 'node:fs'; const src = readFileSync('web/lib/api-client.ts', 'utf8'); if (/not implemented/.test(src)) throw new Error('web/lib/api-client.ts is still a stub'); for (const n of ['ApiError', 'ApiClient', 'createApiClient']) { if (!src.includes(n)) throw new Error('missing ' + n); } console.log('CLIENT OK');\"",
+       "expect": "CLIENT OK"
+     },
+     {
+diff --git a/harness-suite/fixtures/medium/plan/plan.md b/harness-suite/fixtures/medium/plan/plan.md
+index a2d2546..2df34bd 100644
+--- a/harness-suite/fixtures/medium/plan/plan.md
++++ b/harness-suite/fixtures/medium/plan/plan.md
+@@ -1,5 +1,7 @@
+ # Plan: suite-medium (minimal Next.js App Router todo app — API route, store, validation, component, page)
+ 
++Work dir: `{work}` - every path in this plan is relative to it; cd there before running anything.
++
+ ## Goal
+ Turn the seeded Next.js shell into a small todo app: a route handler, the in-memory store behind it, a
+ shared validation module, a presentational list component, and a page that wires the four together. The
+@@ -138,7 +140,7 @@ REQUIREMENTS:
+ CONSTRAINTS: touch only the listed file; no new dependencies; the route must not be edited to use it.
+ 
+ ACCEPTANCE (run from the project root; must print `T3 OK` and exit 0):
+-`cd {work} && npx --no-install tsc --noEmit --incremental && node -e "const fs=require('fs');const p='lib/validate.ts';if(!fs.existsSync(p))process.exit(1);const s=fs.readFileSync(p,'utf8');if(!/export function validateTitle/.test(s))process.exit(1);if(!/export function isValidTitle/.test(s))process.exit(1);console.log('T3 OK')"`
++`cd {work} && npx --no-install tsc --noEmit --incremental && node -e "const fs=require('fs');const p='lib/validate.ts';if(!fs.existsSync(p))process.exit(1);const s=fs.readFileSync(p,'utf8');if(/not implemented/.test(s))process.exit(1);if(!/export function validateTitle/.test(s))process.exit(1);if(!/export function isValidTitle/.test(s))process.exit(1);console.log('T3 OK')"`
+ 
+ ## T4
+ GOAL: Add the presentational `components/TodoList.tsx` that renders todos and reports toggles.
+diff --git a/harness-suite/fixtures/medium/plan/tasks.json b/harness-suite/fixtures/medium/plan/tasks.json
+index 070138e..d839821 100644
+--- a/harness-suite/fixtures/medium/plan/tasks.json
++++ b/harness-suite/fixtures/medium/plan/tasks.json
+@@ -25,7 +25,7 @@
+       "files": [
+         "{work}/lib/validate.ts"
+       ],
+-      "acceptance": "cd {work} && npx --no-install tsc --noEmit --incremental && node -e \"const fs=require('fs');const p='lib/validate.ts';if(!fs.existsSync(p))process.exit(1);const s=fs.readFileSync(p,'utf8');if(!/export function validateTitle/.test(s))process.exit(1);if(!/export function isValidTitle/.test(s))process.exit(1);console.log('T3 OK')\"",
++      "acceptance": "cd {work} && npx --no-install tsc --noEmit --incremental && node -e \"const fs=require('fs');const p='lib/validate.ts';if(!fs.existsSync(p))process.exit(1);const s=fs.readFileSync(p,'utf8');if(/not implemented/.test(s))process.exit(1);if(!/export function validateTitle/.test(s))process.exit(1);if(!/export function isValidTitle/.test(s))process.exit(1);console.log('T3 OK')\"",
+       "expect": "T3 OK"
+     },
+     {
+diff --git a/harness-suite/fixtures/small/plan/plan.md b/harness-suite/fixtures/small/plan/plan.md
+index e2811da..77b19dc 100644
+--- a/harness-suite/fixtures/small/plan/plan.md
++++ b/harness-suite/fixtures/small/plan/plan.md
+@@ -1,5 +1,7 @@
+ # Plan: suite-small (items API — GET /items filters + pagination, /tags router)
+ 
++Work dir: `{work}` - every path in this plan is relative to it; cd there before running anything.
++
+ ## Goal
+ Add two independent features to the existing in-memory items API: query filters plus pagination on
+ `GET /items`, and a `/tags` router backed by its own store module. The two tasks touch disjoint files
+diff --git a/harness-suite/suite.py b/harness-suite/suite.py
+index 760a3f0..316a6d9 100644
+--- a/harness-suite/suite.py
++++ b/harness-suite/suite.py
+@@ -181,11 +181,13 @@ def _leftover_slugs(repo_root=REPO_ROOT):
+     """Slugs of leftover suite worktrees (.worktrees/suite-*) and branches
+     (harness/suite-*), from both sources, sorted."""
+     repo_root = Path(repo_root)
++    sys.path.insert(0, str(repo_root / "harness-suite"))
++    import cells as cells_mod  # noqa: WPS433 (heavy import, only here)
+     slugs = set()
+     worktrees = repo_root / ".worktrees"
+     if worktrees.is_dir():
+         for item in worktrees.iterdir():
+-            if item.is_dir() and item.name.startswith("suite-"):
++            if item.is_dir() and cells_mod.is_cell_slug(item.name):
+                 slugs.add(item.name)
+     try:
+         proc = subprocess.run(["git", "branch", "--list", "harness/suite-*"],
+@@ -193,7 +195,7 @@ def _leftover_slugs(repo_root=REPO_ROOT):
+                               encoding="utf-8", errors="replace")
+         for line in proc.stdout.splitlines():
+             name = line.strip().lstrip("* ").strip()
+-            if name.startswith("harness/suite-"):
++            if name.startswith("harness/") and cells_mod.is_cell_slug(name[len("harness/"):]):
+                 slugs.add(name[len("harness/"):])
+     except OSError:
+         pass

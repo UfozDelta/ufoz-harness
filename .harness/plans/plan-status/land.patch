@@ -1,0 +1,212 @@
+diff --git a/.harness/runner/cli.py b/.harness/runner/cli.py
+index 39c781a..cfe1b24 100644
+--- a/.harness/runner/cli.py
++++ b/.harness/runner/cli.py
+@@ -5,7 +5,7 @@ import sys
+ import time
+ from pathlib import Path
+ 
+-from . import land, pending, planner, scheduler, watch, worktree
++from . import land, pending, planner, scheduler, status, watch, worktree
+ from .executors import get, REGISTRY
+ from .lint import lint
+ from .plan import Plan
+@@ -45,6 +45,8 @@ def build_parser():
+                          "at once. Default; --no-worktree to run in place, or HARNESS_WORKTREE=0.")
+     ap.add_argument("--watch", action="store_true",
+                     help="Watch this plan's executor output live in this terminal; run nothing.")
++    ap.add_argument("--status", action="store_true",
++                    help="Show task states, the first failure's tail and the next command; runs nothing.")
+     ap.add_argument("--window", action=argparse.BooleanOptionalAction, default=None,
+                     help="Run as usual, but also open a shared terminal window with a tab "
+                          "watching the output. Default; --no-window, or HARNESS_WINDOW=0.")
+@@ -164,6 +166,9 @@ def _run(ap, args):
+         sys.exit(relock_only(args.slug))
+     if args.watch:
+         sys.exit(watch.watch(watch_dir(args.slug)))
++    if args.status:
++        print(status.render(args.slug, watch_dir(args.slug)))
++        return
+     if args.plan:
+         plan_dir = Path(".harness/plans") / args.slug
+         result = planner.run_planner(args.slug, args.plan, ".harness/plans", args.planner,
+diff --git a/.harness/runner/status.py b/.harness/runner/status.py
+new file mode 100644
+index 0000000..a4037a8
+--- /dev/null
++++ b/.harness/runner/status.py
+@@ -0,0 +1,77 @@
++"""--status: where is this plan and what do I run next. One screen, nothing run, nothing written.
++
++One line per task in tasks.json order: "T1 pass (1 attempt)", "T2 FAIL (2 attempts)",
++"T3 pending". Then the FIRST failed task's report tail (last 15 lines, indented), and a
++last line "next: <command>". State comes from files only: a report containing
++"RESULT: pass" is a pass, a report without it is a fail, no report is pending.
++"""
++import json
++from pathlib import Path
++
++TAIL_LINES = 15
++
++
++def _tasks(plan_dir):
++    """Task ids in tasks.json order ([] when there is no plan here)."""
++    try:
++        raw = json.loads((plan_dir / "tasks.json").read_text(encoding="utf-8"))
++    except (OSError, ValueError):
++        return []
++    return [t.get("id") for t in raw.get("tasks", []) if t.get("id")]
++
++
++def _attempts(plan_dir, tid):
++    """Attempt count from the task's metrics file, when it recorded one."""
++    try:
++        metrics = json.loads((plan_dir / "items" / f"{tid}.metrics.json").read_text(encoding="utf-8"))
++    except (OSError, ValueError):
++        return None
++    attempts = metrics.get("attempts")
++    return attempts if isinstance(attempts, int) and attempts > 0 else None
++
++
++def _report(plan_dir, tid):
++    try:
++        return (plan_dir / "items" / f"{tid}.report.md").read_text(encoding="utf-8")
++    except OSError:
++        return None
++
++
++def _line(tid, state, plan_dir):
++    if state == "pending":
++        return f"{tid} pending"
++    attempts = _attempts(plan_dir, tid)
++    count = f" ({attempts} attempt{'s' if attempts != 1 else ''})" if attempts else ""
++    return f"{tid} {'pass' if state == 'pass' else 'FAIL'}{count}"
++
++
++def render(slug, plan_dir):
++    """The whole --status screen for slug, read from plan_dir (no lock, no run)."""
++    plan_dir = Path(plan_dir)
++    lines, first_fail, first_fail_report = [], None, None
++    any_unfinished = False
++    for tid in _tasks(plan_dir):
++        text = _report(plan_dir, tid)
++        if text is None:
++            state = "pending"
++            any_unfinished = True
++        else:
++            state = "pass" if "RESULT: pass" in text else "fail"
++            if state == "fail" and first_fail is None:
++                first_fail, first_fail_report = tid, text
++        lines.append(_line(tid, state, plan_dir))
++
++    if first_fail is not None:
++        tail = first_fail_report.splitlines()[-TAIL_LINES:]
++        lines.append("")
++        lines.append(f"{first_fail} report tail:")
++        lines.extend(f"  {line}" for line in tail)
++        if "LOCK-MISMATCH" in first_fail_report:
++            lines.append(f"next: python .harness/run_plan.py {slug} --relock-only")
++        else:
++            lines.append(f"next: python .harness/run_plan.py {slug}")
++    elif any_unfinished:
++        lines.append(f"next: python .harness/run_plan.py {slug}")
++    elif lines:
++        lines.append(f"next: python .harness/run_plan.py {slug} --land")
++    return "\n".join(lines)
+diff --git a/.harness/selftest.py b/.harness/selftest.py
+index 3a31461..ab51167 100644
+--- a/.harness/selftest.py
++++ b/.harness/selftest.py
+@@ -29,20 +29,12 @@ import envfile  # noqa: E402
+ envfile.load_env()
+ 
+ import run_plan  # noqa: E402  (reuses its Claude-log cost reader)
++# the whole runner package the shim imports, so a new module is never left behind
++RUNNER_COPY = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / ".harness/runner").rglob("*.py")
++                     if "__pycache__" not in p.parts)
+ COPY = [".harness/run_plan.py", ".harness/envfile.py", ".pi/deny.json", ".pi/executor.md",
+-        ".pi/extensions/deny-list.ts", ".pi/extensions/deny-match.ts", "AGENTS.md", ".gitignore",
+-        # the runner package the shim imports
+-        ".harness/runner/__init__.py", ".harness/runner/acceptance.py", ".harness/runner/cli.py",
+-        ".harness/runner/guards.py", ".harness/runner/land.py", ".harness/runner/lint.py",
+-        ".harness/runner/plan.py", ".harness/runner/planner.py",
+-        ".harness/runner/procs.py", ".harness/runner/report.py", ".harness/runner/reviewer.py",
+-        ".harness/runner/scheduler.py", ".harness/runner/stats.py", ".harness/runner/task_runner.py",
+-        ".harness/runner/watch.py", ".harness/runner/worktree.py",
+-        ".harness/runner/executors/__init__.py", ".harness/runner/executors/base.py",
+-        ".harness/runner/executors/cline_acp.py",
+-        ".harness/runner/executors/claude.py", ".harness/runner/executors/cline.py",
+-        ".harness/runner/executors/llama.py",
+-        ".harness/runner/executors/opencode.py", ".harness/runner/executors/pi.py"]
++        ".pi/extensions/deny-list.ts", ".pi/extensions/deny-match.ts", "AGENTS.md", ".gitignore"] \
++    + RUNNER_COPY
+ PLANNER_COPY = [".claude/agents/planner.md", ".harness/CHECK_PATTERNS.md"]
+ TASK = """Add `smoke/mathx.py` with a function `clamp(x, lo, hi)`: return `lo` if `x < lo`, `hi` if
+ `x > hi`, otherwise `x`; raise `ValueError` if `lo > hi`. Stdlib only, no other functions."""
+diff --git a/tests/test_status.py b/tests/test_status.py
+new file mode 100644
+index 0000000..49cc82e
+--- /dev/null
++++ b/tests/test_status.py
+@@ -0,0 +1,61 @@
++import json
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".harness"))
++from runner import status  # noqa: E402
++
++
++def make_plan(tmp_path, slug="slug"):
++    """A plan dir with tasks.json for T1..T3 and an empty items dir."""
++    plan_dir = tmp_path / "plans" / slug
++    (plan_dir / "items").mkdir(parents=True, exist_ok=True)
++    tasks = [{"id": tid, "deps": [], "files": [], "acceptance": 'python -c "pass"'}
++             for tid in ("T1", "T2", "T3")]
++    (plan_dir / "tasks.json").write_text(json.dumps({"slug": slug, "tasks": tasks}),
++                                         encoding="utf-8")
++    return plan_dir
++
++
++def write_report(plan_dir, tid, text):
++    (plan_dir / "items" / f"{tid}.report.md").write_text(text, encoding="utf-8")
++
++
++def test_states_first_failure_tail_and_next_command(tmp_path):
++    plan_dir = make_plan(tmp_path)
++    write_report(plan_dir, "T1", "RESULT: pass\ndone\n")
++    body = [f"line{i:02d}" for i in range(1, 21)]
++    write_report(plan_dir, "T2", "RESULT: fail\n" + "\n".join(body) + "\n")
++
++    out = status.render("slug", plan_dir)
++    lines = out.splitlines()
++
++    assert "T1 pass" in out
++    assert "T2 FAIL" in out
++    assert "T3 pending" in out
++    assert "line20" in out            # the report's last line is inside the tail
++    assert "line01" not in out        # the first of 20 lines is cut by the 15-line tail
++    assert lines[-1] == "next: python .harness/run_plan.py slug"
++
++
++def test_all_pass_nexts_the_land_command(tmp_path):
++    plan_dir = make_plan(tmp_path)
++    for tid in ("T1", "T2", "T3"):
++        write_report(plan_dir, tid, f"RESULT: pass\n{tid} done\n")
++
++    out = status.render("slug", plan_dir)
++
++    assert "T1 pass" in out and "T2 pass" in out and "T3 pass" in out
++    assert out.splitlines()[-1] == "next: python .harness/run_plan.py slug --land"
++
++
++def test_lock_mismatch_nexts_the_relock_only_command(tmp_path):
++    plan_dir = make_plan(tmp_path)
++    write_report(plan_dir, "T1", "RESULT: pass\ndone\n")
++    write_report(plan_dir, "T2", "RESULT: fail\nLOCK-MISMATCH: plan.lock.json is stale\n")
++    write_report(plan_dir, "T3", "RESULT: pass\ndone\n")
++
++    out = status.render("slug", plan_dir)
++
++    assert "LOCK-MISMATCH" in out
++    assert out.splitlines()[-1] == "next: python .harness/run_plan.py slug --relock-only"

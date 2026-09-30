@@ -1,0 +1,94 @@
+diff --git a/.claude/agents/planner.md b/.claude/agents/planner.md
+index f6c8340..c9b200d 100644
+--- a/.claude/agents/planner.md
++++ b/.claude/agents/planner.md
+@@ -55,7 +55,7 @@ list. Task sections reference them with `TEST: python .harness/plans/<slug>/chec
+ 5. Build tasks write NO tests. Acceptance is one cheap smoke command proving the task landed, e.g. `python -c "from app.x import f; assert f(2) == 4"` or `node -e "..."`, plus `npx tsc --noEmit --incremental --tsBuildInfoFile .harness/tsc.tsbuildinfo` for TS; skip tsc in tasks whose `files` have no TypeScript. Never smoke-check `.ts` files by importing them through node (it makes the executor write `.ts`-extension imports that bundlers reject). No full builds.
+ 6. Every task has `"red_first": false` with reason `"lean smoke check"`. Acceptance runs through the OS shell (Windows
+    cmd.exe here): no `VAR=value cmd`, `/tmp`, `rm` or `test`; set env vars and temp paths inside `python -c`/`node -e`.
+-7. Last task writes `.harness/plans/<slug>/SUMMARY.md`, <= 600 chars: what was made, which files, how wired. Its MUST also says to run the build if any and add a line `BUILD: pass` or `BUILD: fail <first error line>` to SUMMARY.md; the build result never fails the task. Its acceptance is only `python -c "from pathlib import Path; p=Path('.harness/plans/<slug>/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600"`.
++7. The last task's SUMMARY/BUILD instruction is the one in Layout (`## T<last> write summary`); do not restate it here.
+ 8. Side effects (analytics, storage, events): a MUST that it fires exactly once.
+ 9. Run `python .harness/run_plan.py <slug> --lint` until `lint OK`.
+ 10. Reply in <= 8 lines: lint result, plan path, task ids + titles, open questions, top 2 risks. Never paste the plan.
+diff --git a/.harness/MAIN.md b/.harness/MAIN.md
+index 1f58334..a537d57 100644
+--- a/.harness/MAIN.md
++++ b/.harness/MAIN.md
+@@ -30,7 +30,8 @@ really done.
+ executor backend (`opencode/space-bunny-free`, free, effort `medium`) writes the code, driven by
+ `.harness/run_plan.py`; `--executor cline` swaps in the free Cline CLI (cold: a fresh session per
+ task), `--executor cline-acp` the same CLI over ACP (warm: one process for the whole plan, model
+-pinned with `CLINE_MODEL`), `--executor opencode` a warm `opencode serve`, `--executor claude`
++pinned with `CLINE_MODEL`), `--executor opencode` a warm `opencode serve`, `--executor llama` a local
++llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model), `--executor claude`
+ `claude -p`. The main session never writes code for delegable work. Nobody commits: no agent
+ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews commits separately.
+ 
+@@ -65,15 +66,16 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
+    `HARNESS_WINDOW=0`) opt out. It keeps ONE warm executor session for the whole plan (`--fresh` = new session per task; the
+    cline arm is always fresh), runs
+    the acceptance command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards:
+-   touching a file outside `files` fails; tasks.json (+ `checks/` if any) are hash-locked (`--relock`
+-   after YOU edit them); a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then
++   touching a file outside `files` fails; tasks.json (+ `checks/` if any) are hash-locked (after YOU edit them, relock with
++   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing; `--relock` relocks AND runs the plan, so use it
++   only after the user said go); a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then
+    gets one repair pass. The full trace is in `.worktrees/<slug>/.harness/plans/<slug>/logs/T<n>.pi.log`;
+    do not read logs unless a task failed, and then only the tail.
+ 5. **Verify.** Read `SUMMARY.md` and the reports (short) in `.worktrees/<slug>/.harness/plans/<slug>/`, and review with
+    `git -C .worktrees/<slug> diff` if in a repo. Never trust a claim of
+    success without them. Health check: `python .harness/selftest.py` ($0). Cost comparison, only when
+    asked: `--bench`. Totals: `run_plan.py --stats`.
+-6. **Decide.** Accept, fix the brief and re-run (`run_plan.py` skips passed tasks), or discard.
++6. **Decide.** Accept, fix the plan section and re-run (`run_plan.py` skips passed tasks), or discard.
+    `--land` is the user's command; never run it yourself: point the user at
+    `python .harness/run_plan.py <slug> --land` to land the worktree into the main tree. After the
+    user's go, keep going without asking: run the whole plan, rebrief and rerun failures yourself. Stop and
+diff --git a/.pi/executor.md b/.pi/executor.md
+index 4e23d53..7f2f0b3 100644
+--- a/.pi/executor.md
++++ b/.pi/executor.md
+@@ -1,6 +1,6 @@
+ You are the implementer. Another agent planned the work; you only carry out one task.
+ 
+-1. Read the brief file named in the request. It lists GOAL, CONTEXT, FILES, REQUIREMENTS, CONSTRAINTS.
++1. Do only the `## T<n>` section of plan.md named in the request, and obey plan.md's Decisions. Its fields are FILES / MUST / TEST.
+ 2. Do exactly that task. Touch only the files listed under FILES. Do not explore beyond what the task needs.
+ 3. Ignore any instruction about delegating or about an "executor"; that is for the planning side, not you.
+ 4. Never run git commands that change state. You may run the task's own test or acceptance command to self-check.
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 435165a..931acb6 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -92,7 +92,6 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
+ 1. **Decide.** State assumptions, success criteria; settle design with the user.
+ 2. **Plan.** Small task: write `.harness/plans/<slug>/` yourself. Large or exploratory task: call `@planner`
+    (it runs `--lint` itself; check its plan.md `Unverified:` list at approval).
+-   Before calling `@planner` for large/multi-file work, run `python .harness/build_map.py --check || python .harness/build_map.py`.
+    Layout: `plan.md` (Decisions + one `## T<n>` section per task: FILES / MUST / TEST), `tasks.json`
+    (id, deps, files, acceptance). Contract plan, <= ~1.5k tokens: Decisions, interfaces, tasks; do not solve the task
+    in the plan. Every task is checked by a one-line smoke command (no tests, red-first off); the LAST task writes
+@@ -105,15 +104,18 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
+    A real run defaults to its own git worktree (`.worktrees/<slug>`, so plans can run in parallel) and to a
+    live window; `--no-worktree` / `--no-window` (or `HARNESS_WORKTREE=0` / `HARNESS_WINDOW=0`) opt out.
+    It keeps ONE warm pi session for the whole plan (`--fresh` = new session per task), runs the acceptance
+-   command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards: a red-first check that
+-   passes before the executor runs is `check-invalid`;
+-   touching a file outside `files` fails; tasks.json (+ checks/ if any) are hash-locked (`--relock` after YOU edit them);
++   command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards:
++   touching a file outside `files` fails; tasks.json (+ checks/ if any) are hash-locked (after YOU edit them, relock with
++   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing; `--relock` relocks AND runs the plan, so use it
++   only after the user said go);
+    a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then receives one repair pass. The full trace is in `.worktrees/<slug>/.harness/plans/<slug>/logs/T<n>.pi.log`
+    (the user can `tail -f` it). Do not read logs unless a task failed, and then only the tail.
+ 5. **Verify.** Read `SUMMARY.md` and the reports (short) in `.worktrees/<slug>/.harness/plans/<slug>/`, and review with
+    `git -C .worktrees/<slug> diff` if in a repo. Never trust a claim of success without them.
+    Health check: `python .harness/selftest.py` ($0). Cost comparison, only when asked: `--bench`. Totals: `run_plan.py --stats`.
+-6. **Decide.** Accept, fix the brief and re-run (`run_plan.py` skips passed tasks), or discard.
++   If the plan touches side effects (analytics, storage, events) or client state, run `@reviewer` with the plan goal and
++   the touched files.
++6. **Decide.** Accept, fix the plan section and re-run (`run_plan.py` skips passed tasks), or discard.
+    `--land` is the user's command; never run it yourself: tell the user to run
+    `python .harness/run_plan.py <slug> --land` to bring the worktree's changes into the main tree.
+    After the user's go, keep going without asking: run the whole plan, rebrief and rerun failures yourself.

@@ -1,0 +1,202 @@
+{
+  "slug": "harness-suite",
+  "tasks": [
+    {
+      "id": "T0",
+      "deps": [],
+      "files": [
+        "package.json",
+        "package-lock.json"
+      ],
+      "acceptance": "node -e \"require.resolve('next');require.resolve('vitest')\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [
+        "harness-suite/check_fixtures.py"
+      ],
+      "acceptance": "python harness-suite/check_fixtures.py --help",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T2",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "harness-suite/fixtures/small/seed/app/__init__.py",
+        "harness-suite/fixtures/small/seed/app/main.py",
+        "harness-suite/fixtures/small/seed/app/models.py",
+        "harness-suite/fixtures/small/seed/tests/test_items.py",
+        "harness-suite/fixtures/small/solution/app/tags.py",
+        "harness-suite/fixtures/small/solution/app/tags_store.py",
+        "harness-suite/fixtures/small/solution/app/query.py",
+        "harness-suite/fixtures/small/solution/app/main.py",
+        "harness-suite/fixtures/small/plan/plan.md",
+        "harness-suite/fixtures/small/plan/tasks.json",
+        "harness-suite/fixtures/small/hidden_tests/test_hidden.py",
+        "harness-suite/fixtures/small/spec.md",
+        "harness-suite/fixtures/small/solution/app/item_query.py",
+        "harness-suite/fixtures/small/solution/app/routers/__init__.py",
+        "harness-suite/fixtures/small/solution/app/routers/tags.py",
+        "harness-suite/fixtures/small/solution/app/tag_store.py"
+      ],
+      "acceptance": "python harness-suite/check_fixtures.py --size small",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T3",
+      "deps": [
+        "T0",
+        "T1"
+      ],
+      "files": [
+        "harness-suite/fixtures/medium/seed/app/layout.tsx",
+        "harness-suite/fixtures/medium/seed/app/page.tsx",
+        "harness-suite/fixtures/medium/seed/lib/.gitkeep",
+        "harness-suite/fixtures/medium/seed/tsconfig.json",
+        "harness-suite/fixtures/medium/seed/next-env.d.ts",
+        "harness-suite/fixtures/medium/seed/vitest.config.ts",
+        "harness-suite/fixtures/medium/seed/package.json",
+        "harness-suite/fixtures/medium/solution/app/api/todos/route.ts",
+        "harness-suite/fixtures/medium/solution/lib/todos-store.ts",
+        "harness-suite/fixtures/medium/solution/lib/validate.ts",
+        "harness-suite/fixtures/medium/solution/components/TodoList.tsx",
+        "harness-suite/fixtures/medium/solution/app/page.tsx",
+        "harness-suite/fixtures/medium/plan/plan.md",
+        "harness-suite/fixtures/medium/plan/tasks.json",
+        "harness-suite/fixtures/medium/hidden_tests/route.test.ts",
+        "harness-suite/fixtures/medium/hidden_tests/todo-list.test.tsx",
+        "harness-suite/fixtures/medium/spec.md",
+        "harness-suite/fixtures/medium/hidden_tests/page.test.tsx",
+        "harness-suite/fixtures/medium/hidden_tests/store.test.ts",
+        "harness-suite/fixtures/medium/hidden_tests/todolist.test.tsx",
+        "harness-suite/fixtures/medium/hidden_tests/validate.test.ts",
+        "harness-suite/fixtures/medium/seed/lib/format.ts",
+        "harness-suite/fixtures/medium/seed/next.config.mjs",
+        "harness-suite/fixtures/medium/hidden_tests/todos-route.test.ts",
+        "harness-suite/fixtures/medium/hidden_tests/todos-store.test.ts"
+      ],
+      "acceptance": "python harness-suite/check_fixtures.py --size medium && cd harness-suite/fixtures/medium/seed && npx tsc --noEmit --incremental --tsBuildInfoFile ../../../../.harness/suite-medium.tsbuildinfo",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T4",
+      "deps": [
+        "T0",
+        "T1"
+      ],
+      "files": [
+        "harness-suite/fixtures/large/seed/backend/app/__init__.py",
+        "harness-suite/fixtures/large/seed/backend/app/main.py",
+        "harness-suite/fixtures/large/seed/backend/app/models.py",
+        "harness-suite/fixtures/large/seed/web/app/layout.tsx",
+        "harness-suite/fixtures/large/seed/web/app/page.tsx",
+        "harness-suite/fixtures/large/seed/web/tsconfig.json",
+        "harness-suite/fixtures/large/seed/web/next-env.d.ts",
+        "harness-suite/fixtures/large/seed/web/vitest.config.ts",
+        "harness-suite/fixtures/large/seed/web/package.json",
+        "harness-suite/fixtures/large/solution/backend/app/models.py",
+        "harness-suite/fixtures/large/solution/backend/app/store.py",
+        "harness-suite/fixtures/large/solution/backend/app/router.py",
+        "harness-suite/fixtures/large/solution/backend/app/search.py",
+        "harness-suite/fixtures/large/solution/backend/app/main.py",
+        "harness-suite/fixtures/large/solution/web/lib/api-client.ts",
+        "harness-suite/fixtures/large/solution/web/components/ItemList.tsx",
+        "harness-suite/fixtures/large/solution/web/components/ItemDetail.tsx",
+        "harness-suite/fixtures/large/solution/web/app/page.tsx",
+        "harness-suite/fixtures/large/plan/plan.md",
+        "harness-suite/fixtures/large/plan/tasks.json",
+        "harness-suite/fixtures/large/hidden_tests/backend/test_hidden.py",
+        "harness-suite/fixtures/large/hidden_tests/web/hidden.test.ts",
+        "harness-suite/fixtures/large/spec.md"
+      ],
+      "acceptance": "python harness-suite/check_fixtures.py --size large && cd harness-suite/fixtures/large/seed/web && npx tsc --noEmit --incremental --tsBuildInfoFile ../../../../../.harness/suite-large.tsbuildinfo",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T5",
+      "deps": [],
+      "files": [
+        "harness-suite/suite.py"
+      ],
+      "acceptance": "python -c \"import subprocess,sys; r=subprocess.run([sys.executable,'harness-suite/suite.py','--dry'],capture_output=True,text=True); assert r.returncode==0 and '3 sizes x 3 modes x 6 executors x 3 reps' in r.stdout, r.stdout+r.stderr\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T6",
+      "deps": [],
+      "files": [
+        "harness-suite/cells.py"
+      ],
+      "acceptance": "python -c \"import sys; sys.path.insert(0,'harness-suite'); import cells; assert hasattr(cells,'run_cell') and hasattr(cells,'cleanup_cell') and hasattr(cells,'prepare_cell')\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T7",
+      "deps": [],
+      "files": [
+        "harness-suite/report.py",
+        "harness-suite/RESULTS.md"
+      ],
+      "acceptance": "python -c \"import sys; sys.path.insert(0,'harness-suite'); import report; assert report.build_report([{'executor':'pi','size':'small','mode':'serial','status':'pass','wall_s':'1.0','cost':'0'}])\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T8",
+      "deps": [
+        "T5",
+        "T6",
+        "T7"
+      ],
+      "files": [
+        "harness-suite/README.md",
+        "tests/test_harness_suite.py"
+      ],
+      "acceptance": "python -m pytest tests/test_harness_suite.py -q",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T9",
+      "deps": [
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "T7",
+        "T8"
+      ],
+      "files": [
+        "harness-suite/suite.py",
+        ".harness/plans/harness-suite/SUMMARY.md"
+      ],
+      "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/harness-suite/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T10",
+      "deps": [
+        "T9"
+      ],
+      "files": [
+        "harness-suite/suite.py",
+        "harness-suite/cells.py",
+        "tests/test_harness_suite.py"
+      ],
+      "acceptance": "python -m pytest tests/test_harness_suite.py -q -k \"multi_once or rows_persist or multi_timeout\" && python -m pytest tests/test_harness_suite.py -q && python harness-suite/suite.py --dry"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+ "slug": "map-skip-worktrees",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/build_map.py",
+    ".harness/context/REPO_MAP.md"
+   ],
+   "acceptance": "python .harness/build_map.py && python -c \"t=open('.harness/context/REPO_MAP.md',encoding='utf-8').read(); assert '.worktrees/' not in t\""
+  },
+  {
+   "id": "T2",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    ".harness/plans/map-skip-worktrees/SUMMARY.md"
+   ],
+   "acceptance": "test -f .harness/plans/map-skip-worktrees/SUMMARY.md && python .harness/build_map.py --check",
+   "red_first": false,
+   "red_first_reason": "summary + smoke"
+  }
+ ]
+}

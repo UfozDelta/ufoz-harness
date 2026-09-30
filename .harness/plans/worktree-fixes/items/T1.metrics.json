@@ -1,0 +1,17 @@
+{
+  "slug": "worktree-fixes",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 11.4,
+  "accept_s": 0.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 7768,
+    "output": 334,
+    "reasoning": 0,
+    "cache_read": 14815,
+    "cost": 0.0
+  }
+}

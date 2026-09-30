@@ -1,0 +1,177 @@
+diff --git a/.harness/runner/cli.py b/.harness/runner/cli.py
+index 39c781a..b8e1fd8 100644
+--- a/.harness/runner/cli.py
++++ b/.harness/runner/cli.py
+@@ -5,7 +5,7 @@ import sys
+ import time
+ from pathlib import Path
+ 
+-from . import land, pending, planner, scheduler, watch, worktree
++from . import land, pending, planner, scheduler, skills, watch, worktree
+ from .executors import get, REGISTRY
+ from .lint import lint
+ from .plan import Plan
+@@ -211,6 +211,10 @@ def _run(ap, args):
+ 
+     # only when the flag is given: claude keeps its own sonnet default, cline falls back to
+     # HARNESS_MODEL, pi/opencode to their model lists
++    # the curated skills are decided from the plan's files, before the executor reads the env
++    skills.apply_default([t.raw for t in tasks], os.environ)
++    chosen = skills.chosen_dirs()
++    print(f"skills: on ({len(chosen)})" if skills.enabled() else "skills: off")
+     opts = {"model": args.executor_model} if args.executor_model else {}
+     run_started = time.time()
+     record_plan_event(metrics, args.slug, "run_start", executor=args.executor)
+diff --git a/.harness/runner/executors/opencode.py b/.harness/runner/executors/opencode.py
+index f7778cd..383a01d 100644
+--- a/.harness/runner/executors/opencode.py
++++ b/.harness/runner/executors/opencode.py
+@@ -18,6 +18,7 @@ import urllib.error
+ import urllib.request
+ from pathlib import Path
+ 
++from .. import skills
+ from ..procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS, stop_process_tree
+ from .base import ExecResult, Executor
+ 
+@@ -82,7 +83,7 @@ def opencode_config(deny_bash, profile="default"):
+         permission.update({tool: "deny" for tool in DENIED_TOOLS})
+     if rank >= _profile_rank("agent"):
+         agent["executor"] = {"mode": "primary", "prompt": _agent_prompt()}
+-    return {
++    config = {
+         "snapshot": False,
+         "lsp": False,
+         "formatter": False,
+@@ -91,6 +92,11 @@ def opencode_config(deny_bash, profile="default"):
+         "agent": agent,
+         "permission": permission,
+     }
++    if skills.enabled():  # the same curated dirs pi gets, nothing auto-discovered
++        config["skills"] = {"paths": [str(d.resolve()) for d in skills.chosen_dirs()]}
++    else:
++        permission["skill"] = "deny"
++    return config
+ 
+ 
+ def _executor_prompt(rules=None):
+@@ -150,8 +156,10 @@ def _prompt_body(model, prompt, system, profile="default"):
+ 
+ def _serve_env(base_env, config_dir, cwd, profile="default"):
+     """The serve environment: the throwaway config home, the workdir, and for `noproj` the
+-    flag that keeps opencode from reading project config. External skills stay enabled."""
+-    env = dict(base_env, XDG_CONFIG_HOME=str(config_dir), PWD=str(cwd))
++    flag that keeps opencode from reading project config. Skill auto-discovery is always off:
++    the curated list in .harness/skills.txt is the only source."""
++    env = dict(base_env, XDG_CONFIG_HOME=str(config_dir), PWD=str(cwd),
++               OPENCODE_DISABLE_CLAUDE_CODE="1", OPENCODE_DISABLE_EXTERNAL_SKILLS="1")
+     if _profile_rank(profile) >= _profile_rank("noproj"):
+         env["OPENCODE_DISABLE_PROJECT_CONFIG"] = "1"
+     return env
+diff --git a/.harness/runner/executors/pi.py b/.harness/runner/executors/pi.py
+index 98fafe1..fb4b9b2 100644
+--- a/.harness/runner/executors/pi.py
++++ b/.harness/runner/executors/pi.py
+@@ -8,6 +8,7 @@ import time
+ import uuid
+ from pathlib import Path
+ 
++from .. import skills
+ from ..procs import ANSI, EXIT_RATE_LIMIT, EXIT_TIMEOUT, stop_process_tree, zero_usage
+ from .base import ExecResult, Executor
+ 
+@@ -21,13 +22,12 @@ def _model(model=None):
+ 
+ 
+ def _skill_args():
+-    """`--no-skills` unless HARNESS_PI_SKILLS=1; then the same skill dirs opencode lists
+-    (user + project, .claude and .agents), for a like-for-like comparison."""
+-    if os.environ.get("HARNESS_PI_SKILLS") != "1":
+-        return ["--no-skills"]
+-    dirs = [Path.home() / ".claude" / "skills", Path.home() / ".agents" / "skills",
+-            Path(".claude") / "skills", Path(".agents") / "skills"]
+-    return [arg for d in dirs if d.is_dir() for arg in ("--skill", str(d))]
++    """Auto-discovery is always off; with skills enabled pi loads exactly the curated dirs
++    from .harness/skills.txt (each once), the same set opencode gets."""
++    args = ["--no-skills"]
++    if skills.enabled():
++        args += [arg for d in skills.chosen_dirs() for arg in ("--skill", str(d))]
++    return args
+ 
+ 
+ def _pi_launcher():
+diff --git a/.harness/runner/skills.py b/.harness/runner/skills.py
+new file mode 100644
+index 0000000..5ba9aff
+--- /dev/null
++++ b/.harness/runner/skills.py
+@@ -0,0 +1,57 @@
++"""The curated skills the executors get: one list (.harness/skills.txt), on only for
++frontend plans (HARNESS_SKILLS=1), the same dirs for pi and opencode, each skill once."""
++import os
++from pathlib import Path
++
++LIST_FILE = Path(".harness/skills.txt")
++FRONTEND_EXT = (".tsx", ".jsx", ".css", ".scss", ".html", ".vue", ".svelte")
++
++
++def load_list(path=None):
++    """The names in the list file, in order; blanks and `#` comments ignored. No file, no skills."""
++    try:
++        text = (path or LIST_FILE).read_text(encoding="utf-8")
++    except OSError:
++        return []
++    return [line.strip() for line in text.splitlines() if line.strip() and not line.strip().startswith("#")]
++
++
++def default_roots():
++    """Where skills live, in the order the first hit wins: project first, then the user copies."""
++    return [Path(".agents/skills"), Path(".claude/skills"),
++            Path.home() / ".agents" / "skills", Path.home() / ".claude" / "skills"]
++
++
++def resolve(names, roots=None):
++    """One directory per name: the first root holding a SKILL.md. Missing names are skipped,
++    and a name never resolves twice (the first root wins, not every root)."""
++    dirs = []
++    for name in names:
++        for root in roots if roots is not None else default_roots():
++            candidate = root / name
++            if (candidate / "SKILL.md").is_file():
++                dirs.append(candidate)
++                break
++    return dirs
++
++
++def enabled():
++    return os.environ.get("HARNESS_SKILLS") == "1"
++
++
++def plan_wants_skills(tasks):
++    """True when any task touches a frontend file: a skills list is only worth the tokens there."""
++    return any(str(f).endswith(FRONTEND_EXT)
++               for task in tasks for f in task.get("files", []))
++
++
++def apply_default(tasks, environ):
++    """Set HARNESS_SKILLS from the plan unless the caller already decided (HARNESS_SKILLS=0/1)."""
++    if "HARNESS_SKILLS" not in environ:
++        environ["HARNESS_SKILLS"] = "1" if plan_wants_skills(tasks) else "0"
++    return environ
++
++
++def chosen_dirs():
++    """Looked up at call time so the list and the roots can be changed after import."""
++    return resolve(load_list(), default_roots())
+diff --git a/.harness/skills.txt b/.harness/skills.txt
+new file mode 100644
+index 0000000..b9f487c
+--- /dev/null
++++ b/.harness/skills.txt
+@@ -0,0 +1,6 @@
++# The curated skills an executor may load, one name per line.
++# Resolved against .agents/skills, .claude/skills and the same two under the home dir.
++frontend-design
++emil-design-eng
++animate
++mobile-native

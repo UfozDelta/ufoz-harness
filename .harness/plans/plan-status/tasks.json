@@ -1,0 +1,48 @@
+{
+ "slug": "plan-status",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/status.py",
+    ".harness/runner/cli.py"
+   ],
+   "acceptance": "python .harness/run_plan.py suite-robust --status | python -c \"import sys; t=sys.stdin.read(); assert 'T1 pass' in t and 'next: ' in t, t\""
+  },
+  {
+   "id": "T2",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    "tests/test_status.py"
+   ],
+   "acceptance": "python -m pytest -q tests/test_status.py"
+  },
+  {
+   "id": "T3",
+   "deps": [
+    "T2"
+   ],
+   "files": [
+    ".harness/plans/plan-status/SUMMARY.md"
+   ],
+   "acceptance": "test -f .harness/plans/plan-status/SUMMARY.md && python .harness/selftest.py",
+   "red_first": false,
+   "red_first_reason": "summary + smoke"
+  },
+  {
+   "id": "T4",
+   "deps": [
+    "T3"
+   ],
+   "files": [
+    ".harness/selftest.py",
+    ".harness/runner/cli.py",
+    ".harness/plans/plan-status/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"t=open('.harness/runner/cli.py',encoding='utf-8').read(); assert 'imported here' not in t and 'pending, planner, scheduler, status, watch' in t; s=open('.harness/selftest.py',encoding='utf-8').read(); assert 'runner/pending.py' not in s and 'glob' in s\" && python .harness/selftest.py"
+  }
+ ]
+}

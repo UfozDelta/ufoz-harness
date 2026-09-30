@@ -1,0 +1,17 @@
+{
+  "slug": "pending-log",
+  "task": "T5",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 16.9,
+  "accept_s": 0.2,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 1924,
+    "output": 733,
+    "reasoning": 0,
+    "cache_read": 104967,
+    "cost": 0.0
+  }
+}

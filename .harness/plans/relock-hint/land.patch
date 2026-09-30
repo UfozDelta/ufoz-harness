@@ -1,0 +1,26 @@
+diff --git a/.harness/runner/report.py b/.harness/runner/report.py
+index 5bfd62d..41909f7 100644
+--- a/.harness/runner/report.py
++++ b/.harness/runner/report.py
+@@ -22,7 +22,7 @@ def running():
+ 
+ def lock_mismatch(broken):
+     return (f"RESULT: lock-mismatch\nchanged since lock: {broken}\n"
+-            "If you made this edit on purpose, rerun with --relock.\n"
++            "If you made this edit on purpose, rerun with --relock-only.\n"
+             "exec seconds: 0.0\nacceptance seconds: 0.0\nretry seconds: 0.0\n")
+ 
+ 
+diff --git a/.harness/runner/task_runner.py b/.harness/runner/task_runner.py
+index 1617408..560a529 100644
+--- a/.harness/runner/task_runner.py
++++ b/.harness/runner/task_runner.py
+@@ -174,7 +174,7 @@ class TaskRunner:
+         if broken:
+             rep.write_text(report.lock_mismatch(broken), encoding="utf-8")
+             self._record_metrics(st, "fail", 0, round(time.time() - st.t0, 1))
+-            return False, [f"{tid} LOCK-MISMATCH: {broken} (rerun with --relock if intended)"], session
++            return False, [f"{tid} LOCK-MISMATCH: {broken} (rerun with --relock-only if intended)"], session
+ 
+         # red-first: a check that passes before any work proves nothing. Skipped when
+         # an earlier attempt already ran the executor (fail, or "running" left by a crashed

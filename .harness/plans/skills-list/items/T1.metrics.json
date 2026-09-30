@@ -1,0 +1,17 @@
+{
+  "slug": "skills-list",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 63.3,
+  "accept_s": 29.0,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 20749,
+    "output": 2463,
+    "reasoning": 194,
+    "cache_read": 88636,
+    "cost": 0.0
+  }
+}

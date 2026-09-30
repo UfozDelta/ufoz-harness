@@ -1,0 +1,14 @@
+{"slug": "worktree-fixes", "tasks": [
+  {"id": "T1", "deps": [], "files": [".harness/runner/worktree.py"],
+   "acceptance": "python -c \"import ast; s=open('.harness/runner/worktree.py',encoding='utf-8').read(); ast.parse(s); assert '--git-path' in s\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T2", "deps": ["T1"], "files": [".harness/runner/worktree.py"],
+   "acceptance": "python -c \"import ast; s=open('.harness/runner/worktree.py',encoding='utf-8').read(); ast.parse(s); assert '--git-common-dir' in s and 'rmtree' not in s\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T3", "deps": ["T2"], "files": ["tests/test_worktree.py"],
+   "acceptance": "python -m pytest tests/test_worktree.py -q",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T4", "deps": ["T3"], "files": [".harness/plans/worktree-fixes/SUMMARY.md"],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/worktree-fixes/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false, "red_first_reason": "lean smoke check"}
+]}

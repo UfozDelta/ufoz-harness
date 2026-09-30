@@ -1,0 +1,17 @@
+{
+  "slug": "harness-suite",
+  "task": "T5",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 44.4,
+  "accept_s": 0.9,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 8651,
+    "output": 5289,
+    "reasoning": 1748,
+    "cache_read": 74834,
+    "cost": 0.0
+  }
+}

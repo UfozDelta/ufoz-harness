@@ -1,0 +1,17 @@
+{
+  "slug": "opencode-lean",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 61.3,
+  "accept_s": 4.0,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 11342,
+    "output": 2239,
+    "reasoning": 0,
+    "cache_read": 58752,
+    "cost": 0.0
+  }
+}

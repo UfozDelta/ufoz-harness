@@ -1,0 +1,17 @@
+{
+  "slug": "suite-fixes-2",
+  "task": "T2",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 322.2,
+  "accept_s": 1.0,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 8592,
+    "output": 608,
+    "reasoning": 34,
+    "cache_read": 19625,
+    "cost": 0.0
+  }
+}

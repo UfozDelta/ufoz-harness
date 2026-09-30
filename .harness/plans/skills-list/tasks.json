@@ -1,0 +1,12 @@
+{
+  "slug": "skills-list",
+  "tasks": [
+    {"id": "T1", "deps": [],
+     "files": [".harness/skills.txt", ".harness/runner/skills.py", ".harness/runner/cli.py",
+               ".harness/runner/executors/pi.py", ".harness/runner/executors/opencode.py"],
+     "acceptance": "python -m pytest .harness/plans/skills-list/checks/test_skills.py -q && python -m pytest tests -q"},
+    {"id": "T2", "deps": ["T1"], "files": [".harness/plans/skills-list/SUMMARY.md"],
+     "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/skills-list/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+     "red_first": false, "red_first_reason": "summary existence check"}
+  ]
+}

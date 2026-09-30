@@ -1,0 +1,20 @@
+{"slug": "suite-robust", "tasks": [
+  {"id": "T1", "deps": [], "files": ["harness-suite/cells.py", ".gitignore", "tests/test_harness_suite.py"],
+   "acceptance": "python -m pytest tests/test_harness_suite.py -k preserve_failed -q",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T2", "deps": ["T1"], "files": ["harness-suite/cells.py", "tests/test_harness_suite.py"],
+   "acceptance": "python -m pytest tests/test_harness_suite.py -k \"cleanup_retry or stale_branch\" -q",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T3", "deps": [], "files": [".harness/runner/acceptance.py", "tests/test_acceptance.py"],
+   "acceptance": "python -m pytest tests/test_acceptance.py -q",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T4", "deps": ["T2"], "files": ["harness-suite/cells.py", "tests/test_harness_suite.py"],
+   "acceptance": "python -m pytest tests/test_harness_suite.py -k poll_until -q",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T5", "deps": [], "files": [".harness/runner/executors/opencode.py", "tests/test_opencode_executor.py"],
+   "acceptance": "python -m pytest tests/test_opencode_executor.py -q",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T6", "deps": ["T1", "T2", "T3", "T4", "T5"], "files": [".harness/plans/suite-robust/SUMMARY.md"],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/suite-robust/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false, "red_first_reason": "lean smoke check"}
+]}

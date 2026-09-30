@@ -1,0 +1,17 @@
+{
+  "slug": "doc-fixes",
+  "task": "T2",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 11.9,
+  "accept_s": 0.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 10063,
+    "output": 1017,
+    "reasoning": 298,
+    "cache_read": 20346,
+    "cost": 0.0
+  }
+}

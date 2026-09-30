@@ -1,0 +1,1 @@
+Lock-mismatch hints now point at --relock-only, which relocks and exits without running tasks; --relock still exists but is no longer suggested. Two strings changed: the LOCK-MISMATCH line in .harness/runner/task_runner.py and the lock_mismatch report in .harness/runner/report.py. No behavior change otherwise.

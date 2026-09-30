@@ -1,0 +1,26 @@
+{
+ "slug": "relock-hint",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/task_runner.py",
+    ".harness/runner/report.py"
+   ],
+   "acceptance": "grep -q relock-only .harness/runner/task_runner.py && grep -q relock-only .harness/runner/report.py"
+  },
+  {
+   "id": "T2",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    ".harness/plans/relock-hint/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/relock-hint/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8'))<=600\" && python -m pytest -q tests/test_task_runner.py",
+   "red_first": false,
+   "red_first_reason": "summary + smoke"
+  }
+ ]
+}

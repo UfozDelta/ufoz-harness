@@ -1,0 +1,13 @@
+{
+  "slug": "suite-fixes-2",
+  "tasks": [
+    {"id": "T1", "deps": [],
+     "files": ["harness-suite/fixtures/small/plan/", "harness-suite/fixtures/medium/plan/", "harness-suite/fixtures/large/plan/"],
+     "acceptance": "python .harness/plans/suite-fixes-2/checks/check_red.py && python .harness/plans/suite-fixes-2/checks/check_iso.py && python harness-suite/check_fixtures.py"},
+    {"id": "T2", "deps": [], "files": ["harness-suite/cells.py"],
+     "acceptance": "python .harness/plans/suite-fixes-2/checks/check_t2.py"},
+    {"id": "T3", "deps": ["T1", "T2"], "files": [".harness/plans/suite-fixes-2/SUMMARY.md"],
+     "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/suite-fixes-2/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+     "red_first": false, "red_first_reason": "summary existence check"}
+  ]
+}

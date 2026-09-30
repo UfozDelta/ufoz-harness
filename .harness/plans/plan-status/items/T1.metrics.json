@@ -1,0 +1,17 @@
+{
+  "slug": "plan-status",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 35.3,
+  "accept_s": 0.7,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 10863,
+    "output": 2206,
+    "reasoning": 227,
+    "cache_read": 71356,
+    "cost": 0.0
+  }
+}

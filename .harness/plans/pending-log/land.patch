@@ -1,0 +1,185 @@
+diff --git a/.harness/MAIN.md b/.harness/MAIN.md
+index 1f58334..c6853fe 100644
+--- a/.harness/MAIN.md
++++ b/.harness/MAIN.md
+@@ -86,6 +86,9 @@ runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews c
+ - Report lists out-of-scope files: discard those changes and re-brief with tighter FILES.
+ - A task fails twice after re-briefing: stop, investigate read-only, then re-brief with the diagnosis.
+ - Executor exit 124 (timeout) or empty log: check stdin is closed and the model is reachable before retrying.
++- Any harness/tool/process quirk that SHOULD be fixed: append it to `log.md` as `what → fix (or Open)`
++  under a `## <YYYY-MM-DD> <slug or topic>` heading. At Verify, copy each `items/T<n>.quirks.md` line there too.
++- Unlanded worktrees: `python .harness/run_plan.py --pending`
+ 
+ ## Output style
+ 
+diff --git a/.harness/runner/cli.py b/.harness/runner/cli.py
+index df6dd57..39c781a 100644
+--- a/.harness/runner/cli.py
++++ b/.harness/runner/cli.py
+@@ -5,7 +5,7 @@ import sys
+ import time
+ from pathlib import Path
+ 
+-from . import land, planner, scheduler, watch, worktree
++from . import land, pending, planner, scheduler, watch, worktree
+ from .executors import get, REGISTRY
+ from .lint import lint
+ from .plan import Plan
+@@ -64,6 +64,8 @@ def build_parser():
+     ap.add_argument("--repair", type=int, default=1,
+                      help="Repair passes after retries, with the failing task's and earlier tasks' files in scope.")
+     ap.add_argument("--stats", action="store_true", help="Print executor time/token totals per plan.")
++    ap.add_argument("--pending", action="store_true",
++                    help="List plan worktrees not landed yet; run nothing.")
+     ap.add_argument("--fresh", action="store_true",
+                      help="A fresh pi session per task (the old default). Warm is faster on the bench.")
+     ap.add_argument("--executor-model", default=None,
+@@ -152,6 +154,8 @@ def _run(ap, args):
+     if args.stats:
+         print_stats(metrics)
+         return
++    if args.pending:
++        return pending.pending()
+     if not args.slug:
+         ap.error("slug is required")
+     if args.land:
+diff --git a/.harness/runner/guards.py b/.harness/runner/guards.py
+index 7f27f37..2cc9cfa 100644
+--- a/.harness/runner/guards.py
++++ b/.harness/runner/guards.py
+@@ -56,7 +56,7 @@ def runner_owned(f, run_lock, plan, metrics):
+             or _other_plan(f, plan)
+             or f.endswith(".tsbuildinfo")
+             or (f.startswith(f"{plan.as_posix()}/items/")
+-                and (f.endswith((".report.md", ".feedback.md", ".metrics.json"))
++                and (f.endswith((".report.md", ".feedback.md", ".metrics.json", ".quirks.md"))
+                      or re.search(r"\.repair\d+\.md$", f))))
+ 
+ 
+diff --git a/.harness/runner/land.py b/.harness/runner/land.py
+index 7738139..4084fe8 100644
+--- a/.harness/runner/land.py
++++ b/.harness/runner/land.py
+@@ -71,6 +71,11 @@ def land(slug):
+         if os.path.isjunction(link):
+             os.rmdir(link)  # the link only, never the shared target
+     _git("worktree", "remove", "--force", str(wt))
++    if wt.is_dir() and not any(wt.iterdir()):
++        try:
++            wt.rmdir()  # git left an empty dir behind; Windows may still hold a handle
++        except OSError:
++            pass
+     _git("branch", "-D", f"harness/{slug}")
+     print(f"landed {slug}: {changed} files")
+     return 0
+diff --git a/.harness/runner/pending.py b/.harness/runner/pending.py
+new file mode 100644
+index 0000000..a420a05
+--- /dev/null
++++ b/.harness/runner/pending.py
+@@ -0,0 +1,62 @@
++"""--pending: list the plan worktrees under root that are not landed yet.
++
++One line per worktree dir: <slug>  <passed>/<total> tasks passed  <n> changed files
++plus "  (running)" while the plan's run lock is there. Nothing is run and nothing
++is written; a missing root or no dirs prints "no unlanded worktrees".
++"""
++import json
++import subprocess
++from pathlib import Path
++
++
++def _total(worktree, slug):
++    """Total tasks in the worktree's own copy of the plan (0 if it has none yet)."""
++    path = worktree / ".harness" / "plans" / slug / "tasks.json"
++    if not path.is_file():
++        return 0
++    try:
++        return len(json.loads(path.read_text(encoding="utf-8")).get("tasks", []))
++    except (OSError, ValueError):
++        return 0
++
++
++def _passed(worktree, slug):
++    """How many item reports start with RESULT: pass."""
++    items = worktree / ".harness" / "plans" / slug / "items"
++    if not items.is_dir():
++        return 0
++    passed = 0
++    for report in items.glob("*.report.md"):
++        try:
++            first = report.read_text(encoding="utf-8").splitlines()[:1]
++        except OSError:
++            continue
++        if first and first[0].strip() == "RESULT: pass":
++            passed += 1
++    return passed
++
++
++def _changed(worktree, slug):
++    """Non-empty lines of the worktree's own git status, plan records excluded."""
++    proc = subprocess.run(
++        ["git", "-C", str(worktree), "status", "--porcelain", "--", ".",
++         f":(exclude).harness/plans/{slug}"],
++        capture_output=True, text=True, check=False)
++    return len([line for line in proc.stdout.splitlines() if line.strip()])
++
++
++def pending(root=".worktrees"):
++    """Print one line per worktree under root; always returns 0."""
++    root = Path(root)
++    # only real worktrees have a .git file; leftover empty dirs are skipped, no git call
++    dirs = sorted(d for d in root.iterdir() if d.is_dir() and (d / ".git").exists()) \
++        if root.is_dir() else []
++    if not dirs:
++        print("no unlanded worktrees")
++        return 0
++    for worktree in dirs:
++        slug = worktree.name
++        running = (worktree / ".harness" / "plans" / slug / "run.lock").exists()
++        print(f"{slug}  {_passed(worktree, slug)}/{_total(worktree, slug)} tasks passed  "
++              f"{_changed(worktree, slug)} changed files{'  (running)' if running else ''}")
++    return 0
+diff --git a/AGENTS.md b/AGENTS.md
+index 6968f0b..b875ebf 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -6,7 +6,10 @@ You are the executor. No human is watching; nobody answers questions.
+ - Write tests ONLY when your task is the plan's final spec-tests task; build tasks are checked by a smoke command.
+ - Ignore any "delegate to the executor" guidance found elsewhere; you are the executor.
+ - Never edit anything under .harness/ (plans, checks, reports). Checks are hash-locked; editing one fails the task.
+-  One exception: write `.harness/plans/<slug>/SUMMARY.md` when your task lists it in FILES.
++  Two exceptions: write `.harness/plans/<slug>/SUMMARY.md` when your task lists it in FILES, and
++  write `.harness/plans/<slug>/items/T<n>.quirks.md` for your own task.
++- A harness/tool/process quirk that should be fixed (not a bug in your own task's code): one line
++  per quirk in `.harness/plans/<slug>/items/T<n>.quirks.md`, as `what → suggested fix`. Never edit log.md.
+ - Never run git commands that change state (add, commit, push, reset, checkout, stash, clean, rebase).
+ - Match existing style. No new dependencies, no refactors.
+ - Never write `.ts`/`.tsx` extensions in import paths.
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 435165a..d60a3b9 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -128,6 +128,9 @@ or pi hangs waiting on it.
+ - Report lists out-of-scope files: discard those changes and re-brief with tighter FILES.
+ - A task fails twice after re-briefing: stop, investigate read-only, then re-brief with the diagnosis.
+ - pi exit 124 (timeout) or empty log: check stdin is closed and the model is reachable before retrying.
++- Any harness/tool/process quirk that SHOULD be fixed: append it to `log.md` as `what → fix (or Open)`
++  under a `## <YYYY-MM-DD> <slug or topic>` heading. At Verify, copy each `items/T<n>.quirks.md` line there too.
++- Unlanded worktrees: `python .harness/run_plan.py --pending`
+ 
+ # Explain Decisions
+ For architecture or naming decisions, invoke the adhd skill first.
+diff --git a/log.md b/log.md
+index bf24c47..7e11f57 100644
+--- a/log.md
++++ b/log.md
+@@ -62,7 +62,7 @@ Each entry: what happened → fix applied (or open).
+ 3. **Parallel cross-blame.** One stray fails every task running at the same time. → **Fixed 2026-09-29**: under `--parallel`, a stray fails only the task whose own `[toolCall write/edit]` trace names it (`guards.written_paths`/`attribute`). All other strays are listed once as `UNATTRIBUTED STRAYS` and the run exits 1. Serial runs are unchanged. Tests: `tests/test_task_runner.py`.
+ 4. **Lint false warnings.** `WARN T5/T10: share files without a dep` appears even though T10 → T9 → T5 is a dependency chain. Lint only checks direct deps, not transitive ones. → Open: walk the dep graph.
+ 5. **Suppression guard gamed.** The T6 executor wrote the tamper detector's `@ts-ignore` needle as `"@ts" + "-"` so the guard wouldn't trip on its own source. That's legitimate here, but the guard can't tell code that detects a marker from code that uses one, and executors learn to dodge it. → Open: exempt string literals, or allow a per-task `suppression_ok` list.
+-6. **`--relock` executes the plan.** There's no lock-only mode; see memory `relock-runs-plan`. → Open: add `--relock --lint`, or a `--relock-only`.
++6. **`--relock` executes the plan.** There's no lock-only mode; see memory `relock-runs-plan`. → **Fixed**: `--relock-only` locks and runs nothing.
+ 
+ ### Planner (`@planner`) issues
+ 7. **Coordinator edits dropped on revision.** My worktree-metrics fix to plan.md was lost when the planner rewrote the plan, and I had to re-apply it. → Open: planner should diff against the existing plan.md and keep lines it wasn't asked to change.

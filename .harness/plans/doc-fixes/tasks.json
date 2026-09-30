@@ -1,0 +1,16 @@
+{"slug": "doc-fixes", "tasks": [
+  {"id": "T1", "deps": [], "files": [".pi/executor.md"],
+   "acceptance": "python -c \"t=open('.pi/executor.md',encoding='utf-8').read(); assert 'MUST' in t and '## T' in t and 'REQUIREMENTS' not in t and 'DONE:' in t\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T2", "deps": [], "files": ["CLAUDE.md"],
+   "acceptance": "python -c \"t=open('CLAUDE.md',encoding='utf-8').read(); assert '--relock-only' in t and '@reviewer' in t and 'check-invalid' not in t and 'fix the brief' not in t and 'build_map.py --check' not in t and 'Blocked on me:' in t\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T3", "deps": [], "files": [".harness/MAIN.md"],
+   "acceptance": "python -c \"t=open('.harness/MAIN.md',encoding='utf-8').read(); assert '--executor llama' in t and '--relock-only' in t and 'fix the brief' not in t\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T4", "deps": [], "files": [".claude/agents/planner.md"],
+   "acceptance": "python -c \"t=open('.claude/agents/planner.md',encoding='utf-8').read(); assert t.count('BUILD: pass')==1 and 'build_map' in t and t.startswith('---')\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T5", "deps": ["T1", "T2", "T3", "T4"], "files": [".harness/plans/doc-fixes/SUMMARY.md"],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/doc-fixes/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false, "red_first_reason": "lean smoke check"}]}

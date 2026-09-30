@@ -1,0 +1,546 @@
+diff --git a/.gitignore b/.gitignore
+index 284f641..9faf33a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -12,3 +12,4 @@ node_modules/
+ .pi_test_probe
+ .harness/tsc.tsbuildinfo
+ harness-suite/.check-tmp/
++harness-suite/failed/
+diff --git a/.harness/runner/acceptance.py b/.harness/runner/acceptance.py
+index 3f4d9e7..42bdf4b 100644
+--- a/.harness/runner/acceptance.py
++++ b/.harness/runner/acceptance.py
+@@ -1,8 +1,11 @@
+ """Acceptance runs and compiler/test error extraction."""
++import contextlib
+ import os
+ import re
+ import subprocess
+ 
++from .procs import stop_process_tree
++
+ 
+ def parse_errors(text):
+     """Return de-duplicated compiler/test errors as `path:line: message`."""
+@@ -29,12 +32,19 @@ def parse_errors(text):
+ def run_acceptance(cmd, expect, timeout=300):
+     # scripts run from a plan dir get that dir on sys.path, not the project root
+     env = dict(os.environ, PYTHONPATH=os.pathsep.join(filter(None, [os.getcwd(), os.environ.get("PYTHONPATH")])))
++    # utf-8 + replace: the Windows default codepage (cp1252) cannot decode tool output
++    # such as vitest's check marks, which left stdout None and crashed the run
++    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
++                            text=True, encoding="utf-8", errors="replace",
++                            stdin=subprocess.DEVNULL, env=env)
+     try:
+-        # utf-8 + replace: the Windows default codepage (cp1252) cannot decode tool output
+-        # such as vitest's check marks, which left stdout None and crashed the run
+-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding="utf-8",
+-                           errors="replace", stdin=subprocess.DEVNULL, timeout=timeout, env=env)
++        stdout, _ = proc.communicate(timeout=timeout)
+     except subprocess.TimeoutExpired:
++        # a grandchild inheriting the pipe keeps communicate() blocked long after the
++        # shell itself is gone: kill the tree and stop waiting for the output
++        stop_process_tree(proc)
++        with contextlib.suppress(subprocess.TimeoutExpired):
++            proc.communicate(timeout=5)
+         return False, "acceptance command timed out"
+-    out = r.stdout + r.stderr
+-    return r.returncode == 0 and (expect is None or expect in out), out[-2000:]
++    out = stdout or ""
++    return proc.returncode == 0 and (expect is None or expect in out), out[-2000:]
+diff --git a/.harness/runner/executors/opencode.py b/.harness/runner/executors/opencode.py
+index f8a0a8a..f7778cd 100644
+--- a/.harness/runner/executors/opencode.py
++++ b/.harness/runner/executors/opencode.py
+@@ -122,6 +122,14 @@ def _http(url, path, body=None, timeout=600):
+     return json.loads(raw) if raw else None
+ 
+ 
++def _abort(url, session_id):
++    """Best-effort abort of a stuck session; the caller is already giving up on it."""
++    try:
++        _http(url, f"/session/{session_id}/abort", {})
++    except (urllib.error.URLError, TimeoutError, ValueError):
++        pass
++
++
+ def _prompt_body(model, prompt, system, profile="default"):
+     """From the `agent` profile on the rules live in the agent config, so the request names
+     the agent and carries no system prompt unless run() was given custom rules."""
+@@ -275,9 +283,14 @@ class OpenCodeExecutor(Executor):
+             return 1, self._usage(), session, False
+         usage, answered, seen = self._usage(), False, {"non_assistant": set(), "logged": set()}
+         deadline = time.monotonic() + timeout
++        # wall clock, not monotonic: it must still fire after a machine sleep
++        idle_timeout = float(os.environ.get("HARNESS_OPENCODE_IDLE_S", 300))
++        last_event = time.time()
+         code = EXIT_TIMEOUT
+         while time.monotonic() < deadline:
+             state = self._drain(events, session_id, log, usage, seen)
++            if state["saw_event"]:
++                last_event = time.time()
+             answered = answered or state["text"]
+             if state["idle"]:
+                 code = 0
+@@ -285,12 +298,14 @@ class OpenCodeExecutor(Executor):
+             if state["error"]:
+                 code = EXIT_RATE_LIMIT if RATE_LIMIT_TEXT in state["error"].lower() else 1
+                 break
++            if time.time() - last_event > idle_timeout:
++                self._write(log, f"[harness] no session event for {idle_timeout:.0f}s, aborting")
++                code = EXIT_TIMEOUT
++                _abort(url, session_id)
++                break
+             time.sleep(0.05)
+         else:
+-            try:
+-                _http(url, f"/session/{session_id}/abort", {})
+-            except (urllib.error.URLError, TimeoutError, ValueError):
+-                pass
++            _abort(url, session_id)
+         return code, usage, session_id, answered
+ 
+     def _started_url(self):
+@@ -303,11 +318,12 @@ class OpenCodeExecutor(Executor):
+ 
+     def _drain(self, events, session_id, log, usage, seen):
+         """Consume every event seen so far for this session: log it, sum its tokens."""
+-        state = {"idle": False, "error": None, "text": False}
++        state = {"idle": False, "error": None, "text": False, "saw_event": False}
+         while events:
+             event = events.pop(0)
+             if not isinstance(event, dict) or event.get("properties", {}).get("sessionID") != session_id:
+                 continue
++            state["saw_event"] = True
+             kind, props = event.get("type", ""), event.get("properties", {})
+             if kind.startswith("question.asked") or kind.startswith("permission.asked"):
+                 state["error"] = "blocked on question/permission"
+diff --git a/harness-suite/cells.py b/harness-suite/cells.py
+index 7e0573f..76bc64a 100644
+--- a/harness-suite/cells.py
++++ b/harness-suite/cells.py
+@@ -124,6 +124,17 @@ def _copy_files(src, dst):
+             shutil.copy2(item, dst / item.name)
+ 
+ 
++def _preserve_failed(cell, repo_root):
++    """Copy a failed cell's plan items and logs out of its worktree before cleanup
++    takes the worktree away. The work dir / source tree itself is never copied."""
++    repo_root = Path(repo_root)
++    slug = cell["slug"]
++    src_plan = repo_root / worktree.path_for(slug) / ".harness" / "plans" / slug
++    dst_plan = repo_root / SUITE_DIR / "failed" / slug
++    for name in ("items", "logs"):
++        _copy_tree(src_plan / name, dst_plan / name)
++
++
+ def _plan_dir(root, slug):
+     return Path(root) / ".harness" / "plans" / slug
+ 
+@@ -171,6 +182,12 @@ def _task_files(slug, repo_root):
+ 
+ 
+ # ---------------------------------------------------------------------- prepare
++def _branch_in_use(branch, repo_root):
++    """True if any worktree has `branch` checked out."""
++    out = _git("worktree", "list", "--porcelain", cwd=repo_root).stdout or ""
++    return any(line.strip() == f"branch refs/heads/{branch}" for line in out.splitlines())
++
++
+ def prepare_cell(cell, repo_root=REPO_ROOT):
+     """Worktree + fixture seed + templated plan. Returns the worktree path."""
+     repo_root = Path(repo_root)
+@@ -180,6 +197,15 @@ def prepare_cell(cell, repo_root=REPO_ROOT):
+     if not seed.is_dir():
+         raise SystemExit(f"cells: missing fixture seed {seed} (build the fixture first)")
+ 
++    # a crashed run can leave the branch behind; a checked-out worktree must keep it
++    if is_cell_slug(slug):
++        branch = f"harness/{slug}"
++        exists = _git("rev-parse", "--verify", "--quiet", f"refs/heads/{branch}",
++                      cwd=repo_root)
++        if exists.returncode == 0 and exists.stdout.strip() and not _branch_in_use(
++                branch, repo_root):
++            _git("branch", "-D", branch, cwd=repo_root)
++
+     with _chdir(repo_root):
+         # harness-suite/ (fixtures, hidden tests, results) is left out of the snapshot, and
+         # the snapshot has no parent, so neither the tree nor `git show HEAD~1:...` reaches it
+@@ -525,6 +551,16 @@ def _finish(cell, row, wt, repo_root, reports):
+ 
+ 
+ # ---------------------------------------------------------------------- run
++def _poll_until(proc, deadline, clock=time.time, sleep_fn=time.sleep):
++    """Wait for `proc`, comparing the wall clock: proc.wait(timeout=) counts sleep time
++    towards the timeout it is meant to bound. True if it was still running past `deadline`."""
++    while proc.poll() is None:
++        if clock() >= deadline:
++            return True
++        sleep_fn(1)
++    return False
++
++
+ def _run_single(cell, repo_root, cell_timeout):
+     """serial / parallel / window: one run_plan process, one row."""
+     row = _blank(cell)
+@@ -543,11 +579,8 @@ def _run_single(cell, repo_root, cell_timeout):
+         if mode == "window":
+             row["window_opened"] = _window_opened(slug)
+         t0 = time.time()
+-        timed_out = False
+-        try:
+-            proc.wait(timeout=cell_timeout)
+-        except subprocess.TimeoutExpired:
+-            timed_out = True
++        timed_out = _poll_until(proc, t0 + cell_timeout)
++        if timed_out:
+             _stop_tree(proc)
+             with contextlib.suppress(subprocess.TimeoutExpired):
+                 proc.wait(timeout=30)
+@@ -618,6 +651,8 @@ def _run_multi(cell, repo_root, cell_timeout, keep=False):
+         else:
+             rows.append(_finish(sub, row, wt, repo_root, reports))
+         if not keep:
++            if row["status"] != "pass":
++                _preserve_failed(sub, repo_root)
+             cleanup_cell(sub, repo_root)
+     return rows
+ 
+@@ -628,7 +663,11 @@ def run_cell(cell, repo_root=REPO_ROOT, cell_timeout=1800, keep=False):
+     if cell.get("mode") == "multi":
+         return _run_multi(cell, repo_root, cell_timeout, keep=keep)
+     try:
+-        return _run_single(cell, repo_root, cell_timeout)
++        row = _run_single(cell, repo_root, cell_timeout)
++        result = row[0] if isinstance(row, list) else row
++        if not keep and result.get("status") != "pass":
++            _preserve_failed(cell, repo_root)
++        return row
+     finally:
+         if not keep:
+             cleanup_cell(cell, repo_root)
+@@ -659,17 +698,27 @@ def _remove_leftover(path):
+     shutil.rmtree(path, ignore_errors=True)
+ 
+ 
+-def cleanup_cell(cell, repo_root=REPO_ROOT):
++def cleanup_cell(cell, repo_root=REPO_ROOT, sleep_fn=time.sleep):
+     """Drop the worktree, its branch, and this cell's plan/work dir. Never rmtree a
+     worktree path directly: node_modules is a junction into the root tree."""
+     repo_root = Path(repo_root)
+     slug = cell["slug"]
+     if not is_cell_slug(slug):  # only ever delete what the suite created
+         raise ValueError(f"cleanup_cell: refusing non-suite slug {slug!r}")
+-    _git("worktree", "remove", "--force", f".worktrees/{slug}", cwd=repo_root)
++    # a just-stopped agent can still hold a file open; retry before falling back
++    for attempt in range(3):
++        done = _git("worktree", "remove", "--force", f".worktrees/{slug}", cwd=repo_root)
++        if done.returncode == 0:
++            break
++        if attempt < 2:
++            sleep_fn(1)
+     _remove_leftover(Path(repo_root) / ".worktrees" / slug)
+     _git("worktree", "prune", cwd=repo_root)
+     _git("branch", "-D", f"harness/{slug}", cwd=repo_root)
++    still = _git("rev-parse", "--verify", "--quiet", f"refs/heads/harness/{slug}",
++                 cwd=repo_root)
++    if still.returncode == 0 and still.stdout.strip():
++        print(f"cells: warning: branch harness/{slug} still exists after cleanup")
+     plan = _plan_dir(repo_root, slug)
+     if plan.is_dir() and is_cell_slug(plan.name):
+         shutil.rmtree(plan, ignore_errors=True)
+diff --git a/tests/test_acceptance.py b/tests/test_acceptance.py
+index 9504b76..71e6503 100644
+--- a/tests/test_acceptance.py
++++ b/tests/test_acceptance.py
+@@ -1,4 +1,6 @@
++"""Tests for the acceptance runner (real subprocesses, no network)."""
+ import sys
++import time
+ from pathlib import Path
+ 
+ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".harness"))
+@@ -11,3 +13,16 @@ def test_non_codepage_output_does_not_crash():
+     ok, out = run_acceptance(cmd, "ok")
+     assert ok
+     assert "ok" in out
++
++
++def test_timeout_with_held_grandchild_pipe_returns_fast():
++    # the grandchild keeps the inherited stdout pipe open; communicate() must not wait
++    # for it (before: the run hung for the child's full 30s lifetime)
++    cmd = (f'"{sys.executable}" -c "import subprocess,sys,time; '
++           f"subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)']); "
++           f'time.sleep(30)"')
++    t0 = time.monotonic()
++    ok, out = run_acceptance(cmd, None, timeout=1)
++    elapsed = time.monotonic() - t0
++    assert (ok, out) == (False, "acceptance command timed out")
++    assert elapsed < 10, elapsed
+diff --git a/tests/test_harness_suite.py b/tests/test_harness_suite.py
+index b0fafa5..436a873 100644
+--- a/tests/test_harness_suite.py
++++ b/tests/test_harness_suite.py
+@@ -287,3 +287,193 @@ def test_build_report_on_one_row():
+     text = report.build_report([{"executor": "pi", "size": "small", "mode": "serial",
+                                  "status": "pass", "wall_s": "1.0", "cost": "0"}])
+     assert "pi" in text
++
++
++# ------------------------------------------------------------- cleanup retry / stale branch
++def _git_out(text="", returncode=0):
++    return types.SimpleNamespace(stdout=text, stderr="", returncode=returncode)
++
++
++def test_cleanup_retry_on_failing_worktree_remove(tmp_path):
++    import cells  # noqa: PLC0415 (real module; every git call is mocked)
++
++    calls = []
++    slept = []
++
++    def fake_git(*args, cwd=None):
++        argv = list(args)
++        calls.append(argv)
++        if argv[:3] == ["worktree", "remove", "--force"]:
++            attempts = len([c for c in calls if c[:3] == ["worktree", "remove", "--force"]])
++            return _git_out("error: locked", returncode=1 if attempts < 3 else "")
++        if argv[:2] == ["rev-parse", "--verify"]:
++            return _git_out("", returncode=1)
++        return _git_out("")
++
++    monkey = pytest.MonkeyPatch()
++    monkey.setattr(cells, "_git", fake_git)
++    monkey.setattr(cells, "_remove_leftover", lambda path: None)
++    try:
++        cells.cleanup_cell({"slug": "suite-small-serial-pi-r1"}, tmp_path,
++                           sleep_fn=slept.append)
++    finally:
++        monkey.undo()
++
++    removes = [c for c in calls if c[:3] == ["worktree", "remove", "--force"]]
++    assert len(removes) == 3
++    assert slept == [1, 1]
++
++
++def test_cleanup_stale_branch_warns_when_branch_survives(tmp_path, capsys):
++    import cells  # noqa: PLC0415
++
++    calls = []
++
++    def fake_git(*args, cwd=None):
++        argv = list(args)
++        calls.append(argv)
++        if argv[:2] == ["branch", "-D"]:
++            return _git_out("", returncode=1)
++        if argv[:2] == ["rev-parse", "--verify"]:
++            return _git_out("abc123\n")
++        return _git_out("")
++
++    monkey = pytest.MonkeyPatch()
++    monkey.setattr(cells, "_git", fake_git)
++    monkey.setattr(cells, "_remove_leftover", lambda path: None)
++    try:
++        cells.cleanup_cell({"slug": "suite-small-serial-pi-r1"}, tmp_path, sleep_fn=lambda s: None)
++    finally:
++        monkey.undo()
++    out = capsys.readouterr().out
++    assert "harness/suite-small-serial-pi-r1" in out
++
++
++def test_prepare_cell_deletes_unused_branch_stale_branch(tmp_path):
++    import cells  # noqa: PLC0415
++
++    (tmp_path / "harness-suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
++    calls = []
++
++    def fake_git(*args, cwd=None):
++        argv = list(args)
++        calls.append(argv)
++        if argv[:2] == ["rev-parse", "--verify"]:
++            return _git_out("abc123\n")
++        if argv[:2] == ["worktree", "list"]:
++            return _git_out("worktree /other\nHEAD abc\n")
++        return _git_out("")
++
++    monkey = pytest.MonkeyPatch()
++    monkey.setattr(cells, "_git", fake_git)
++    monkey.setattr(cells, "worktree", types.SimpleNamespace(
++        ensure=lambda slug, exclude=(), orphan=False: str(tmp_path / "wt")))
++    try:
++        cells.prepare_cell({"slug": "suite-small-serial-pi-r1", "size": "small"}, tmp_path)
++    finally:
++        monkey.undo()
++
++    assert ["branch", "-D", "harness/suite-small-serial-pi-r1"] in calls
++
++
++def test_prepare_cell_stale_branch_keeps_checked_out(tmp_path):
++    import cells  # noqa: PLC0415
++
++    (tmp_path / "harness-suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
++    calls = []
++
++    def fake_git(*args, cwd=None):
++        argv = list(args)
++        calls.append(argv)
++        if argv[:2] == ["rev-parse", "--verify"]:
++            return _git_out("abc123\n")
++        if argv[:2] == ["worktree", "list"]:
++            return _git_out(
++                "worktree /other\nHEAD abc\nbranch refs/heads/harness/suite-small-serial-pi-r1\n")
++        return _git_out("")
++
++    monkey = pytest.MonkeyPatch()
++    monkey.setattr(cells, "_git", fake_git)
++    monkey.setattr(cells, "worktree", types.SimpleNamespace(
++        ensure=lambda slug, exclude=(), orphan=False: str(tmp_path / "wt")))
++    try:
++        cells.prepare_cell({"slug": "suite-small-serial-pi-r1", "size": "small"}, tmp_path)
++    finally:
++        monkey.undo()
++
++    assert not [c for c in calls if c[:2] == ["branch", "-D"]]
++
++
++def test_prepare_cell_stale_branch_skipped_for_non_cell_slug(tmp_path):
++    import cells  # noqa: PLC0415
++
++    (tmp_path / "harness-suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
++    calls = []
++
++    def fake_git(*args, cwd=None):
++        argv = list(args)
++        calls.append(argv)
++        return _git_out("abc123\n")
++
++    monkey = pytest.MonkeyPatch()
++    monkey.setattr(cells, "_git", fake_git)
++    monkey.setattr(cells, "worktree", types.SimpleNamespace(
++        ensure=lambda slug, exclude=(), orphan=False: str(tmp_path / "wt")))
++    try:
++        cells.prepare_cell({"slug": "suite-fixes", "size": "small"}, tmp_path)
++    finally:
++        monkey.undo()
++
++    assert not [c for c in calls if c[:2] == ["branch", "-D"]]
++
++
++# ------------------------------------------------------------- poll_until (wall clock)
++def test_poll_until_returns_true_after_machine_sleep():
++    import cells  # noqa: PLC0415
++
++    class FakeProc:
++        def __init__(self):
++            self.polls = 0
++
++        def poll(self):
++            self.polls += 1
++            return None
++
++    ticks = iter([0.0, 10_000.0])  # the clock jumps past the deadline between polls
++    assert cells._poll_until(FakeProc(), 100.0, clock=lambda: next(ticks),
++                             sleep_fn=lambda s: None) is True
++
++
++def test_poll_until_returns_false_when_process_exits():
++    import cells  # noqa: PLC0415
++
++    class FakeProc:
++        def __init__(self):
++            self.polls = 0
++
++        def poll(self):
++            self.polls += 1
++            return 0 if self.polls > 2 else None
++
++    sleeps = []
++    assert cells._poll_until(FakeProc(), 100.0, clock=lambda: 0.0,
++                             sleep_fn=sleeps.append) is False
++    assert sleeps == [1, 1]
++
++
++# ------------------------------------------------------------- preserve failed logs
++def test_preserve_failed_copies_items_and_logs(tmp_path):
++    import cells  # noqa: PLC0415 (real module, tmp layout only)
++
++    slug = "suite-small-serial-pi-r1"
++    src = tmp_path / ".worktrees" / slug / ".harness" / "plans" / slug
++    (src / "items").mkdir(parents=True)
++    (src / "logs").mkdir(parents=True)
++    (src / "items" / "T1.report.md").write_text("report body", encoding="utf-8")
++    (src / "logs" / "T1.pi.log").write_text("pi output", encoding="utf-8")
++
++    cells._preserve_failed({"slug": slug}, tmp_path)
++
++    dst = tmp_path / "harness-suite" / "failed" / slug
++    assert (dst / "items" / "T1.report.md").read_text(encoding="utf-8") == "report body"
++    assert (dst / "logs" / "T1.pi.log").read_text(encoding="utf-8") == "pi output"
+diff --git a/tests/test_opencode_executor.py b/tests/test_opencode_executor.py
+new file mode 100644
+index 0000000..8254566
+--- /dev/null
++++ b/tests/test_opencode_executor.py
+@@ -0,0 +1,61 @@
++"""Tests for the opencode executor's stream handling (no server, no network)."""
++import io
++import sys
++import threading
++import time
++from pathlib import Path
++
++import pytest
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".harness"))
++from runner.executors import opencode  # noqa: E402
++from runner.executors.opencode import OpenCodeExecutor  # noqa: E402
++from runner.procs import EXIT_TIMEOUT  # noqa: E402
++
++
++class _StubReader:
++    def is_alive(self):
++        return True
++
++    def join(self, timeout=None):
++        pass
++
++
++@pytest.fixture
++def quiet_executor(monkeypatch):
++    """An executor wired to a stub server that accepts the prompt and then says nothing."""
++    monkeypatch.setenv("HARNESS_OPENCODE_IDLE_S", "0.1")
++    monkeypatch.setattr(opencode, "_http",
++                        lambda url, path, body=None, timeout=600: {"id": "s1"})
++    ex = OpenCodeExecutor(model="test/model")
++    ex.url = "http://127.0.0.1:1"
++    ex._reader = _StubReader()
++    ex._connected = threading.Event()
++    ex._connected.set()
++    ex._events = []
++    return ex
++
++
++def test_idle_watchdog_aborts_a_silent_session(quiet_executor):
++    t0 = time.monotonic()
++    code, _usage, session, answered = quiet_executor._stream("hi", io.StringIO(), 60, None)
++    elapsed = time.monotonic() - t0
++    assert code == EXIT_TIMEOUT
++    assert session == "s1"
++    assert answered is False
++    assert elapsed < 30, elapsed
++
++
++def test_saw_event_is_set_for_matching_events(quiet_executor):
++    quiet_executor._events.append(
++        {"type": "session.idle", "properties": {"sessionID": "other"}})
++    assert quiet_executor._drain(quiet_executor._events, "s1", io.StringIO(),
++                                 quiet_executor._usage(), {"non_assistant": set(),
++                                                          "logged": set()})["saw_event"] is False
++    quiet_executor._events.append(
++        {"type": "message.part.updated",
++         "properties": {"sessionID": "s1", "part": {"type": "text", "text": "hi",
++                                                    "messageID": "m1"}}})
++    assert quiet_executor._drain(quiet_executor._events, "s1", io.StringIO(),
++                                 quiet_executor._usage(), {"non_assistant": set(),
++                                                          "logged": set()})["saw_event"] is True
+\ No newline at end of file
