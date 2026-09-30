@@ -22,7 +22,7 @@ def running():
 
 def lock_mismatch(broken):
     return (f"RESULT: lock-mismatch\nchanged since lock: {broken}\n"
-            "If you made this edit on purpose, rerun with --relock.\n"
+            "If you made this edit on purpose, rerun with --relock-only.\n"
             "exec seconds: 0.0\nacceptance seconds: 0.0\nretry seconds: 0.0\n")
 
 

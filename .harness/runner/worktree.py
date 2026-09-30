@@ -54,7 +54,7 @@ def path_for(slug):
 def _exclude_worktrees():
     """.worktrees/ in .git/info/exclude: local only, so no tracked file changes and
     neither the main tree's status nor the guard snapshot ever sees it."""
-    exclude = Path(".git/info/exclude")
+    exclude = Path(_git("rev-parse", "--git-path", "info/exclude").stdout.strip() or ".git/info/exclude")
     try:
         current = exclude.read_text(encoding="utf-8")
     except OSError:
@@ -74,21 +74,28 @@ def _known_worktrees():
             for line in out.splitlines() if line.startswith("worktree ")]
 
 
-def _snapshot(slug):
+def _snapshot(slug, exclude=(), orphan=False):
     """Commit sha of the current tree, incl. uncommitted + untracked non-ignored files,
-    built on a throwaway index. The user's index and HEAD stay as they are."""
+    built on a throwaway index. The user's index and HEAD stay as they are.
+    `exclude`: paths left out of the snapshot entirely (not even as git objects in it).
+    `orphan`: no parent commit, so `git show HEAD~1:<path>` reaches nothing of the main
+    history (for throwaway worktrees that are never landed)."""
     fd, index = tempfile.mkstemp(prefix="harness-index-")
     os.close(fd)
     os.unlink(index)
     env = {"GIT_INDEX_FILE": index}
+    steps = [("read-tree", "HEAD"), ("add", "-A")]
+    if exclude:
+        steps.append(("rm", "-r", "-q", "--cached", "--ignore-unmatch", "--", *exclude))
+    steps.append(("write-tree",))
     try:
-        for args in (("read-tree", "HEAD"), ("add", "-A"), ("write-tree",)):
+        for args in steps:
             r = _git(*args, env=env)
             if r.returncode != 0:
                 sys.exit(f"worktree: {args[0]} failed: {r.stderr.strip() or r.stdout.strip()}")
         tree = r.stdout.strip()
-        head = _git("rev-parse", "HEAD").stdout.strip()
-        c = _git("commit-tree", tree, "-p", head, "-m", f"harness snapshot for {slug}", env=env)
+        parent = [] if orphan else ["-p", _git("rev-parse", "HEAD").stdout.strip()]
+        c = _git("commit-tree", tree, *parent, "-m", f"harness snapshot for {slug}", env=env)
         if c.returncode != 0:
             sys.exit(f"worktree: commit-tree failed: {c.stderr.strip()}")
         return c.stdout.strip()
@@ -98,9 +105,21 @@ def _snapshot(slug):
 
 
 def _link(name, target):
-    """Share a big, gitignored dir with the worktree instead of copying it."""
+    """Share a big, gitignored dir with the worktree instead of copying it.
+
+    Inside a linked worktree the shared dir only exists in the main tree (the parent
+    of the common git dir), so the source is looked up there; falls back to the
+    current tree when that copy is absent."""
     src = Path(name)
-    if not src.is_dir() or _git("check-ignore", "-q", name).returncode != 0:
+    common = _git("rev-parse", "--path-format=absolute", "--git-common-dir").stdout.strip()
+    root = Path(common).parent if common else None
+    main = root / name if root is not None and (root / name).is_dir() else None
+    if main is not None:
+        src = main
+        ignored = _git("-C", str(root), "check-ignore", "-q", str(src)).returncode == 0
+    else:
+        ignored = _git("check-ignore", "-q", name).returncode == 0
+    if not src.is_dir() or not ignored:
         return
     dst = target / name
     if dst.exists():
@@ -115,8 +134,9 @@ def _link(name, target):
         shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
-def ensure(slug):
-    """Create (or reuse) the worktree for `slug` and return its absolute path."""
+def ensure(slug, exclude=(), orphan=False):
+    """Create (or reuse) the worktree for `slug` and return its absolute path.
+    `exclude`/`orphan`: see _snapshot (used by harness-suite; plans that land use neither)."""
     _exclude_worktrees()
     target = (Path.cwd() / path_for(slug)).resolve()
     if target in _known_worktrees():
@@ -127,7 +147,7 @@ def ensure(slug):
     if _git("rev-parse", "--verify", "--quiet", f"refs/heads/harness/{slug}").returncode == 0:
         sys.exit(f"worktree: branch harness/{slug} already exists but {path_for(slug)} does not; "
                  f"delete the branch or use another slug")
-    sha = _snapshot(slug)
+    sha = _snapshot(slug, exclude, orphan)
     r = None
     for attempt in range(3):
         r = _git("worktree", "add", "-b", f"harness/{slug}", str(path_for(slug)), sha)

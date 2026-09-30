@@ -71,6 +71,11 @@ def land(slug):
         if os.path.isjunction(link):
             os.rmdir(link)  # the link only, never the shared target
     _git("worktree", "remove", "--force", str(wt))
+    if wt.is_dir() and not any(wt.iterdir()):
+        try:
+            wt.rmdir()  # git left an empty dir behind; Windows may still hold a handle
+        except OSError:
+            pass
     _git("branch", "-D", f"harness/{slug}")
     print(f"landed {slug}: {changed} files")
     return 0

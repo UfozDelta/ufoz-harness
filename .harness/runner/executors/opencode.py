@@ -18,6 +18,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from .. import skills
 from ..procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS, stop_process_tree
 from .base import ExecResult, Executor
 
@@ -27,6 +28,10 @@ RATE_LIMIT_TEXT = "rate limit"
 CONNECT_TIMEOUT = 10     # seconds for the event stream to connect
 STARTUP_TIMEOUT = 120    # seconds for the server to answer HTTP
 VARIANT = os.environ.get("HARNESS_VARIANT", "medium")
+PROFILES = ("default", "tools", "agent", "noproj")  # each profile stacks on the one before
+DENIED_TOOLS = ("todowrite", "task", "websearch", "codesearch", "list", "lsp")  # skill stays allowed
+BATCH_LINE = ("Read the brief and every FILES entry in ONE response using parallel tool calls; "
+              "batch independent edits; do not glob or list before writing a new file.")
 SESSION_BODY = {"permission": [{"permission": name, "action": "deny", "pattern": "*"}
                                 for name in ("question", "plan_enter", "plan_exit")]}
 
@@ -45,32 +50,53 @@ def opencode_command(*args):
     return [discovered, *args]
 
 
-def opencode_config(deny_bash):
+def _profile_rank(profile):
+    try:
+        return PROFILES.index(profile)
+    except ValueError:
+        raise ValueError(f"HARNESS_OPENCODE_PROFILE must be one of {PROFILES}, not {profile!r}") from None
+
+
+def _agent_prompt():
+    return _executor_prompt().strip() + "\n\n" + BATCH_LINE
+
+
+def opencode_config(deny_bash, profile="default"):
     """The config the executor runs under: no snapshot/lsp/formatter/autoupdate, no share,
     no title/summary generation, and no custom agent (the rules travel with each prompt as
     the system prompt). Questions and plan mode are denied so the run cannot block on them.
     The git commands .pi/deny.json bans are denied by pattern; everything else the agent
-    runs is allowed."""
-    return {
-        "snapshot": False,
-        "lsp": False,
-        "formatter": False,
-        "autoupdate": False,
-        "share": "disabled",
-        "agent": {
-            "title": {"disable": True},
-            "summary": {"disable": True},
-        },
-        "permission": {
-            "edit": "allow",
+    runs is allowed. The profile trims tools, and from `agent` on moves the rules into an
+    `executor` primary agent instead of sending them with every prompt."""
+    rank = _profile_rank(profile)
+    agent = {"title": {"disable": True}, "summary": {"disable": True}}
+    permission = {
+        "edit": "allow",
             "question": "deny",
             "plan_enter": "deny",
             "plan_exit": "deny",
             "webfetch": "deny",
             "external_directory": "deny",
             "bash": {"*": "allow", **{f"{cmd} *": "deny" for cmd in deny_bash}},
-        },
+        }
+    if rank >= _profile_rank("tools"):
+        permission.update({tool: "deny" for tool in DENIED_TOOLS})
+    if rank >= _profile_rank("agent"):
+        agent["executor"] = {"mode": "primary", "prompt": _agent_prompt()}
+    config = {
+        "snapshot": False,
+        "lsp": False,
+        "formatter": False,
+        "autoupdate": False,
+        "share": "disabled",
+        "agent": agent,
+        "permission": permission,
     }
+    if skills.enabled():  # the same curated dirs pi gets, nothing auto-discovered
+        config["skills"] = {"paths": [str(d.resolve()) for d in skills.chosen_dirs()]}
+    else:
+        permission["skill"] = "deny"
+    return config
 
 
 def _executor_prompt(rules=None):
@@ -102,14 +128,41 @@ def _http(url, path, body=None, timeout=600):
     return json.loads(raw) if raw else None
 
 
-def _prompt_body(model, prompt, system):
+def _abort(url, session_id):
+    """Best-effort abort of a stuck session; the caller is already giving up on it."""
+    try:
+        _http(url, f"/session/{session_id}/abort", {})
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        pass
+
+
+def _prompt_body(model, prompt, system, profile="default"):
+    """From the `agent` profile on the rules live in the agent config, so the request names
+    the agent and carries no system prompt unless run() was given custom rules."""
     provider, api_model = _model_parts(model)
-    return {
+    body = {
         "model": {"providerID": provider, "modelID": api_model},
-        "system": system,
         "variant": VARIANT,
         "parts": [{"type": "text", "text": prompt}],
     }
+    if _profile_rank(profile) >= _profile_rank("agent"):
+        body["agent"] = "executor"
+        if system:
+            body["system"] = system
+    else:
+        body["system"] = system
+    return body
+
+
+def _serve_env(base_env, config_dir, cwd, profile="default"):
+    """The serve environment: the throwaway config home, the workdir, and for `noproj` the
+    flag that keeps opencode from reading project config. Skill auto-discovery is always off:
+    the curated list in .harness/skills.txt is the only source."""
+    env = dict(base_env, XDG_CONFIG_HOME=str(config_dir), PWD=str(cwd),
+               OPENCODE_DISABLE_CLAUDE_CODE="1", OPENCODE_DISABLE_EXTERNAL_SKILLS="1")
+    if _profile_rank(profile) >= _profile_rank("noproj"):
+        env["OPENCODE_DISABLE_PROJECT_CONFIG"] = "1"
+    return env
 
 
 def _read_events(url, events, connected, responses):
@@ -146,9 +199,14 @@ class OpenCodeExecutor(Executor):
 
     def __init__(self, model=None):
         self.model = model or os.environ.get("HARNESS_MODEL", DEFAULT_MODEL)
+        self.profile = os.environ.get("HARNESS_OPENCODE_PROFILE", "default")
+        _profile_rank(self.profile)
         self.url = None
         self.process = None
         self._config = None
+        self._reader = None  # one SSE reader per server: closing a stream mid-read blocks until the next heartbeat
+        self._events = []
+        self._connected = threading.Event()
 
     def start(self):
         """Write the executor config into a throwaway XDG_CONFIG_HOME, then serve it."""
@@ -156,11 +214,11 @@ class OpenCodeExecutor(Executor):
         config_dir = Path(self._config.name)
         path = config_dir / "opencode" / "opencode.json"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(opencode_config(_deny_bash()), indent=2) + "\n",
+        path.write_text(json.dumps(opencode_config(_deny_bash(), self.profile), indent=2) + "\n",
                         encoding="utf-8")
         port = _free_port()
         self.url = f"http://127.0.0.1:{port}"
-        env = dict(os.environ, XDG_CONFIG_HOME=str(config_dir), PWD=os.getcwd())
+        env = _serve_env(os.environ, config_dir, os.getcwd(), self.profile)
         self.process = subprocess.Popen(opencode_command("serve", "--port", str(port)),
                                         cwd=os.getcwd(), env=env, stdin=subprocess.DEVNULL,
                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -181,8 +239,9 @@ class OpenCodeExecutor(Executor):
 
     def stop(self):
         if self.process is not None:
-            stop_process_tree(self.process)
+            stop_process_tree(self.process)  # ends the SSE stream, so the reader thread exits
             self.process = None
+            self._reader = None
         if self._config is not None:
             self._config.cleanup()
             self._config = None
@@ -209,23 +268,37 @@ class OpenCodeExecutor(Executor):
         """Send one prompt and follow its session to idle. Returns (code, usage, session id,
         whether any assistant text came back)."""
         url = self.url or self._started_url()
-        events, responses, connected = [], [], threading.Event()
-        reader = threading.Thread(target=_read_events, args=(url, events, connected, responses), daemon=True)
-        reader.start()
-        if not connected.wait(CONNECT_TIMEOUT):
+        if self._reader is None or not self._reader.is_alive():
+            self._events, self._connected = [], threading.Event()
+            self._reader = threading.Thread(target=_read_events, args=(url, self._events, self._connected, []),
+                                            daemon=True)
+            self._reader.start()
+        if not self._connected.wait(CONNECT_TIMEOUT):
             return 1, self._usage(), session, False
+        events = self._events
+        events.clear()  # the previous prompt's leftovers; the session is idle between prompts
         try:
             session_id = session or _http(url, "/session", SESSION_BODY)["id"]
+            # from `agent` on the default rules already live in the agent prompt: only custom
+            # rules travel as `system`, or the model would get them twice
+            if _profile_rank(self.profile) >= _profile_rank("agent"):
+                system = system_text
+            else:
+                system = _executor_prompt() if system_text is None else system_text
             _http(url, f"/session/{session_id}/prompt_async",
-                  _prompt_body(self.model, prompt, _executor_prompt() if system_text is None else system_text))
+                  _prompt_body(self.model, prompt, system, self.profile))
         except (urllib.error.URLError, TimeoutError, KeyError, ValueError):
-            self._close(responses)
             return 1, self._usage(), session, False
         usage, answered, seen = self._usage(), False, {"non_assistant": set(), "logged": set()}
         deadline = time.monotonic() + timeout
+        # wall clock, not monotonic: it must still fire after a machine sleep
+        idle_timeout = float(os.environ.get("HARNESS_OPENCODE_IDLE_S", 300))
+        last_event = time.time()
         code = EXIT_TIMEOUT
         while time.monotonic() < deadline:
             state = self._drain(events, session_id, log, usage, seen)
+            if state["saw_event"]:
+                last_event = time.time()
             answered = answered or state["text"]
             if state["idle"]:
                 code = 0
@@ -233,14 +306,14 @@ class OpenCodeExecutor(Executor):
             if state["error"]:
                 code = EXIT_RATE_LIMIT if RATE_LIMIT_TEXT in state["error"].lower() else 1
                 break
+            if time.time() - last_event > idle_timeout:
+                self._write(log, f"[harness] no session event for {idle_timeout:.0f}s, aborting")
+                code = EXIT_TIMEOUT
+                _abort(url, session_id)
+                break
             time.sleep(0.05)
         else:
-            try:
-                _http(url, f"/session/{session_id}/abort", {})
-            except (urllib.error.URLError, TimeoutError, ValueError):
-                pass
-        self._close(responses)
-        reader.join(5)
+            _abort(url, session_id)
         return code, usage, session_id, answered
 
     def _started_url(self):
@@ -251,21 +324,14 @@ class OpenCodeExecutor(Executor):
     def _usage():
         return {**dict.fromkeys(TOKEN_KEYS, 0), "cost": 0.0}
 
-    @staticmethod
-    def _close(responses):
-        for response in responses:
-            try:
-                response.close()
-            except OSError:
-                pass
-
     def _drain(self, events, session_id, log, usage, seen):
         """Consume every event seen so far for this session: log it, sum its tokens."""
-        state = {"idle": False, "error": None, "text": False}
+        state = {"idle": False, "error": None, "text": False, "saw_event": False}
         while events:
             event = events.pop(0)
             if not isinstance(event, dict) or event.get("properties", {}).get("sessionID") != session_id:
                 continue
+            state["saw_event"] = True
             kind, props = event.get("type", ""), event.get("properties", {})
             if kind.startswith("question.asked") or kind.startswith("permission.asked"):
                 state["error"] = "blocked on question/permission"

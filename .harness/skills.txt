@@ -1,0 +1,6 @@
+# The curated skills an executor may load, one name per line.
+# Resolved against .agents/skills, .claude/skills and the same two under the home dir.
+frontend-design
+emil-design-eng
+animate
+mobile-native

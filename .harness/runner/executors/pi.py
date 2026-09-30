@@ -8,6 +8,7 @@ import time
 import uuid
 from pathlib import Path
 
+from .. import skills
 from ..procs import ANSI, EXIT_RATE_LIMIT, EXIT_TIMEOUT, stop_process_tree, zero_usage
 from .base import ExecResult, Executor
 
@@ -18,6 +19,15 @@ DEFAULT_MODEL = "opencode/space-bunny-free"
 
 def _model(model=None):
     return model or os.environ.get("HARNESS_MODEL", DEFAULT_MODEL)
+
+
+def _skill_args():
+    """Auto-discovery is always off; with skills enabled pi loads exactly the curated dirs
+    from .harness/skills.txt (each once), the same set opencode gets."""
+    args = ["--no-skills"]
+    if skills.enabled():
+        args += [arg for d in skills.chosen_dirs() for arg in ("--skill", str(d))]
+    return args
 
 
 def _pi_launcher():
@@ -42,7 +52,7 @@ def run_pi(brief, log, timeout, feedback=None, session=None, raw_prompt=None, ru
     session = session or uuid.uuid4().hex
     usage = zero_usage()
     env = dict(os.environ, PWD=os.getcwd(), **(env or {}))
-    cmd = ["node", launcher, "-p", "--mode", "json", "--no-extensions", "--no-skills",
+    cmd = ["node", launcher, "-p", "--mode", "json", "--no-extensions", *_skill_args(),
            "--no-prompt-templates", "-e", ".pi/extensions/deny-list.ts",
            "--append-system-prompt", rules or ".pi/executor.md",
            "--model", _model(model),

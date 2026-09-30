@@ -29,20 +29,12 @@ import envfile  # noqa: E402
 envfile.load_env()
 
 import run_plan  # noqa: E402  (reuses its Claude-log cost reader)
+# the whole runner package the shim imports, so a new module is never left behind
+RUNNER_COPY = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / ".harness/runner").rglob("*.py")
+                     if "__pycache__" not in p.parts)
 COPY = [".harness/run_plan.py", ".harness/envfile.py", ".pi/deny.json", ".pi/executor.md",
-        ".pi/extensions/deny-list.ts", ".pi/extensions/deny-match.ts", "AGENTS.md", ".gitignore",
-        # the runner package the shim imports
-        ".harness/runner/__init__.py", ".harness/runner/acceptance.py", ".harness/runner/cli.py",
-        ".harness/runner/guards.py", ".harness/runner/land.py", ".harness/runner/lint.py",
-        ".harness/runner/plan.py", ".harness/runner/planner.py",
-        ".harness/runner/procs.py", ".harness/runner/report.py", ".harness/runner/reviewer.py",
-        ".harness/runner/scheduler.py", ".harness/runner/stats.py", ".harness/runner/task_runner.py",
-        ".harness/runner/watch.py", ".harness/runner/worktree.py",
-        ".harness/runner/executors/__init__.py", ".harness/runner/executors/base.py",
-        ".harness/runner/executors/cline_acp.py",
-        ".harness/runner/executors/claude.py", ".harness/runner/executors/cline.py",
-        ".harness/runner/executors/llama.py",
-        ".harness/runner/executors/opencode.py", ".harness/runner/executors/pi.py"]
+        ".pi/extensions/deny-list.ts", ".pi/extensions/deny-match.ts", "AGENTS.md", ".gitignore"] \
+    + RUNNER_COPY
 PLANNER_COPY = [".claude/agents/planner.md", ".harness/CHECK_PATTERNS.md"]
 TASK = """Add `smoke/mathx.py` with a function `clamp(x, lo, hi)`: return `lo` if `x < lo`, `hi` if
 `x > hi`, otherwise `x`; raise `ValueError` if `lo > hi`. Stdlib only, no other functions."""

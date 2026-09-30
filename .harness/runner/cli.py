@@ -5,7 +5,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import land, planner, scheduler, watch, worktree
+from . import land, pending, planner, scheduler, skills, status, watch, worktree
 from .executors import get, REGISTRY
 from .lint import lint
 from .plan import Plan
@@ -45,12 +45,17 @@ def build_parser():
                          "at once. Default; --no-worktree to run in place, or HARNESS_WORKTREE=0.")
     ap.add_argument("--watch", action="store_true",
                     help="Watch this plan's executor output live in this terminal; run nothing.")
+    ap.add_argument("--status", action="store_true",
+                    help="Show task states, the first failure's tail and the next command; runs nothing.")
     ap.add_argument("--window", action=argparse.BooleanOptionalAction, default=None,
                     help="Run as usual, but also open a shared terminal window with a tab "
                          "watching the output. Default; --no-window, or HARNESS_WINDOW=0.")
     ap.add_argument("--relock", action="store_true",
                      help="Re-record plan.lock.json after you (not the executor) edited "
                           "tasks.json or a check script.")
+    ap.add_argument("--relock-only", action="store_true",
+                    help="Re-record plan.lock.json (here, and in the plan's worktree if there is "
+                         "one) after you edited tasks.json or a check script; run nothing.")
     ap.add_argument("--land", action="store_true",
                     help="The user's command, not ours: apply the worktree's code changes to "
                          "this tree, copy its plan records, remove the worktree and its branch.")
@@ -61,6 +66,8 @@ def build_parser():
     ap.add_argument("--repair", type=int, default=1,
                      help="Repair passes after retries, with the failing task's and earlier tasks' files in scope.")
     ap.add_argument("--stats", action="store_true", help="Print executor time/token totals per plan.")
+    ap.add_argument("--pending", action="store_true",
+                    help="List plan worktrees not landed yet; run nothing.")
     ap.add_argument("--fresh", action="store_true",
                      help="A fresh pi session per task (the old default). Warm is faster on the bench.")
     ap.add_argument("--executor-model", default=None,
@@ -109,6 +116,24 @@ def watch_dir(slug):
     return in_worktree if in_worktree.is_dir() else Path(".harness/plans") / slug
 
 
+def relock_only(slug):
+    """Lock the grader without running anything. The worktree copy gets the edited plan
+    first, and is locked from inside the worktree: lock keys are cwd-relative paths."""
+    Plan(slug, ".harness/plans").lock_grader(True)
+    print(f"relocked: {Path('.harness/plans') / slug}")
+    wt = worktree.path_for(slug)
+    if (wt / ".harness" / "plans" / slug).is_dir():
+        home = Path.cwd()
+        worktree.sync_plan(slug, wt.resolve(), home)
+        os.chdir(wt)
+        try:
+            Plan(slug, ".harness/plans").lock_grader(True)
+        finally:
+            os.chdir(home)
+        print(f"relocked: {wt / '.harness' / 'plans' / slug}")
+    return 0
+
+
 def main(argv=None):
     global _ACTIVE_RUN_LOCK
     ap = build_parser()
@@ -131,12 +156,19 @@ def _run(ap, args):
     if args.stats:
         print_stats(metrics)
         return
+    if args.pending:
+        return pending.pending()
     if not args.slug:
         ap.error("slug is required")
     if args.land:
         sys.exit(land.land(args.slug))
+    if args.relock_only:
+        sys.exit(relock_only(args.slug))
     if args.watch:
         sys.exit(watch.watch(watch_dir(args.slug)))
+    if args.status:
+        print(status.render(args.slug, watch_dir(args.slug)))
+        return
     if args.plan:
         plan_dir = Path(".harness/plans") / args.slug
         result = planner.run_planner(args.slug, args.plan, ".harness/plans", args.planner,
@@ -184,6 +216,10 @@ def _run(ap, args):
 
     # only when the flag is given: claude keeps its own sonnet default, cline falls back to
     # HARNESS_MODEL, pi/opencode to their model lists
+    # the curated skills are decided from the plan's files, before the executor reads the env
+    skills.apply_default([t.raw for t in tasks], os.environ)
+    chosen = skills.chosen_dirs()
+    print(f"skills: on ({len(chosen)})" if skills.enabled() else "skills: off")
     opts = {"model": args.executor_model} if args.executor_model else {}
     run_started = time.time()
     record_plan_event(metrics, args.slug, "run_start", executor=args.executor)
@@ -192,6 +228,10 @@ def _run(ap, args):
         result = scheduler.run_all(plan, args, runner)
 
     summary, failed = result.summary, result.failed
+    if runner.state.unattributed:
+        summary.insert(0, f"UNATTRIBUTED STRAYS (no task's trace wrote them; review by hand): "
+                          f"{sorted(runner.state.unattributed)}")
+        failed = True
     if result.ran_any:
         record_plan_event(metrics, args.slug, "run_end", executor=args.executor,
                           result=("fail" if failed else "pass"),
