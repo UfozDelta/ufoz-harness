@@ -7,6 +7,16 @@ from pathlib import Path
 from .guards import lock_hashes
 
 
+def in_scope(path, entries):
+    """True when `path` is an entry, or lies under a directory entry (one ending in "/")."""
+    return any(path == e or (e.endswith("/") and path.startswith(e)) for e in entries)
+
+
+def overlaps(a, b):
+    """True when two tasks' file entries could name the same file."""
+    return any(in_scope(x, b) for x in a) or any(in_scope(y, a) for y in b)
+
+
 @dataclass
 class Task:
     id: str

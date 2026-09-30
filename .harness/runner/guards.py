@@ -56,8 +56,54 @@ def runner_owned(f, run_lock, plan, metrics):
             or _other_plan(f, plan)
             or f.endswith(".tsbuildinfo")
             or (f.startswith(f"{plan.as_posix()}/items/")
-                and (f.endswith((".report.md", ".feedback.md", ".metrics.json"))
+                and (f.endswith((".report.md", ".feedback.md", ".metrics.json", ".quirks.md"))
                      or re.search(r"\.repair\d+\.md$", f))))
+
+
+# executor logs: one `[toolCall <name>] <json args>` line per call (pi, claude, opencode, cline).
+# The json may be cut at 200 chars (cline), so the path is matched, not parsed.
+TOOL_CALL = re.compile(r"^\[toolCall (?P<name>[^\]]+)\] (?P<args>.*)$")
+PATH_ARG = re.compile(r'"(?:path|file_path|filePath)"\s*:\s*"(?P<path>(?:[^"\\]|\\.)+)"')
+WRITE_TOOLS = ("write", "edit", "patch", "replace", "create", "insert", "apply")
+
+
+def written_paths(logs):
+    """Repo-relative paths an executor's write/edit tool calls named in these logs. Bash side
+    effects are not in here: they cannot be attributed from a trace."""
+    root = Path.cwd().resolve()
+    found = set()
+    for log in logs:
+        try:
+            lines = Path(log).read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+        for line in lines:
+            call = TOOL_CALL.match(line)
+            if not call or not any(w in call["name"].lower() for w in WRITE_TOOLS):
+                continue
+            arg = PATH_ARG.search(call["args"])
+            if not arg:
+                continue
+            raw = arg["path"].replace("\\\\", "/").replace("\\", "/")
+            p = Path(raw)
+            if p.is_absolute():
+                try:
+                    p = p.resolve().relative_to(root)
+                except ValueError:
+                    continue
+            found.add(p.as_posix().removeprefix("./"))
+    return found
+
+
+def attribute(stray, written):
+    """--parallel: split strays into the ones this task's own trace wrote and the rest, which
+    may belong to a concurrent task (its own guard catches them) or to a bash side effect."""
+    own = [f for f in stray if f in written]
+    return own, [f for f in stray if f not in written]
+
+
+# a marker inside a string literal is data (a detector's needle), not a suppression comment
+STRING_LITERAL = re.compile(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'|`(?:[^`\\]|\\.)*`')
 
 
 def marker_counts(f):
@@ -65,7 +111,12 @@ def marker_counts(f):
         text = Path(f).read_text(encoding="utf-8", errors="replace")
     except OSError:
         return dict.fromkeys(SUPPRESSION_MARKERS, 0)
-    return {marker: sum(1 for line in text.splitlines() if marker in line)
+    lines = text.splitlines()
+    stripped = [STRING_LITERAL.sub("", line) for line in lines]
+    # a marker right after a comment opener always counts: that is the only spelling the
+    # tools honour, and a stray quote earlier on the line must not hide it
+    return {marker: sum(1 for raw, bare in zip(lines, stripped)
+                        if marker in bare or re.search(r"(//|/\*|#)\s*" + re.escape(marker), raw))
             for marker in SUPPRESSION_MARKERS}
 
 

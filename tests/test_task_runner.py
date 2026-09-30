@@ -87,3 +87,45 @@ def test_still_failing_after_repair_is_not_ok(tmp_path):
     assert (plan.items / "T1.repair1.md").is_file()
     assert "RESULT: fail" in plan.report_text("T1")
     assert lines[0].startswith("T1 FAIL")
+
+
+class TracingExecutor(FakeExecutor):
+    """Does the work on the first call and logs one extra tool call line."""
+
+    def __init__(self, plan_dir, done, trace_line):
+        super().__init__(plan_dir, done, succeed_on=1)
+        self.trace_line = trace_line
+
+    def run(self, brief, log, timeout, feedback=None, session=None, rules=None, raw_prompt=None):
+        res = super().run(brief, log, timeout, feedback, session, rules, raw_prompt)
+        with open(log, "ab") as f:
+            f.write((self.trace_line + "\n").encode())
+        return res
+
+
+def _parallel_stray_run(tmp_path, monkeypatch, trace_line):
+    """One task under --parallel whose tree diff shows `side.txt`, a file no task lists."""
+    plan, args, executor = make_plan(tmp_path, succeed_on=1)
+    args.parallel = 2
+    snaps = iter([{}, {"side.txt": "h"}])
+    monkeypatch.setattr(task_runner, "snapshot", lambda: next(snaps))
+    executor = TracingExecutor(executor.plan_dir, executor.done, trace_line)
+    runner = task_runner.TaskRunner(plan, args, executor)
+    ok, lines, _ = runner.run(plan.tasks[0])
+    return ok, lines, runner.state
+
+
+def test_parallel_stray_written_by_own_trace_fails_the_task(tmp_path, monkeypatch):
+    ok, lines, state = _parallel_stray_run(tmp_path, monkeypatch,
+                                           '[toolCall write] {"path": "side.txt"}')
+    assert ok is False
+    assert "side.txt" in "\n".join(lines)
+    assert not state.unattributed
+
+
+def test_parallel_stray_not_in_trace_is_reported_not_failed(tmp_path, monkeypatch):
+    ok, lines, state = _parallel_stray_run(tmp_path, monkeypatch,
+                                           '[toolCall bash] {"command": "echo x > side.txt"}')
+    assert ok is True
+    assert state.unattributed == {"side.txt"}
+    assert any("not in its trace" in line for line in lines)

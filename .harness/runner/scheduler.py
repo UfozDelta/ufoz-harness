@@ -2,6 +2,8 @@
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 
+from .plan import overlaps
+
 
 @dataclass
 class RunResult:
@@ -57,7 +59,7 @@ def _parallel(plan, args, runner, todo, done, summary, result):
                 if not all(d in done for d in t.deps):
                     continue
                 with state.state_lock:
-                    if any(files & other for other in state.running.values()):
+                    if any(overlaps(files, other) for other in state.running.values()):
                         continue
                     state.co_files[t.id] = set().union(*state.running.values()) if state.running else set()
                     for other in state.running:

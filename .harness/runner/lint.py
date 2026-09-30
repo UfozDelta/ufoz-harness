@@ -1,8 +1,56 @@
 """Static plan validation + red-first proof on the untouched tree."""
 import re
+import subprocess
 from pathlib import Path
 
 from .acceptance import run_acceptance
+from .plan import in_scope
+
+# a directory entry lets the executor write anything under it: never the harness, git or deps,
+# and never a directory that already holds a lot of the project
+PROTECTED_DIRS = (".harness", ".git", "node_modules", ".worktrees", ".pi", ".claude")
+MAX_TRACKED_UNDER_DIR = 50
+
+
+HARNESS_MODULES = ("runner", "envfile", "build_map", "selftest", "run_plan")
+
+
+def _shadows_harness(entry):
+    """A new module outside .harness/ named like a harness module: code in its dir that
+    puts .harness on sys.path and imports e.g. runner.executors gets itself instead."""
+    p = Path(entry.rstrip("/"))
+    if p.parts and p.parts[0] == ".harness":
+        return False
+    return p.stem in HARNESS_MODULES and (entry.endswith("/") or p.suffix == ".py")
+
+
+def _ancestors(task, by_id):
+    """Every task `task` depends on, directly or through other deps."""
+    seen, pending = set(), list(task.get("deps", []))
+    while pending:
+        dep = pending.pop()
+        if dep in seen or dep not in by_id:
+            continue
+        seen.add(dep)
+        pending.extend(by_id[dep].get("deps", []))
+    return seen
+
+
+def _too_broad(entry):
+    """Why a directory entry is too broad, or None."""
+    rel = entry.replace("\\", "/").strip("/")
+    while rel.startswith("./"):
+        rel = rel[2:]
+    if rel in ("", "."):
+        return "the whole repo"
+    if rel.split("/")[0] in PROTECTED_DIRS:
+        return f"under protected {rel.split('/')[0]}/"
+    r = subprocess.run(["git", "ls-files", "--", rel], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    tracked = len(r.stdout.splitlines()) if r.returncode == 0 else 0
+    if tracked > MAX_TRACKED_UNDER_DIR:
+        return f"{tracked} tracked files under it, max {MAX_TRACKED_UNDER_DIR}"
+    return None
 
 
 def lint(plan, tasks, passed):
@@ -17,10 +65,13 @@ def lint(plan, tasks, passed):
             probe.unlink()
         except OSError as e:
             errs.append(f"cannot write {d}/: {e}")
-    try:
-        (plan.parent.parent / "metrics.jsonl").open("a", encoding="utf-8").close()
-    except OSError as e:
-        errs.append(f"cannot write metrics.jsonl: {e}")
+    # only a real .harness/plans/<slug> layout has a metrics.jsonl two levels up; a plan dir
+    # anywhere else (e.g. a fixture's plan/) would get a stray metrics.jsonl beside it
+    if plan.parent.name == "plans":
+        try:
+            (plan.parent.parent / "metrics.jsonl").open("a", encoding="utf-8").close()
+        except OSError as e:
+            errs.append(f"cannot write metrics.jsonl: {e}")
     for i, t in enumerate(tasks):
         tid = t.get("id", "?")
         errs += [f"{tid}: missing '{k}'" for k in ("id", "acceptance", "files") if k not in t]
@@ -37,8 +88,13 @@ def lint(plan, tasks, passed):
         files = t.get("files", [])
         errs += [f"{tid}: files entry '{f}' is a glob, list exact paths"
                  for f in files if "*" in f or "?" in f]
-        errs += [f"{tid}: files entry '{f}' is a directory, list exact file paths"
-                 for f in files if Path(f).is_dir()]
+        errs += [f"{tid}: files entry '{f}' is a directory; directory entries must end with '/'"
+                 for f in files if not f.endswith("/") and Path(f).is_dir()]
+        errs += [f"{tid}: files entry '{f}' is too broad ({why})"
+                 for f in files if f.endswith("/") and (why := _too_broad(f))]
+        warns += [f"{tid}: files entry '{f}' shadows the harness package '{Path(f.rstrip('/')).stem}' "
+                  f"(code in that dir importing it gets this file instead); rename it"
+                  for f in files if _shadows_harness(f)]
         if (any(f.endswith((".ts", ".tsx")) and not f.endswith(".d.ts") for f in files)
                 and "tsc" not in acceptance):
             errs.append(f"{tid}: TypeScript files but no tsc in acceptance")
@@ -68,10 +124,12 @@ def lint(plan, tasks, passed):
         if tid in seen:
             errs.append(f"{tid}: duplicate id")
         seen.add(tid)
+    by_id = {task.get("id"): task for task in tasks}
     for i, a in enumerate(tasks):
         for b in tasks[i + 1:]:
-            shared = set(a.get("files", [])) & set(b.get("files", []))
-            if shared and a.get("id") not in b.get("deps", []):
+            fa, fb = a.get("files", []), b.get("files", [])
+            shared = {x for x in fa if in_scope(x, fb)} | {y for y in fb if in_scope(y, fa)}
+            if shared and a.get("id") not in _ancestors(b, by_id):
                 warns.append(f"{a.get('id')}/{b.get('id')}: share {sorted(shared)} without a dep between them")
     for t in tasks:
         if t.get("id") in passed or not t.get("red_first", True) or "acceptance" not in t:

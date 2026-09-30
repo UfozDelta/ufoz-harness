@@ -10,7 +10,8 @@ from dataclasses import dataclass, field
 
 from . import report
 from .acceptance import run_acceptance
-from .guards import marker_counts, runner_owned, snapshot, suppression_markers
+from .guards import attribute, marker_counts, runner_owned, snapshot, suppression_markers, written_paths
+from .plan import in_scope
 from .procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS
 
 
@@ -21,6 +22,7 @@ class State:
     metrics_lock: threading.Lock = field(default_factory=threading.Lock)
     running: dict = field(default_factory=dict)   # tid -> files of tasks executing right now
     co_files: dict = field(default_factory=dict)  # tid -> files owned by tasks that ran during its window
+    unattributed: set = field(default_factory=set)  # --parallel strays no task's trace wrote
 
 
 @dataclass
@@ -52,6 +54,7 @@ class Attempt:
     suppressed: list
     broken: list
     build_line: str | None
+    unattributed: list = field(default_factory=list)
 
 
 class TaskRunner:
@@ -131,7 +134,15 @@ class TaskRunner:
         # never overlaps two tasks' files, and each owner's own acceptance covers them)
         with self.state.state_lock:
             allowed = set(scope) | (self.state.co_files.get(t.id, set()) if dynamic_scope else set())
-        stray = [f for f in touched if f not in allowed and not self.owned(f)]
+        stray = [f for f in touched if not in_scope(f, allowed) and not self.owned(f)]
+        unattributed = []
+        if stray and getattr(args, "parallel", 1) > 1:
+            # a stray fails only the task whose own trace wrote it; the rest (a concurrent
+            # task's, or a bash side effect) is reported once for the run instead of failing
+            # every task that happened to be running
+            stray, unattributed = attribute(stray, written_paths(plan.logs.glob(f"{t.id}.*log")))
+            with self.state.state_lock:
+                self.state.unattributed.update(unattributed)
         suppressed = suppression_markers([f for f in touched if not self.owned(f)], st.baseline)
         build_line = self._build_failure() if acceptance_ok and t.build_gate else None
         if repair:
@@ -147,7 +158,7 @@ class TaskRunner:
             and code != EXIT_TIMEOUT
         return Attempt(ok=ok, plain_failure=plain_failure, code=code, session=session, out=out,
                        touched=touched, stray=stray, suppressed=suppressed, broken=broken,
-                       build_line=build_line)
+                       build_line=build_line, unattributed=unattributed)
 
     # --- one task -------------------------------------------------------------------------
 
@@ -163,7 +174,7 @@ class TaskRunner:
         if broken:
             rep.write_text(report.lock_mismatch(broken), encoding="utf-8")
             self._record_metrics(st, "fail", 0, round(time.time() - st.t0, 1))
-            return False, [f"{tid} LOCK-MISMATCH: {broken} (rerun with --relock if intended)"], session
+            return False, [f"{tid} LOCK-MISMATCH: {broken} (rerun with --relock-only if intended)"], session
 
         # red-first: a check that passes before any work proves nothing. Skipped when
         # an earlier attempt already ran the executor (fail, or "running" left by a crashed
@@ -179,12 +190,15 @@ class TaskRunner:
         feedback = plan.items / f"{tid}.feedback.md"
         listed = t.norm_files
         repair_allowed = listed | plan.prior_files(t)
-        for f in repair_allowed | self.state.co_files.get(tid, set()):
-            counts = marker_counts(f)
-            st.baseline[f] = {"total": sum(counts.values()), "counts": counts}
         # written before the snapshot so it never counts as an out-of-scope edit
         rep.write_text(report.running(), encoding="utf-8")
         before = snapshot()
+        # suppression baseline: every existing file the task may touch (directory entries
+        # expand to the files under them)
+        scope = repair_allowed | self.state.co_files.get(tid, set())
+        for f in (f for f in before if in_scope(f, scope)) if before is not None else scope:
+            counts = marker_counts(f)
+            st.baseline[f] = {"total": sum(counts.values()), "counts": counts}
 
         for attempt in range(1 + max(0, args.retries)):
             if attempt:
@@ -222,4 +236,6 @@ class TaskRunner:
                                            got.build_line, log, got.out), encoding="utf-8")
         lines = report.summary_lines(tid, args.executor, ok, got.code, attempt + 1 + st.repairs,
                                      st.repairs, seconds, st.usage, got.stray, got.broken, log)
+        if got.unattributed:
+            lines.append(f"{tid} note: strays not in its trace (not failing it): {got.unattributed}")
         return ok, lines, session
