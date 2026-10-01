@@ -54,7 +54,7 @@ first four tasks touch disjoint files and have no dependencies on each other; th
 - Toolchain: React 19, Next 16, TypeScript 5.9, vitest 5, jsdom, `@testing-library/react` all come from the
   repo root `node_modules` — the work dir's `package.json` stays dependency-free and is never `npm install`ed.
   No new dependencies, no `next.config` changes, no client-side data fetching library.
-- The work dir is `harness-suite/work/<slug>/`; every acceptance command runs `cd {work} && ...` (`{work}`
+- The work dir is `bench/suite/work/<slug>/`; every acceptance command runs `cd {work} && ...` (`{work}`
   is substituted by the runner). `app/layout.tsx`, `lib/format.ts`, `tsconfig.json`, `vitest.config.ts`,
   `next.config.mjs` and `package.json` are never edited.
 

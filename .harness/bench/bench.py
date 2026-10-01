@@ -67,7 +67,7 @@ def make_worktree(task, arm, rep, copy_plan=True, overlay_name=None):
                            cwd=ROOT, capture_output=True, check=True).stdout.decode("utf-8", "replace").split("\0")
     for rel in files:
         # never ship hidden tests / other runs into a builder's copy; skills are copied below (symlinks resolved)
-        if not rel or rel.startswith((".harness/bench/", "packages/", ".claude/skills/", ".agents/", "harness-speed-test/")):
+        if not rel or rel.startswith((".harness/bench/", "packages/", ".claude/skills/", ".agents/", "bench/speed/")):
             continue
         src, dst = ROOT / rel, wt / rel
         if not src.is_file():  # tracked but deleted on disk

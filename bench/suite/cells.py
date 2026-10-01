@@ -16,13 +16,13 @@ import threading
 import time
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT / ".harness") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / ".harness"))
 
 from runner import worktree  # noqa: E402
 
-SUITE_DIR = "harness-suite"
+SUITE_DIR = "bench/suite"
 WORK_PREFIX = f"{SUITE_DIR}/work"
 SIZES = ("small", "medium", "large")
 # only names build_matrix makes; plans like `suite-fixes` share the prefix and must never match
@@ -207,7 +207,7 @@ def prepare_cell(cell, repo_root=REPO_ROOT):
             _git("branch", "-D", branch, cwd=repo_root)
 
     with _chdir(repo_root):
-        # harness-suite/ (fixtures, hidden tests, results) is left out of the snapshot, and
+        # bench/suite/ (fixtures, hidden tests, results) is left out of the snapshot, and
         # the snapshot has no parent, so neither the tree nor `git show HEAD~1:...` reaches it
         wt = Path(worktree.ensure(slug, exclude=[SUITE_DIR], orphan=True))
 

@@ -95,7 +95,7 @@ CLIENT_CAPABILITIES = {
     "fs": {"readTextFile": True, "writeTextFile": True},
     # Terminals are how the agent gets a shell. With this false, cline cannot run pytest,
     # git or pip at all, and a coding task flails: measured 40 tool calls and 47.7s versus
-    # 7 calls and 17.1s on the --json path. See harness-speed-test results-acp.csv.
+    # 7 calls and 17.1s on the --json path. See bench/speed results-acp.csv.
     "terminal": True,
 }
 

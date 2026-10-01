@@ -12,6 +12,14 @@ node_modules/
 .pi_test_probe
 .harness/tsc.tsbuildinfo
 .harness/*.tsbuildinfo
-harness-suite/work/_logs/
-harness-suite/.check-tmp/
-harness-suite/failed/
+bench/suite/work/_logs/
+bench/suite/.check-tmp/
+bench/suite/failed/
+.harness/suite-*.tsbuildinfo
+bench/suite/work/
+# raw bench output (summaries in RESULTS.md / LATENCY.md stay tracked)
+bench/suite/results*.csv
+bench/speed/results*.csv
+bench/speed/latency.jsonl
+bench/speed/run.log
+.harness/bench/data/

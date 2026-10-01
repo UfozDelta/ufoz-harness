@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SUITE_DIR = REPO_ROOT / "harness-suite"
+SUITE_DIR = REPO_ROOT / "bench" / "suite"
 if str(SUITE_DIR) not in sys.path:
     sys.path.insert(0, str(SUITE_DIR))
 
@@ -352,7 +352,7 @@ def test_cleanup_stale_branch_warns_when_branch_survives(tmp_path, capsys):
 def test_prepare_cell_deletes_unused_branch_stale_branch(tmp_path):
     import cells  # noqa: PLC0415
 
-    (tmp_path / "harness-suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
+    (tmp_path / "bench" / "suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
     calls = []
 
     def fake_git(*args, cwd=None):
@@ -379,7 +379,7 @@ def test_prepare_cell_deletes_unused_branch_stale_branch(tmp_path):
 def test_prepare_cell_stale_branch_keeps_checked_out(tmp_path):
     import cells  # noqa: PLC0415
 
-    (tmp_path / "harness-suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
+    (tmp_path / "bench" / "suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
     calls = []
 
     def fake_git(*args, cwd=None):
@@ -407,7 +407,7 @@ def test_prepare_cell_stale_branch_keeps_checked_out(tmp_path):
 def test_prepare_cell_stale_branch_skipped_for_non_cell_slug(tmp_path):
     import cells  # noqa: PLC0415
 
-    (tmp_path / "harness-suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
+    (tmp_path / "bench" / "suite" / "fixtures" / "small" / "seed").mkdir(parents=True)
     calls = []
 
     def fake_git(*args, cwd=None):
@@ -474,6 +474,29 @@ def test_preserve_failed_copies_items_and_logs(tmp_path):
 
     cells._preserve_failed({"slug": slug}, tmp_path)
 
-    dst = tmp_path / "harness-suite" / "failed" / slug
+    dst = tmp_path / "bench" / "suite" / "failed" / slug
     assert (dst / "items" / "T1.report.md").read_text(encoding="utf-8") == "report body"
     assert (dst / "logs" / "T1.pi.log").read_text(encoding="utf-8") == "pi output"
+
+
+# ----------------------------------------------------------- report.main guard
+def _report_paths(monkeypatch, tmp_path):
+    md = tmp_path / "RESULTS.md"
+    md.write_text("# keep me\n", encoding="utf-8")
+    monkeypatch.setattr(report, "RESULTS_CSV", tmp_path / "results.csv")
+    monkeypatch.setattr(report, "RESULTS_MD", md)
+    return md
+
+
+@pytest.mark.parametrize("argv", [["--help"], ["--bogus"]])
+def test_report_main_bad_or_help_args_never_write(monkeypatch, tmp_path, argv):
+    md = _report_paths(monkeypatch, tmp_path)
+    with pytest.raises(SystemExit):
+        report.main(argv)
+    assert md.read_text(encoding="utf-8") == "# keep me\n"
+
+
+def test_report_main_keeps_existing_md_when_no_rows(monkeypatch, tmp_path):
+    md = _report_paths(monkeypatch, tmp_path)
+    assert report.main([]) == 1
+    assert md.read_text(encoding="utf-8") == "# keep me\n"

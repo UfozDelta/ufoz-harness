@@ -17,9 +17,9 @@ import urllib.error
 import urllib.request
 
 
-ROOT = Path(__file__).resolve().parent.parent
-DATA_PATH = ROOT / "harness-speed-test" / "latency.jsonl"
-REPORT_PATH = ROOT / "harness-speed-test" / "LATENCY.md"
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = ROOT / "bench" / "speed" / "latency.jsonl"
+REPORT_PATH = ROOT / "bench" / "speed" / "LATENCY.md"
 PI_LAUNCHER = Path.home() / ".pi" / "agent" / "bin" / "pi-launcher.js"
 DEFAULT_MODEL = "opencode/space-bunny-free"
 THINKING = "medium"

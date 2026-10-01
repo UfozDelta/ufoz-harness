@@ -34,7 +34,7 @@ def _lint(tmp_path, files, capsys):
 
 
 def test_lint_accepts_a_narrow_directory_entry(tmp_path, capsys):
-    code, out = _lint(tmp_path, ["harness-suite/fixtures/medium/"], capsys)
+    code, out = _lint(tmp_path, ["bench/suite/fixtures/medium/"], capsys)
     assert code == 0, out
 
 

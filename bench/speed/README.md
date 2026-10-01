@@ -12,9 +12,9 @@ alternate order, and receive identical prompts with closed stdin. OpenCode uses
 ## Run
 
 ```sh
-python harness-speed-test/duel.py
-python harness-speed-test/duel.py --tasks small,medium --reps 3
-python harness-speed-test/duel.py --dry
+python bench/speed/duel.py
+python bench/speed/duel.py --tasks small,medium --reps 3
+python bench/speed/duel.py --dry
 ```
 
 Override defaults with `--model`, `--thinking`, `--timeout`, `--out`, `--pi`, and
@@ -23,5 +23,5 @@ to load a pi extension for benchmark runs.
 ## Report
 
 Each run prints task, harness, repetition, wall time, and passed/total tests.
-Share the appended `harness-speed-test/results.csv` when reporting. Event logs,
+Share the appended `bench/speed/results.csv` when reporting. Event logs,
 stderr, and pytest output remain under the run directory.

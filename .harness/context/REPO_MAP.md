@@ -1,13 +1,13 @@
 # Repo map
-fingerprint: 04f3d958e012
+fingerprint: c8d435a66e14
 Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before exploring.
 
 ## Routes
-- `/` -> harness-suite/fixtures/large/seed/web/app/page.tsx
-- `/` -> harness-suite/fixtures/large/solution/web/app/page.tsx
-- `/` -> harness-suite/fixtures/medium/seed/app/page.tsx
-- `/api/todos` -> harness-suite/fixtures/medium/solution/app/api/todos/route.ts
-- `/` -> harness-suite/fixtures/medium/solution/app/page.tsx
+- `/` -> bench/suite/fixtures/large/seed/web/app/page.tsx
+- `/` -> bench/suite/fixtures/large/solution/web/app/page.tsx
+- `/` -> bench/suite/fixtures/medium/seed/app/page.tsx
+- `/api/todos` -> bench/suite/fixtures/medium/solution/app/api/todos/route.ts
+- `/` -> bench/suite/fixtures/medium/solution/app/page.tsx
 
 ## Files
 - .agents/skills/animate-expo/RECIPES.md
@@ -42,140 +42,140 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - AGENTS.md
 - CLAUDE.md
 - README.md
+- bench/speed/LATENCY.md
+- bench/speed/README.md
+- bench/speed/RESULTS.md
+- bench/speed/duel.py: parse_models, model_for, cline_binary, parse, task_prompt, acp_run, command_for, display_command, test_result, append_result, ...
+- bench/speed/fixtures/opencode.jsonl
+- bench/speed/fixtures/pi.jsonl
+- bench/speed/latency.py: pi_command, opencode_command, build_opencode_config, append_rows, summarize_trace, summarize_opencode_trace, harness_rows, run_startup, run_direct, task_prompt, ...
+- bench/speed/report.py: number, display, table, build_report, main
+- bench/speed/results.csv
+- bench/speed/run.log
+- bench/suite/README.md
+- bench/suite/RESULTS.md
+- bench/suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
+- bench/suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, check_size, main
+- bench/suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
+- bench/suite/fixtures/large/hidden_tests/vitest.config.ts
+- bench/suite/fixtures/large/hidden_tests/web/api-client.test.ts
+- bench/suite/fixtures/large/hidden_tests/web/itemdetail.test.tsx
+- bench/suite/fixtures/large/hidden_tests/web/itemlist.test.tsx
+- bench/suite/fixtures/large/hidden_tests/web/page.test.tsx
+- bench/suite/fixtures/large/plan/plan.md
+- bench/suite/fixtures/large/plan/tasks.json
+- bench/suite/fixtures/large/seed/backend/app/__init__.py
+- bench/suite/fixtures/large/seed/backend/app/main.py: health
+- bench/suite/fixtures/large/seed/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- bench/suite/fixtures/large/seed/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- bench/suite/fixtures/large/seed/web/app/layout.tsx: metadata, RootLayout
+- bench/suite/fixtures/large/seed/web/app/page.tsx: HomePage
+- bench/suite/fixtures/large/seed/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- bench/suite/fixtures/large/seed/web/lib/format.ts: pluralItems
+- bench/suite/fixtures/large/seed/web/next-env.d.ts
+- bench/suite/fixtures/large/seed/web/next.config.mjs
+- bench/suite/fixtures/large/seed/web/package.json
+- bench/suite/fixtures/large/seed/web/tsconfig.json
+- bench/suite/fixtures/large/seed/web/vitest.config.ts
+- bench/suite/fixtures/large/solution/backend/app/__init__.py
+- bench/suite/fixtures/large/solution/backend/app/items_router.py: list_items, create_item, get_item, update_item, delete_item
+- bench/suite/fixtures/large/solution/backend/app/main.py: create_app
+- bench/suite/fixtures/large/solution/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
+- bench/suite/fixtures/large/solution/backend/app/stats.py: search_items, item_stats
+- bench/suite/fixtures/large/solution/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- bench/suite/fixtures/large/solution/backend/tests/test_openapi.py: test_every_route_is_documented, test_every_operation_is_documented, test_schemas_are_published, test_item_schema_properties, test_item_create_schema_has_no_id, test_search_result_wraps_a_list_of_items, test_post_items_documents_201_and_409, test_delete_item_documents_204
+- bench/suite/fixtures/large/solution/web/app/page.tsx: HomePage
+- bench/suite/fixtures/large/solution/web/components/ItemDetail.tsx: ItemDetailProps, ItemDetail
+- bench/suite/fixtures/large/solution/web/components/ItemList.tsx: ItemListProps, ItemList
+- bench/suite/fixtures/large/solution/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- bench/suite/fixtures/large/spec.md
+- bench/suite/fixtures/medium/hidden_tests/todo-list.test.tsx
+- bench/suite/fixtures/medium/hidden_tests/todos-route.test.ts
+- bench/suite/fixtures/medium/hidden_tests/todos-store.test.ts
+- bench/suite/fixtures/medium/hidden_tests/validate.test.ts
+- bench/suite/fixtures/medium/plan/plan.md
+- bench/suite/fixtures/medium/plan/tasks.json
+- bench/suite/fixtures/medium/seed/app/layout.tsx: metadata, RootLayout
+- bench/suite/fixtures/medium/seed/app/page.tsx: Page
+- bench/suite/fixtures/medium/seed/lib/format.ts: formatCount
+- bench/suite/fixtures/medium/seed/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- bench/suite/fixtures/medium/seed/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- bench/suite/fixtures/medium/seed/next-env.d.ts
+- bench/suite/fixtures/medium/seed/next.config.mjs
+- bench/suite/fixtures/medium/seed/package.json
+- bench/suite/fixtures/medium/seed/tsconfig.json
+- bench/suite/fixtures/medium/seed/vitest.config.ts
+- bench/suite/fixtures/medium/solution/app/api/todos/route.ts: GET, POST
+- bench/suite/fixtures/medium/solution/app/page.tsx: Page
+- bench/suite/fixtures/medium/solution/components/TodoList.tsx: TodoListProps, TodoList
+- bench/suite/fixtures/medium/solution/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
+- bench/suite/fixtures/medium/solution/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
+- bench/suite/fixtures/medium/spec.md
+- bench/suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
+- bench/suite/fixtures/small/plan/plan.md
+- bench/suite/fixtures/small/plan/tasks.json
+- bench/suite/fixtures/small/seed/app/__init__.py
+- bench/suite/fixtures/small/seed/app/main.py: reset_store, health, list_items, get_item, create_item
+- bench/suite/fixtures/small/seed/app/models.py: ItemCreate, Item
+- bench/suite/fixtures/small/seed/tests/test_items.py: test_health, test_list_items_empty, test_create_item, test_create_then_list, test_get_item, test_get_missing_item_404, test_create_invalid_returns_422, test_store_is_isolated_between_tests
+- bench/suite/fixtures/small/solution/app/item_query.py: filter_items, count_filtered, select_items
+- bench/suite/fixtures/small/solution/app/main.py: reset_store, health, list_items, get_item, create_item
+- bench/suite/fixtures/small/solution/app/routers/__init__.py
+- bench/suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
+- bench/suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
+- bench/suite/fixtures/small/spec.md
+- bench/suite/report.py: load_rows, wilson_ci, build_report, main
+- bench/suite/results-oc-agent-rep1.csv
+- bench/suite/results-oc-agent-rep2.csv
+- bench/suite/results-oc-default-rep1.csv
+- bench/suite/results-oc-default-rep2.csv
+- bench/suite/results-oc-tools-rep1.csv
+- bench/suite/results-oc-tools-rep2.csv
+- bench/suite/results-rep1-buggy.csv
+- bench/suite/results-rep1-clean-partial.csv
+- bench/suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
+- bench/suite/work/_logs/suite-large-multi-claude-r1.log
+- bench/suite/work/_logs/suite-large-multi-cline-acp-r1.log
+- bench/suite/work/_logs/suite-large-multi-cline-r1.log
+- bench/suite/work/_logs/suite-large-multi-opencode-r1.log
+- bench/suite/work/_logs/suite-large-multi-pi-r1.log
+- bench/suite/work/_logs/suite-large-parallel-opencode-r1.log
+- bench/suite/work/_logs/suite-large-parallel-pi-r1.log
+- bench/suite/work/_logs/suite-large-serial-claude-r1.log
+- bench/suite/work/_logs/suite-large-serial-cline-r1.log
+- bench/suite/work/_logs/suite-large-serial-opencode-r1.log
+- bench/suite/work/_logs/suite-large-serial-pi-r1.log
+- bench/suite/work/_logs/suite-medium-multi-claude-r1.log
+- bench/suite/work/_logs/suite-medium-multi-cline-acp-r1.log
+- bench/suite/work/_logs/suite-medium-multi-cline-r1.log
+- bench/suite/work/_logs/suite-medium-multi-opencode-r1.log
+- bench/suite/work/_logs/suite-medium-multi-pi-r1.log
+- bench/suite/work/_logs/suite-medium-parallel-claude-r1.log
+- bench/suite/work/_logs/suite-medium-serial-cline-acp-r1.log
+- bench/suite/work/_logs/suite-medium-serial-opencode-r1.log
+- bench/suite/work/_logs/suite-medium-serial-pi-r1.log
+- bench/suite/work/_logs/suite-small-multi-claude-r1.log
+- bench/suite/work/_logs/suite-small-multi-cline-acp-r1.log
+- bench/suite/work/_logs/suite-small-multi-cline-r1.log
+- bench/suite/work/_logs/suite-small-multi-opencode-r1.log
+- bench/suite/work/_logs/suite-small-multi-pi-r1.log
+- bench/suite/work/_logs/suite-small-parallel-pi-r1.log
+- bench/suite/work/_logs/suite-small-serial-cline-acp-r1.log
+- bench/suite/work/_logs/suite-small-serial-opencode-r1.log
+- bench/suite/work/_logs/suite-small-serial-opencode-r2.log
+- bench/suite/work/_logs/suite-small-serial-pi-r1.log
+- bench/suite/work/_logs/suite-small-window-cline-r1.log
+- bench/suite/work/_logs/suite-small-window-pi-r1.log
 - docs/ARCHITECTURE.md
 - docs/FLOWS.md
 - docs/bench-cost.svg
+- docs/findings.md
 - docs/flows.html
 - docs/harness-flow.svg
 - docs/harness.css
 - docs/hero.svg
 - docs/mermaid.md
 - docs/session-flows.html
-- findings.md
-- harness-speed-test/LATENCY.md
-- harness-speed-test/README.md
-- harness-speed-test/RESULTS.md
-- harness-speed-test/duel.py: parse_models, model_for, cline_binary, parse, task_prompt, acp_run, command_for, display_command, test_result, append_result, ...
-- harness-speed-test/fixtures/opencode.jsonl
-- harness-speed-test/fixtures/pi.jsonl
-- harness-speed-test/latency.py: pi_command, opencode_command, build_opencode_config, append_rows, summarize_trace, summarize_opencode_trace, harness_rows, run_startup, run_direct, task_prompt, ...
-- harness-speed-test/report.py: number, display, table, build_report, main
-- harness-speed-test/results.csv
-- harness-speed-test/run.log
-- harness-suite/README.md
-- harness-suite/RESULTS.md
-- harness-suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
-- harness-suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, check_size, main
-- harness-suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
-- harness-suite/fixtures/large/hidden_tests/vitest.config.ts
-- harness-suite/fixtures/large/hidden_tests/web/api-client.test.ts
-- harness-suite/fixtures/large/hidden_tests/web/itemdetail.test.tsx
-- harness-suite/fixtures/large/hidden_tests/web/itemlist.test.tsx
-- harness-suite/fixtures/large/hidden_tests/web/page.test.tsx
-- harness-suite/fixtures/large/plan/plan.md
-- harness-suite/fixtures/large/plan/tasks.json
-- harness-suite/fixtures/large/seed/backend/app/__init__.py
-- harness-suite/fixtures/large/seed/backend/app/main.py: health
-- harness-suite/fixtures/large/seed/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
-- harness-suite/fixtures/large/seed/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
-- harness-suite/fixtures/large/seed/web/app/layout.tsx: metadata, RootLayout
-- harness-suite/fixtures/large/seed/web/app/page.tsx: HomePage
-- harness-suite/fixtures/large/seed/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
-- harness-suite/fixtures/large/seed/web/lib/format.ts: pluralItems
-- harness-suite/fixtures/large/seed/web/next-env.d.ts
-- harness-suite/fixtures/large/seed/web/next.config.mjs
-- harness-suite/fixtures/large/seed/web/package.json
-- harness-suite/fixtures/large/seed/web/tsconfig.json
-- harness-suite/fixtures/large/seed/web/vitest.config.ts
-- harness-suite/fixtures/large/solution/backend/app/__init__.py
-- harness-suite/fixtures/large/solution/backend/app/items_router.py: list_items, create_item, get_item, update_item, delete_item
-- harness-suite/fixtures/large/solution/backend/app/main.py: create_app
-- harness-suite/fixtures/large/solution/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
-- harness-suite/fixtures/large/solution/backend/app/stats.py: search_items, item_stats
-- harness-suite/fixtures/large/solution/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
-- harness-suite/fixtures/large/solution/backend/tests/test_openapi.py: test_every_route_is_documented, test_every_operation_is_documented, test_schemas_are_published, test_item_schema_properties, test_item_create_schema_has_no_id, test_search_result_wraps_a_list_of_items, test_post_items_documents_201_and_409, test_delete_item_documents_204
-- harness-suite/fixtures/large/solution/web/app/page.tsx: HomePage
-- harness-suite/fixtures/large/solution/web/components/ItemDetail.tsx: ItemDetailProps, ItemDetail
-- harness-suite/fixtures/large/solution/web/components/ItemList.tsx: ItemListProps, ItemList
-- harness-suite/fixtures/large/solution/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
-- harness-suite/fixtures/large/spec.md
-- harness-suite/fixtures/medium/hidden_tests/todo-list.test.tsx
-- harness-suite/fixtures/medium/hidden_tests/todos-route.test.ts
-- harness-suite/fixtures/medium/hidden_tests/todos-store.test.ts
-- harness-suite/fixtures/medium/hidden_tests/validate.test.ts
-- harness-suite/fixtures/medium/plan/plan.md
-- harness-suite/fixtures/medium/plan/tasks.json
-- harness-suite/fixtures/medium/seed/app/layout.tsx: metadata, RootLayout
-- harness-suite/fixtures/medium/seed/app/page.tsx: Page
-- harness-suite/fixtures/medium/seed/lib/format.ts: formatCount
-- harness-suite/fixtures/medium/seed/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
-- harness-suite/fixtures/medium/seed/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
-- harness-suite/fixtures/medium/seed/next-env.d.ts
-- harness-suite/fixtures/medium/seed/next.config.mjs
-- harness-suite/fixtures/medium/seed/package.json
-- harness-suite/fixtures/medium/seed/tsconfig.json
-- harness-suite/fixtures/medium/seed/vitest.config.ts
-- harness-suite/fixtures/medium/solution/app/api/todos/route.ts: GET, POST
-- harness-suite/fixtures/medium/solution/app/page.tsx: Page
-- harness-suite/fixtures/medium/solution/components/TodoList.tsx: TodoListProps, TodoList
-- harness-suite/fixtures/medium/solution/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
-- harness-suite/fixtures/medium/solution/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
-- harness-suite/fixtures/medium/spec.md
-- harness-suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
-- harness-suite/fixtures/small/plan/plan.md
-- harness-suite/fixtures/small/plan/tasks.json
-- harness-suite/fixtures/small/seed/app/__init__.py
-- harness-suite/fixtures/small/seed/app/main.py: reset_store, health, list_items, get_item, create_item
-- harness-suite/fixtures/small/seed/app/models.py: ItemCreate, Item
-- harness-suite/fixtures/small/seed/tests/test_items.py: test_health, test_list_items_empty, test_create_item, test_create_then_list, test_get_item, test_get_missing_item_404, test_create_invalid_returns_422, test_store_is_isolated_between_tests
-- harness-suite/fixtures/small/solution/app/item_query.py: filter_items, count_filtered, select_items
-- harness-suite/fixtures/small/solution/app/main.py: reset_store, health, list_items, get_item, create_item
-- harness-suite/fixtures/small/solution/app/routers/__init__.py
-- harness-suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
-- harness-suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
-- harness-suite/fixtures/small/spec.md
-- harness-suite/report.py: load_rows, wilson_ci, build_report, main
-- harness-suite/results-oc-agent-rep1.csv
-- harness-suite/results-oc-agent-rep2.csv
-- harness-suite/results-oc-default-rep1.csv
-- harness-suite/results-oc-default-rep2.csv
-- harness-suite/results-oc-tools-rep1.csv
-- harness-suite/results-oc-tools-rep2.csv
-- harness-suite/results-rep1-buggy.csv
-- harness-suite/results-rep1-clean-partial.csv
-- harness-suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
-- harness-suite/work/_logs/suite-large-multi-claude-r1.log
-- harness-suite/work/_logs/suite-large-multi-cline-acp-r1.log
-- harness-suite/work/_logs/suite-large-multi-cline-r1.log
-- harness-suite/work/_logs/suite-large-multi-opencode-r1.log
-- harness-suite/work/_logs/suite-large-multi-pi-r1.log
-- harness-suite/work/_logs/suite-large-parallel-opencode-r1.log
-- harness-suite/work/_logs/suite-large-parallel-pi-r1.log
-- harness-suite/work/_logs/suite-large-serial-claude-r1.log
-- harness-suite/work/_logs/suite-large-serial-cline-r1.log
-- harness-suite/work/_logs/suite-large-serial-opencode-r1.log
-- harness-suite/work/_logs/suite-large-serial-pi-r1.log
-- harness-suite/work/_logs/suite-medium-multi-claude-r1.log
-- harness-suite/work/_logs/suite-medium-multi-cline-acp-r1.log
-- harness-suite/work/_logs/suite-medium-multi-cline-r1.log
-- harness-suite/work/_logs/suite-medium-multi-opencode-r1.log
-- harness-suite/work/_logs/suite-medium-multi-pi-r1.log
-- harness-suite/work/_logs/suite-medium-parallel-claude-r1.log
-- harness-suite/work/_logs/suite-medium-serial-cline-acp-r1.log
-- harness-suite/work/_logs/suite-medium-serial-opencode-r1.log
-- harness-suite/work/_logs/suite-medium-serial-pi-r1.log
-- harness-suite/work/_logs/suite-small-multi-claude-r1.log
-- harness-suite/work/_logs/suite-small-multi-cline-acp-r1.log
-- harness-suite/work/_logs/suite-small-multi-cline-r1.log
-- harness-suite/work/_logs/suite-small-multi-opencode-r1.log
-- harness-suite/work/_logs/suite-small-multi-pi-r1.log
-- harness-suite/work/_logs/suite-small-parallel-pi-r1.log
-- harness-suite/work/_logs/suite-small-serial-cline-acp-r1.log
-- harness-suite/work/_logs/suite-small-serial-opencode-r1.log
-- harness-suite/work/_logs/suite-small-serial-opencode-r2.log
-- harness-suite/work/_logs/suite-small-serial-pi-r1.log
-- harness-suite/work/_logs/suite-small-window-cline-r1.log
-- harness-suite/work/_logs/suite-small-window-pi-r1.log
 - log.md
 - opencode.json
 - package.json

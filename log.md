@@ -118,3 +118,6 @@ Each entry: what happened → fix applied (or open).
 - harness-suite deletes cell worktrees on failure unless `--keep`, so a one-off failure leaves nothing to diagnose. → Open: keep failed cells by default.
   - Rerun with `--keep`: pass (141.6s), no tool errors in any T<n>.opencode.log → likely a transient provider/session error. Note: that failure got 1 attempt, i.e. no retry on an executor-level error. → Open: retry once on a non-timeout executor error.
 - Its speed fixes (one SSE reader per server, worktree exclude via `git rev-parse --git-path`) are in main. The experimental profiles (core, inline, bash, noskill, fresh) and `opencode_bash.ts` were not landed; no A/B results were saved in the repo.
+
+## 2026-09-30 repo-cleanup
+- `bench/suite/report.py` has no argparse: `--help` is ignored and RESULTS.md is rewritten from results.csv (0 rows when only results-*.csv exist) → fixed: argparse, and a 0-row run keeps an existing RESULTS.md (exit 1)

@@ -1,3 +1,0 @@
-slug,ts,size,mode,executor,rep,status,wall_s,tests_passed,tests_total,tasks_passed,tasks_total,attempts,input,output,reasoning,cache_read,cost,window_opened,watch_ok,peak_worktrees,model,harness_sha,batch_wall_s,tampered,seed,order_idx
-suite-small-serial-opencode-r1,2026-09-29T13:29:44,small,serial,opencode,1,pass,475.7,28,28,2,2,2,15763,3434,195,283079,0.0,,,,opencode,5030d80-dirty,,false,0,0
-suite-medium-serial-opencode-r1,2026-09-29T13:37:45,medium,serial,opencode,1,pass,351.1,26,26,5,5,5,27141,6168,1962,841842,0.0,,,,opencode,5030d80-dirty,,false,0,1

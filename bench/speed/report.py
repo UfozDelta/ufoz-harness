@@ -7,9 +7,9 @@ from pathlib import Path
 from statistics import median
 
 
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CSV = ROOT / "harness-speed-test" / "results.csv"
-DEFAULT_OUT = ROOT / "harness-speed-test" / "RESULTS.md"
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CSV = ROOT / "bench" / "speed" / "results.csv"
+DEFAULT_OUT = ROOT / "bench" / "speed" / "RESULTS.md"
 COLUMNS = [
     ("runs", "Runs"),
     ("pass rate", "Pass rate"),

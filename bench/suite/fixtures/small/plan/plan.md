@@ -45,7 +45,7 @@ and have no dependencies on each other.
   store; tags only remember item ids.
 - `app/routers/__init__.py` is empty. No new dependencies: fastapi 0.115.0, uvicorn 0.32.0, pytest 9.1.1,
   pydantic 2.13.4, httpx 0.28.1 are already installed.
-- The work dir is `harness-suite/work/<slug>/`; all acceptance commands run from the project root and are
+- The work dir is `bench/suite/work/<slug>/`; all acceptance commands run from the project root and are
   `cd {work} && ...` (`{work}` is substituted with the work dir path by the runner; when running a command
   by hand, replace `{work}` with the current work dir). `tests/test_items.py` is never edited.
 

@@ -1,7 +1,7 @@
 """The opencode executor: the same brief, guards and guards-only overhead, but the code is
 written by `opencode serve` over its HTTP+SSE API instead of a CLI per task.
 
-Ported from harness-speed-test/latency.py (which drives the same server for latency
+Ported from bench/speed/latency.py (which drives the same server for latency
 measurements): one warm server per run, opencode's own agent with the .pi/executor.md
 rules appended, and a task streamed to completion by watching the event bus for that
 session's idle.

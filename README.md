@@ -279,10 +279,10 @@ Under Claude Code the main session follows `CLAUDE.md` and plans with `@planner`
   then the same plan runs with the pi executor and with a Claude (Sonnet)
   executor, both with `--review`. Only who writes the code differs. Rows go to
   `.harness/bench.csv`. About $0.50 per run; run it only when you want numbers.
-- `harness-speed-test/`: `duel.py` compares opencode, pi and cline on the same model and hidden
+- `bench/speed/`: `duel.py` compares opencode, pi and cline on the same model and hidden
   tests, then `report.py` writes `RESULTS.md` from `results.csv`. `bench.py` copies the
   current on-disk tree (`git ls-files -co --exclude-standard`, skipping deleted files and
-  `bench/packages/harness-speed-test`), not HEAD, and `staged.py` honors
+  `bench/speed/`), not HEAD, and `staged.py` honors
   `HARNESS_ARM_LABEL`. Across 9 small/medium/large runs each, both passed 100%; pi's
   median was 15 s versus 38 s, with about 10x fewer input tokens and half the tool calls.
   That result is why pi became the default executor. opencode is back as an optional
@@ -292,7 +292,7 @@ Under Claude Code the main session follows `CLAUDE.md` and plans with `@planner`
   15–18 min for $1.13–$1.32, no crashes. Prior opencode K runs passed 59/59 in 25–31 min
   for $1.42–$1.61, or crashed once in 31 min for $1.95. Every pi rep missed stage 2's
   unknown-slug 404 page (`test_detail_page_unknown_slug_404`).
-- `harness-speed-test/latency.py`: measures "Reply OK" startup. `--oc-tune 0..4` walks the
+- `bench/speed/latency.py`: measures "Reply OK" startup. `--oc-tune 0..4` walks the
   opencode speedups: 1 = one warm server plus `run --attach`, 2 = plus a lean config,
   3 = plus a lean agent, 4 = warm server over HTTP with the current fixes (default agent).
   Startup medians: pi 1.71 s, opencode over HTTP 3.14 s, opencode `run --attach` 6.78 s.
@@ -353,7 +353,9 @@ opencode.json                opencode `orchestrator` agent: MAIN.md as the main 
 .harness/metrics.jsonl       per-task metrics (gitignored)
 .harness/bench.csv           --bench results (gitignored)
 .harness/bench/              lab benchmark on larger frozen tasks
-harness-speed-test/          executor duel and startup latency (duel.py, latency.py)
+bench/speed/                 executor duel and startup latency (duel.py, latency.py)
+bench/suite/                 capability matrix: executor x size x mode (suite.py)
+docs/findings.md             benchmark findings
 packages/ufoz-harness/       npm package that installs the kit into another project
 ```
 

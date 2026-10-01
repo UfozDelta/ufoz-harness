@@ -1,17 +1,19 @@
 """harness-suite report builder: results.csv -> markdown (RESULTS.md).
 
 Pure-python, never raises on missing/empty/malformed CSVs: a missing file (or
-one with no data rows) yields a "no results yet" stub.
+one with no data rows) yields a "no results yet" stub, unless RESULTS.md
+already exists, which is then kept.
 """
+import argparse
 import csv
 import math
 import statistics
 from collections import OrderedDict, defaultdict
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-RESULTS_CSV = REPO_ROOT / "harness-suite" / "results.csv"
-RESULTS_MD = REPO_ROOT / "harness-suite" / "RESULTS.md"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+RESULTS_CSV = REPO_ROOT / "bench" / "suite" / "results.csv"
+RESULTS_MD = REPO_ROOT / "bench" / "suite" / "RESULTS.md"
 
 # Mirror of suite.COLUMNS (kept standalone so report.py imports with no deps).
 COLUMNS = [
@@ -251,8 +253,8 @@ def build_report(rows):
     rows = [r for r in (rows or []) if isinstance(r, dict)]
     lines = ["# harness-suite results", ""]
     if not rows:
-        lines.append("No results yet. Run `python harness-suite/suite.py` to populate "
-                     "`harness-suite/results.csv`.")
+        lines.append("No results yet. Run `python bench/suite/suite.py` to populate "
+                     "`bench/suite/results.csv`.")
         return "\n".join(lines) + "\n"
 
     graded = _graded(rows)
@@ -293,7 +295,11 @@ def build_report(rows):
 
 
 def main(argv=None):
+    argparse.ArgumentParser(description="Rebuild RESULTS.md from results.csv.").parse_args(argv)
     rows = load_rows(RESULTS_CSV)
+    if not rows and RESULTS_MD.exists():
+        print(f"no rows in {RESULTS_CSV}; kept {RESULTS_MD}")
+        return 1
     text = build_report(rows)
     RESULTS_MD.parent.mkdir(parents=True, exist_ok=True)
     RESULTS_MD.write_text(text, encoding="utf-8")

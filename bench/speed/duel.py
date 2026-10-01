@@ -15,7 +15,7 @@ import tempfile
 import time
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 TASKS_ROOT = ROOT / ".harness" / "bench" / "tasks"
 # cline-test's client now lives in the runner (the kit ships the runner), so the bench
 # exercises the same one the executor uses. Must go on sys.path at the package root
@@ -305,7 +305,7 @@ def main(argv=None):
     parser.add_argument("--out", type=Path)
     parser.add_argument("--pi", type=Path)
     parser.add_argument("--pi-ext", type=Path)
-    parser.add_argument("--csv", type=Path, default=ROOT / "harness-speed-test" / "results.csv")
+    parser.add_argument("--csv", type=Path, default=ROOT / "bench" / "speed" / "results.csv")
     parser.add_argument("--dry", action="store_true")
     args = parser.parse_args(argv)
 

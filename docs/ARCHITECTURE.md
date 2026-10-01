@@ -194,7 +194,7 @@ denied, and every prompt sends the model, `variant` = `$HARNESS_VARIANT` (defaul
 tokens). A `question.asked` or `permission.asked` event fails the task immediately;
 finished tool calls and text are logged once; a timeout aborts the session.
 
-Why (measured in `harness-speed-test/latency.py`): without `variant` the model reasoned up
+Why (measured in `bench/speed/latency.py`): without `variant` the model reasoned up
 to ~16x more and took ~2x longer, and with the question tool allowed a session hung for
 30 min. A replacement "lean" prompt made bench task `crm` fail 0/37 (it stops when the spec
 is ambiguous), while opencode's default prompt got 37/37.

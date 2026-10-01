@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT / ".harness") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / ".harness"))
 
@@ -36,7 +36,7 @@ COLUMNS = [
 # the slug column is what load_existing_rows()/load_existing_slugs() key on.
 CSV_FIELDS = ["slug"] + COLUMNS
 
-RESULTS_CSV = REPO_ROOT / "harness-suite" / "results.csv"
+RESULTS_CSV = REPO_ROOT / "bench" / "suite" / "results.csv"
 
 
 def _thread_safe(executor: str) -> bool:
@@ -181,7 +181,7 @@ def _leftover_slugs(repo_root=REPO_ROOT):
     """Slugs of leftover suite worktrees (.worktrees/suite-*) and branches
     (harness/suite-*), from both sources, sorted."""
     repo_root = Path(repo_root)
-    sys.path.insert(0, str(repo_root / "harness-suite"))
+    sys.path.insert(0, str(repo_root / "bench" / "suite"))
     import cells as cells_mod  # noqa: WPS433 (heavy import, only here)
     slugs = set()
     worktrees = repo_root / ".worktrees"
@@ -204,7 +204,7 @@ def _leftover_slugs(repo_root=REPO_ROOT):
 
 def run_cleanup(repo_root=REPO_ROOT):
     """Clean every leftover suite cell. Runs nothing else."""
-    sys.path.insert(0, str(Path(repo_root) / "harness-suite"))
+    sys.path.insert(0, str(Path(repo_root) / "bench" / "suite"))
     import cells as cells_mod  # noqa: WPS433 (heavy import, only here)
 
     slugs = _leftover_slugs(repo_root)
@@ -244,7 +244,7 @@ def main(argv=None):
         print(f"estimated real (non-unsupported) runs: {len(planned)}")
         return 0
 
-    sys.path.insert(0, str(REPO_ROOT / "harness-suite"))
+    sys.path.insert(0, str(REPO_ROOT / "bench" / "suite"))
     import cells as cells_mod  # noqa: WPS433 (heavy import, only for real runs)
 
     prior = load_existing_rows()

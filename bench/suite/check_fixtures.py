@@ -1,8 +1,8 @@
 """Validate the harness-suite fixtures: seed must be RED under hidden tests, solution GREEN.
 
 Usage:
-    python harness-suite/check_fixtures.py            # all sizes that exist
-    python harness-suite/check_fixtures.py --size small
+    python bench/suite/check_fixtures.py            # all sizes that exist
+    python bench/suite/check_fixtures.py --size small
 """
 
 from __future__ import annotations
@@ -157,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
         sizes = [s for s in SIZES
                  if (FIXTURES / s / "seed").is_dir() and (FIXTURES / s / "hidden_tests").is_dir()]
     if not sizes:
-        print("no fixtures found under harness-suite/fixtures")
+        print("no fixtures found under bench/suite/fixtures")
         return 1
 
     TMP_ROOT.mkdir(parents=True, exist_ok=True)
