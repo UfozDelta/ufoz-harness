@@ -1,0 +1,1 @@
+{ "name": "harness-band", "version": "0.1.0", "description": "Live band above the prompt following running .harness plans", "types": "./types/index.d.ts" }

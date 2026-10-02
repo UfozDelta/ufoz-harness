@@ -121,3 +121,6 @@ Each entry: what happened → fix applied (or open).
 
 ## 2026-09-30 repo-cleanup
 - `bench/suite/report.py` has no argparse: `--help` is ignored and RESULTS.md is rewritten from results.csv (0 rows when only results-*.csv exist) → fixed: argparse, and a 0-row run keeps an existing RESULTS.md (exit 1)
+
+## 2026-10-01 harness-band
+- VS Code extension (2.1.286) never loads function hooks from `.claude/skills/harness-band`, even with `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` in global settings + window reload (no session.start marker) → Open: band is terminal-only.
