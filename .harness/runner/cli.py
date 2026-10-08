@@ -5,7 +5,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import land, pending, planner, scheduler, skills, status, watch, worktree
+from . import check, land, pending, planner, scheduler, skills, status, watch, worktree
 from .executors import get, REGISTRY
 from .lint import lint
 from .plan import Plan
@@ -56,9 +56,16 @@ def build_parser():
     ap.add_argument("--relock-only", action="store_true",
                     help="Re-record plan.lock.json (here, and in the plan's worktree if there is "
                          "one) after you edited tasks.json or a check script; run nothing.")
+    ap.add_argument("--check", metavar="DIR",
+                    help="Grade work done outside the runner in the git worktree DIR (plan files from "
+                         "this tree): grader lock, file scope, each task's acceptance run in DIR. "
+                         "Runs nothing else.")
     ap.add_argument("--land", action="store_true",
                     help="The user's command, not ours: apply the worktree's code changes to "
                          "this tree, copy its plan records, remove the worktree and its branch.")
+    ap.add_argument("--from", dest="from_dir", metavar="DIR",
+                    help="With --land: land a git worktree DIR made outside the runner (e.g. a "
+                         "Claude subagent worktree) after --check passes; only plan-listed files.")
     ap.add_argument("--lint", action="store_true",
                      help="Validate the plan and run every check on the untouched tree; run nothing else.")
     ap.add_argument("--retries", type=int, default=1,
@@ -160,10 +167,16 @@ def _run(ap, args):
         return pending.pending()
     if not args.slug:
         ap.error("slug is required")
+    if args.from_dir and not args.land:
+        ap.error("--from requires --land")
     if args.land:
+        if args.from_dir:
+            sys.exit(land.land_from(args.slug, args.from_dir))
         sys.exit(land.land(args.slug))
     if args.relock_only:
         sys.exit(relock_only(args.slug))
+    if args.check:
+        sys.exit(check.check(args.slug, args.check))
     if args.watch:
         sys.exit(watch.watch(watch_dir(args.slug)))
     if args.status:

@@ -21,6 +21,8 @@ from .base import ExecResult, Executor
 HEALTH_PROMPT = "Health check, not a task. Reply OK."
 ALLOWED_TOOLS = "Read,Edit,Write,Glob,Grep,Bash"
 USAGE_LIMIT = ("usage limit", "rate limit")
+# $ per million tokens (input, output, cache_read): the claude CLI's total_cost_usd misprices these
+RATES = {"claude-haiku-5-5": (0.10, 0.50, 0.01)}
 
 
 def _deny_bash():
@@ -37,6 +39,16 @@ def _executor_prompt(rules=None):
     text = Path(".pi/executor.md").read_text(encoding="utf-8")
     agents = Path("AGENTS.md")
     return f"{text}\n\n{agents.read_text(encoding='utf-8')}" if agents.exists() else text
+
+
+def rated_cost(model, usage):
+    """Dollar cost from the token counts at RATES (output already includes thinking), or
+    None when the model has no entry and the CLI's own cost stands."""
+    rate = RATES.get(model)
+    if rate is None:
+        return None
+    price_in, price_out, price_cache = rate
+    return (usage["input"] * price_in + usage["output"] * price_out + usage["cache_read"] * price_cache) / 1e6
 
 
 def _claude_cmd(prompt, model, session, resume, rules=None):
@@ -134,6 +146,9 @@ def run_claude_exec(brief, log, timeout, feedback=None, session=None, model="son
                     code = EXIT_TIMEOUT
                     break
         t.join(5)
+    rated = rated_cost(model, usage)
+    if rated is not None:
+        usage["cost"] = rated
     if state["limited"]:
         stop_process_tree(p)
         return EXIT_RATE_LIMIT, usage, session
