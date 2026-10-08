@@ -519,7 +519,7 @@ def _blank(cell):
 def _plan_args(cell, wt, parallel=0):
     args = [sys.executable, ".harness/run_plan.py", cell["slug"],
             "--executor", cell["executor"], "--no-worktree"]
-    if model := EXECUTOR_MODELS.get(cell["executor"]):
+    if model := os.environ.get("HARNESS_EXECUTOR_MODEL") or EXECUTOR_MODELS.get(cell["executor"]):
         args += ["--executor-model", model]
     if cell["mode"] != "window":
         args.append("--no-window")
