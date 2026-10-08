@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 320" width="960" height="320" role="img" aria-label="Runner mode: a main session (Claude, pi or opencode) decides, the planner writes the plan, run_plan.py drives a free pi or opencode executor in its own worktree, the runner checks every task, and you land the result.">
+  <style>
+    svg{--bg:#f5f6f4;--panel:#ffffff;--ink:#1c2321;--muted:#5d6864;--line:#dde2df;--accent:#1f6f5c;--free:#1f7a45;--free-bg:#e3f2e8;--grid:#e6eae7;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+    @media (prefers-color-scheme: dark){svg{--bg:#131816;--panel:#1b2220;--ink:#e4e9e6;--muted:#9aa6a1;--line:#2c3531;--accent:#5cc0a3;--free:#7fd4a0;--free-bg:#1d3226;--grid:#1c2320}}
+    .bg{fill:var(--bg)}
+    .title{fill:var(--ink);font-size:30px;font-weight:700;letter-spacing:-0.5px}
+    .title tspan{fill:var(--accent)}
+    .tag{fill:var(--muted);font-size:15px}
+    .mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+    .note{fill:var(--muted);font-size:12px}
+    .band{fill:none;stroke:var(--free);stroke-width:1.5;stroke-dasharray:3 4}
+    .chip rect{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+    .chip text{fill:var(--ink);font-size:14px;font-weight:600;text-anchor:middle}
+    .chip text.s{fill:var(--muted);font-size:11px;font-weight:400}
+    .chip.hot rect{fill:var(--free-bg);stroke:var(--free);stroke-width:2}
+    .chip.you rect{stroke:var(--accent);stroke-width:2}
+    .wire{stroke:var(--muted);stroke-width:1.5;fill:none;stroke-dasharray:4 5;animation:flow 1.2s linear infinite}
+    @keyframes flow{to{stroke-dashoffset:-18}}
+    @media (prefers-reduced-motion: reduce){.wire{animation:none}}
+  </style>
+  <rect class="bg" width="960" height="320" rx="14"/>
+  <text class="title" x="40" y="50">Runner <tspan>mode</tspan> · pi / opencode</text>
+  <text class="tag" x="40" y="76">run_plan.py drives a free executor in its own worktree. The main session can be Claude, pi or opencode.</text>
+  <rect class="band" x="24" y="96" width="912" height="112" rx="12"/>
+
+  <path class="wire" d="M180 152H230M370 152H420M560 152H610M750 152H800"/>
+  <g class="chip"><rect x="40" y="124" width="140" height="56" rx="10"/><text x="110" y="149">Decide</text><text class="s mono" x="110" y="167">Claude/pi/opencode</text></g>
+  <g class="chip"><rect x="230" y="124" width="140" height="56" rx="10"/><text x="300" y="149">Plan</text><text class="s mono" x="300" y="167">@planner · --plan</text></g>
+  <g class="chip hot"><rect x="420" y="124" width="140" height="56" rx="10"/><text x="490" y="149">Execute</text><text class="s mono" x="490" y="167">pi · opencode · $0</text></g>
+  <g class="chip"><rect x="610" y="124" width="140" height="56" rx="10"/><text x="680" y="149">Check</text><text class="s mono" x="680" y="167">retry + repair</text></g>
+  <g class="chip you"><rect x="800" y="124" width="140" height="56" rx="10"/><text x="870" y="149">Land</text><text class="s mono" x="870" y="167">--land</text></g>
+
+  <text class="note mono" x="40" y="238">• run_plan.py &lt;slug&gt; opens .worktrees/&lt;slug&gt; on branch harness/&lt;slug&gt;; several plans run at once</text>
+  <text class="note mono" x="40" y="260">• one warm executor session per plan; a task touching a file outside its list fails</text>
+  <text class="note mono" x="40" y="282">• executors: pi (default), opencode, cline, cline-acp, llama, or claude -p</text>
+  <text class="note mono" x="40" y="304">• you land and commit; no agent ever does</text>
+</svg>

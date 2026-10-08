@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="docs/hero.svg" alt="ufoz-harness: Claude plans, a free model writes the code, a runner checks every task" width="100%">
+<img src="docs/hero.svg" alt="ufoz-harness: Claude plans, a cheap executor (pi, opencode or Haiku) writes the code, a runner checks every task" width="100%">
 
 ![executor cost](https://img.shields.io/badge/executor-%240-1f7a45)
 ![main session](https://img.shields.io/badge/main%20session-Claude%20%7C%20pi%20%7C%20opencode-1f6f5c)
 ![executors](https://img.shields.io/badge/executors-6-5d6864)
 ![python](https://img.shields.io/badge/python-3%20stdlib%20only-5d6864)
 
-[Why](#why) · [Quick start](#quick-start) · [How it works](#how-it-works) · [Flags](#runner-flags) · [Architecture](docs/ARCHITECTURE.md)
+[Why](#why) · [Quick start](#quick-start) · [How it works](#how-it-works) · [Run modes](#run-modes) · [Flags](#runner-flags) · [Architecture](docs/ARCHITECTURE.md)
 
 </div>
 
@@ -26,8 +26,9 @@ the same model decides its own work is done. The harness splits those jobs.
   free model writes the code. On the staged benchmark that cut the bill 2–3x.
 - **Mistakes stay contained.** Each run gets its own git worktree, a task that touches a
   file outside its list fails, and no agent can commit. You land the result with one command.
-- **Nothing is locked in.** Three main sessions (Claude Code, pi, opencode) and six
-  executors, all behind the same brief and the same checks.
+- **Nothing is locked in.** Three main sessions (Claude Code, pi, opencode), six
+  runner executors, plus a native in-Claude executor (`@claude-executor`, Haiku by default),
+  all behind the same brief and the same checks. See [Run modes](#run-modes).
 
 <img src="docs/bench-cost.svg" alt="Staged shop bench: pure Sonnet $3.39 in 13.6 min, harness + opencode $1.18 in 22.1 min, harness + pi $1.47 in 26.4 min" width="100%">
 
@@ -75,7 +76,11 @@ every task with shell commands, so no model decides whether work passed.
   `PI_CODING_AGENT_DIR`; your `~/.pi/agent` is never touched. Free, offline, warm session,
   but only as good as the local model.
 
-All six follow the same brief and guards. pi, opencode and claude keep one warm session per
+There is also a seventh path that is not a `run_plan.py` executor: **`@claude-executor`**, a
+Claude Code subagent (Haiku by default; pass `model: sonnet|opus` to override) that edits files
+itself in a Claude worktree and runs each task's acceptance command. See [Run modes](#run-modes).
+
+All six runner executors follow the same brief and guards. pi, opencode and claude keep one warm session per
 plan (llama too, since it is pi underneath); the cline arm is fresh per task, because
 Cline's CLI cannot resume a headless session.
 The main session never writes code for delegable work, which
@@ -163,6 +168,8 @@ you read the reports and the diff, then run --land. Nobody in this chain commits
 | Flag | Does |
 |---|---|
 | `--land` | your command, not the agent's: apply a finished worktree run to this tree, copy its plan records, remove the worktree and its branch (see below) |
+| `--land --from DIR` | land work done outside the runner (a Claude subagent worktree): runs `--check` first, applies only the plan's listed files, then removes `DIR` and its branch |
+| `--check DIR` | grade a worktree `DIR` against the plan in this tree: grader lock, file scope, every task's acceptance run in `DIR`; exit 0 only if clean; runs nothing else |
 | `--lint` | validate the plan and prove every check fails; runs nothing else |
 | `--only T2` | run one task |
 | `--retries N` | executor reruns on a plain failure (default 1) |
@@ -329,9 +336,12 @@ docs/session-flows.html      start-to-finish flow for Claude Code, pi and openco
 docs/flows.html              FLOWS.md as pictures
 docs/harness-flow.svg        the data-flow diagram shown above
 docs/hero.svg, bench-cost.svg README banner and benchmark chart
+docs/mode-claude.svg         Claude mode diagram (native subagent executor)
+docs/mode-runner.svg         Runner mode diagram (pi / opencode)
 docs/harness.css             shared style for the docs pages
 .claude/settings.json        allow the runner; deny git state changes
 .claude/agents/planner.md    plan writer (sonnet)
+.claude/agents/claude-executor.md  native executor subagent (haiku default), see Run modes
 .claude/agents/reviewer.md   post-run checklist reviewer (sonnet), used by --review
 .claude/agents/validator.md  blind A/B code-quality judge (opus), used by the lab bench
 .claude/skills/              caveman, adhd, animation/design skills
@@ -375,3 +385,42 @@ packages/ufoz-harness/       npm package that installs the kit into another proj
   model itself. A small model on CPU is slow and weak: Qwen3-1.7B ran the pipeline end to end
   but failed a one-function task (it garbled file paths).
   Full form: `--executor pi|claude|opencode|cline|cline-acp|llama` (pi is the default).
+
+## Run modes
+
+Two ways to run the same plan. The plan, the acceptance commands and the rule that nobody
+commits are identical; what differs is who types the code and who enforces the guards.
+
+### Claude mode
+
+<img src="docs/mode-claude.svg" alt="Claude mode: Decide, Plan with @planner, Execute with @claude-executor, Check with --check, Land with --land --from" width="100%">
+
+Stay inside Claude Code. Once you say go, the main session spawns the `claude-executor` subagent
+(`.claude/agents/claude-executor.md`) with `isolation: "worktree"` and `run_in_background: true`,
+so it shows up in the agents panel. It defaults to Haiku; pass `model: sonnet` or `model: opus`
+for harder work. The agent reads `plan.md` and `tasks.json` by absolute path (plan files are
+untracked, so a Claude worktree branched from HEAD does not contain them), edits only each
+task's `files`, and runs each acceptance command, retrying once.
+
+```
+python .harness/run_plan.py <slug> --check <worktree>          # grade it: lock, scope, acceptance
+python .harness/run_plan.py <slug> --land --from <worktree>    # you: apply plan-listed files, drop the worktree
+```
+
+Trade-off: the runner is not driving, so there is no automatic retry-with-feedback, repair pass
+or live lock during the run. `--check` and `--land --from` apply the lock, scope and acceptance
+checks afterwards, and `--land --from` refuses anything outside the plan's file list.
+
+### Runner mode (pi / opencode)
+
+<img src="docs/mode-runner.svg" alt="Runner mode: Decide with Claude, pi or opencode, Plan, Execute with pi or opencode, Check with retry and repair, Land" width="100%">
+
+`run_plan.py <slug>` drives a free executor (pi by default, or `--executor opencode`) in its own
+`.worktrees/<slug>`. The runner does the checking itself: lock, scope, suppression guard, one
+retry with feedback, one repair pass. The main session can be Claude, pi or opencode. This is
+the mode the benchmarks measure, and it is the cheapest.
+
+```
+python .harness/run_plan.py <slug>            # pi; add --executor opencode
+python .harness/run_plan.py <slug> --land     # you
+```
