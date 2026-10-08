@@ -1,0 +1,29 @@
+{
+ "slug": "land-from",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/land.py",
+    ".harness/runner/cli.py"
+   ],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'.harness'); import inspect; from runner import land; assert list(inspect.signature(land.land_from).parameters)==['slug','directory']; assert 'land' in dir(land); print('OK')\" && python .harness/run_plan.py x --help | grep -q -- --from",
+   "expect": "OK",
+   "red_first": false,
+   "red_first_reason": "smoke"
+  },
+  {
+   "id": "T2",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    ".harness/plans/land-from/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/land-from/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8'))<=600\" && python -m pytest -q tests/test_guards.py tests/test_acceptance.py",
+   "red_first": false,
+   "red_first_reason": "summary + smoke"
+  }
+ ]
+}

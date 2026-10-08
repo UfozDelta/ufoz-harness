@@ -1,0 +1,41 @@
+{
+ "slug": "haiku-guards",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/check.py",
+    ".harness/runner/cli.py"
+   ],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'.harness'); from runner.check import scope_violations as s; assert s(['a/x.py','b.py','.harness/plans/p/r.md','.claude/w/z'],['a/x.py','c/'])==['b.py']; assert s(['c/d.py'],['c/'])==[]; print('OK')\" && python .harness/run_plan.py x --help | grep -q -- --check",
+   "expect": "OK",
+   "red_first": false,
+   "red_first_reason": "smoke"
+  },
+  {
+   "id": "T2",
+   "deps": [],
+   "files": [
+    ".harness/runner/executors/claude.py"
+   ],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'.harness'); from runner.executors.claude import rated_cost as r; u={'input':1000000,'output':1000000,'cache_read':1000000,'reasoning':5,'cost':9.0}; assert abs(r('claude-haiku-5-5',u)-0.61)<1e-9; assert r('sonnet',u) is None; print('OK')\"",
+   "expect": "OK",
+   "red_first": false,
+   "red_first_reason": "smoke"
+  },
+  {
+   "id": "T3",
+   "deps": [
+    "T1",
+    "T2"
+   ],
+   "files": [
+    ".harness/plans/haiku-guards/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/haiku-guards/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8'))<=600\" && python -m pytest -q tests/test_guards.py tests/test_acceptance.py",
+   "red_first": false,
+   "red_first_reason": "summary + smoke"
+  }
+ ]
+}

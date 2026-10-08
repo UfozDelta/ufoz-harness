@@ -124,3 +124,7 @@ Each entry: what happened → fix applied (or open).
 
 ## 2026-10-01 harness-band
 - VS Code extension (2.1.286) never loads function hooks from `.claude/skills/harness-band`, even with `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` in global settings + window reload (no session.start marker) → Open: band is terminal-only.
+
+## 2026-10-08 haiku-executor
+- Agent `isolation: "worktree"` branches from HEAD, so untracked `.harness/plans/<slug>/` is missing in the subagent's worktree. → Worked around: prompt passes the absolute main-tree plan dir; agent doc + CLAUDE.md say so. Open: no run_plan guards (scope, hash lock, retry feedback) on this path; Verify must check `git diff --stat` by hand.
+- haiku-executor e2e (plan haiku-e2e = suite small fixture, 2 tasks): both acceptance exit 0, hidden tests 39 passed, 80s, 25.5k subagent tokens.
