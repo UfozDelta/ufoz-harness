@@ -10,7 +10,8 @@ from dataclasses import dataclass, field
 
 from . import report
 from .acceptance import run_acceptance
-from .guards import attribute, marker_counts, runner_owned, snapshot, suppression_markers, written_paths
+from .guards import (GIT_MOVED, attribute, git_state, marker_counts, runner_owned, snapshot,
+                     suppression_markers, written_paths)
 from .plan import in_scope
 from .procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS
 
@@ -36,6 +37,7 @@ class _Run:
     retry_s: float = 0.0
     repairs: int = 0
     baseline: dict = field(default_factory=dict)
+    git0: tuple | None = None
 
     @property
     def timings(self):
@@ -143,6 +145,8 @@ class TaskRunner:
             stray, unattributed = attribute(stray, written_paths(plan.logs.glob(f"{t.id}.*log")))
             with self.state.state_lock:
                 self.state.unattributed.update(unattributed)
+        if st.git0 is not None and git_state() != st.git0:
+            stray.append(GIT_MOVED)
         suppressed = suppression_markers([f for f in touched if not self.owned(f)], st.baseline)
         build_line = self._build_failure() if acceptance_ok and t.build_gate else None
         if repair:
@@ -193,6 +197,7 @@ class TaskRunner:
         # written before the snapshot so it never counts as an out-of-scope edit
         rep.write_text(report.running(), encoding="utf-8")
         before = snapshot()
+        st.git0 = git_state()
         # suppression baseline: every existing file the task may touch (directory entries
         # expand to the files under them)
         scope = repair_allowed | self.state.co_files.get(tid, set())

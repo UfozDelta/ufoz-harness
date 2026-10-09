@@ -63,6 +63,9 @@ def build_parser():
     ap.add_argument("--land", action="store_true",
                     help="The user's command, not ours: apply the worktree's code changes to "
                          "this tree, copy its plan records, remove the worktree and its branch.")
+    ap.add_argument("--yes", action="store_true",
+                    help="With --land: skip the interactive-terminal requirement (CI). Without it "
+                         "--land refuses when stdin is not a terminal, e.g. under an agent's Bash tool.")
     ap.add_argument("--from", dest="from_dir", metavar="DIR",
                     help="With --land: land a git worktree DIR made outside the runner (e.g. a "
                          "Claude subagent worktree) after --check passes; only plan-listed files.")
@@ -101,6 +104,18 @@ def build_parser():
     ap.add_argument("--planner-model", default=os.environ.get("HARNESS_PLANNER_MODEL"),
                     help="Model for --planner (default: sonnet for claude, else the pi/opencode default).")
     return ap
+
+
+def interactive():
+    """True when stdin is a real terminal. isatty() alone is wrong on Windows: the NUL device
+    reports True, so there stdin must be a console (GetConsoleMode succeeds only on one)."""
+    if not sys.stdin or not sys.stdin.isatty():
+        return False
+    if sys.platform != "win32":
+        return True
+    import ctypes
+    handle = ctypes.windll.kernel32.GetStdHandle(-10)  # STD_INPUT_HANDLE
+    return bool(ctypes.windll.kernel32.GetConsoleMode(handle, ctypes.byref(ctypes.c_ulong())))
 
 
 def use_worktree(args):
@@ -169,6 +184,9 @@ def _run(ap, args):
         ap.error("slug is required")
     if args.from_dir and not args.land:
         ap.error("--from requires --land")
+    if args.land and not args.yes and not interactive():
+        print("--land is your command: run it in a terminal, or pass --yes")
+        sys.exit(1)
     if args.land:
         if args.from_dir:
             sys.exit(land.land_from(args.slug, args.from_dir))

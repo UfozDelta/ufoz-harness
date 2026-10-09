@@ -30,6 +30,20 @@ def snapshot():
     return snap
 
 
+GIT_MOVED = "<git HEAD or branch changed>"
+
+
+def git_state():
+    """(HEAD sha, branch ref) of the current tree. A task must not move either: a commit,
+    reset or branch switch can leave every file hash identical, so snapshot() misses it.
+    None outside a git repo."""
+    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False)
+    if head.returncode != 0:
+        return None
+    ref = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], capture_output=True, text=True, check=False)
+    return head.stdout.strip(), ref.stdout.strip()
+
+
 def lock_hashes(plan):
     """sha256 of every file that decides pass/fail: tasks.json + checks/*.py.
     The executor must never be able to edit its own grader."""

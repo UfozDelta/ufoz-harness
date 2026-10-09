@@ -11,7 +11,8 @@
     "git clean",
     "git rebase",
     "git merge",
-    "git branch"
+    "git branch",
+    "git worktree"
   ],
   "external_directory": "deny"
 }
