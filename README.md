@@ -327,6 +327,13 @@ change. A real env var already set in your shell always wins over the same key i
 
 ## Test and measure
 
+<img src="docs/bench-flow.svg" alt="Benchmark cell flow: Seed, Project, Plan, Run, Land, Score" width="100%">
+
+`bench/suite/suite.py` runs a matrix of executor x size x mode x rep. Each cell is an isolated temp
+project (committed seed, kit installed, plan at the root), run and landed like a real user's work,
+then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-source planner` has
+`@planner` write the plan instead of using the fixture's; `--legacy` keeps the old lab-worktree path.
+
 - `python .harness/selftest.py`: checks python, git, pi and the executor model, then runs a
   one-task smoke plan in a throwaway temp repo. $0; never touches this project.
 - `python .harness/selftest.py --bench`: fair A/B. `@planner` plans once, then the same plan runs
@@ -413,6 +420,7 @@ docs/harness-flow.svg        the data-flow diagram shown above
 docs/hero.svg, bench-cost.svg README banner and benchmark chart
 docs/mode-claude.svg         Claude mode diagram (native subagent executor)
 docs/mode-runner.svg         Runner mode diagram (pi / opencode)
+docs/bench-flow.svg          Benchmark cell flow diagram
 docs/harness.css             shared style for the docs pages
 .claude/settings.json        allow the runner (no denies; see settings.strict.json)
 .claude/settings.strict.json optional: the same allows plus hard git/--land denies

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 330" width="960" height="330" role="img" aria-label="Benchmark cell flow: a fixture seed becomes a temp git project with the kit installed, a plan comes from the fixture or the planner, the executor runs, the result is landed and scored on hidden tests, the seed's own tests and a tamper diff.">
+  <style>
+    svg{--bg:#f5f6f4;--panel:#ffffff;--ink:#1c2321;--muted:#5d6864;--line:#dde2df;--accent:#1f6f5c;--free:#1f7a45;--free-bg:#e3f2e8;--grid:#e6eae7;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+    @media (prefers-color-scheme: dark){svg{--bg:#131816;--panel:#1b2220;--ink:#e4e9e6;--muted:#9aa6a1;--line:#2c3531;--accent:#5cc0a3;--free:#7fd4a0;--free-bg:#1d3226;--grid:#1c2320}}
+    .bg{fill:var(--bg)}
+    .title{fill:var(--ink);font-size:30px;font-weight:700;letter-spacing:-0.5px}
+    .title tspan{fill:var(--accent)}
+    .tag{fill:var(--muted);font-size:15px}
+    .mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+    .note{fill:var(--muted);font-size:12px}
+    .band{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 4}
+    .chip rect{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+    .chip text{fill:var(--ink);font-size:14px;font-weight:600;text-anchor:middle}
+    .chip text.s{fill:var(--muted);font-size:11px;font-weight:400}
+    .chip.hot rect{fill:var(--free-bg);stroke:var(--free);stroke-width:2}
+    .chip.you rect{stroke:var(--accent);stroke-width:2}
+    .wire{stroke:var(--muted);stroke-width:1.5;fill:none;stroke-dasharray:4 5;animation:flow 1.2s linear infinite}
+    @keyframes flow{to{stroke-dashoffset:-18}}
+    @media (prefers-reduced-motion: reduce){.wire{animation:none}}
+  </style>
+  <rect class="bg" width="960" height="330" rx="14"/>
+  <text class="title" x="40" y="50">Benchmark <tspan>cell</tspan></text>
+  <text class="tag" x="40" y="76">One cell = one executor on one fixture, run the way a real user would run it.</text>
+  <rect class="band" x="24" y="96" width="912" height="112" rx="12"/>
+
+  <path class="wire" d="M165 152H195M320 152H350M475 152H505M630 152H660M785 152H815"/>
+  <g class="chip"><rect x="40" y="124" width="125" height="56" rx="10"/><text x="102" y="149">Seed</text><text class="s mono" x="102" y="167">fixture + tests</text></g>
+  <g class="chip"><rect x="195" y="124" width="125" height="56" rx="10"/><text x="257" y="149">Project</text><text class="s mono" x="257" y="167">git init + kit</text></g>
+  <g class="chip"><rect x="350" y="124" width="125" height="56" rx="10"/><text x="412" y="149">Plan</text><text class="s mono" x="412" y="167">fixture | planner</text></g>
+  <g class="chip hot"><rect x="505" y="124" width="125" height="56" rx="10"/><text x="567" y="149">Run</text><text class="s mono" x="567" y="167">executor, worktree</text></g>
+  <g class="chip"><rect x="660" y="124" width="125" height="56" rx="10"/><text x="722" y="149">Land</text><text class="s mono" x="722" y="167">--land --yes</text></g>
+  <g class="chip you"><rect x="815" y="124" width="125" height="56" rx="10"/><text x="877" y="149">Score</text><text class="s mono" x="877" y="167">hidden + regress</text></g>
+
+  <text class="note mono" x="40" y="238">• a temp project in %TEMP%, built like a user's: committed seed, kit installed by the real installer, no lab repo</text>
+  <text class="note mono" x="40" y="260">• --plan-source planner: Sonnet writes the plan once per spec and kit hash, cached; its cost is reported apart</text>
+  <text class="note mono" x="40" y="282">• score = hidden tests + the seed's own tests + a tamper diff; rows carry git sha, kit_hash, fixture_hash</text>
+  <text class="note mono" x="40" y="304">• harness_fail and infra_error stay out of pass rates; the report shows the latest row per cell, newest sha</text>
+</svg>
