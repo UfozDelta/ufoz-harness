@@ -1,0 +1,104 @@
+{
+  "slug": "bench-isolate",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [
+        "packages/ufoz-harness/export_kit.py"
+      ],
+      "acceptance": "python -c \"import sys; sys.path.insert(0,'packages/ufoz-harness'); import export_kit as e; assert str(e.parse_args(['--kit-dir','x']).kit_dir)=='x'; assert e.parse_args([]).kit_dir is None\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T2",
+      "deps": [],
+      "files": [
+        "bench/suite/fixtures/small/plan_project/plan.md",
+        "bench/suite/fixtures/small/plan_project/tasks.json",
+        "bench/suite/fixtures/medium/plan_project/plan.md",
+        "bench/suite/fixtures/medium/plan_project/tasks.json",
+        "bench/suite/fixtures/large/plan_project/plan.md",
+        "bench/suite/fixtures/large/plan_project/tasks.json"
+      ],
+      "acceptance": "python .harness/plans/bench-isolate/checks/check_t2.py",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T3",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        "bench/suite/cells.py"
+      ],
+      "acceptance": "python .harness/plans/bench-isolate/checks/check_t3.py",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T4",
+      "deps": [
+        "T2",
+        "T3"
+      ],
+      "files": [
+        "bench/suite/cells.py"
+      ],
+      "acceptance": "python .harness/plans/bench-isolate/checks/check_t4.py",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T5",
+      "deps": [
+        "T4"
+      ],
+      "files": [
+        "bench/suite/cells.py"
+      ],
+      "acceptance": "python .harness/plans/bench-isolate/checks/check_t5.py",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T6",
+      "deps": [],
+      "files": [
+        "bench/suite/suite.py",
+        "bench/suite/report.py"
+      ],
+      "acceptance": "python .harness/plans/bench-isolate/checks/check_t6.py",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T7",
+      "deps": [
+        "T5",
+        "T6"
+      ],
+      "files": [
+        ".gitignore",
+        "tests/test_harness_suite.py"
+      ],
+      "acceptance": "python -m pytest -q tests/test_harness_suite.py -k \"make_project_commits or plan_cache_hit_once or tampered_git_flags or report_regressions\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T8",
+      "deps": [
+        "T7"
+      ],
+      "files": [
+        ".harness/plans/bench-isolate/SUMMARY.md"
+      ],
+      "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/bench-isolate/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    }
+  ]
+}
