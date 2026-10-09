@@ -63,12 +63,17 @@ def _other_plan(f, plan):
     return bool(tail) and f"{root}/{head}" != plan.as_posix()
 
 
+# `opencode serve` rewrites its own plugin manifest and lockfile when it boots; not the executor's work.
+OPENCODE_OWNED = (".opencode/package.json", ".opencode/package-lock.json")
+
+
 def runner_owned(f, run_lock, plan, metrics):
     """reports, feedback, logs, metrics, other plans' files, and TypeScript buildinfo the
     runner itself owns"""
     return (f == run_lock.as_posix() or f.startswith(f"{plan.as_posix()}/logs/") or f == metrics.as_posix()
             or _other_plan(f, plan)
             or f.endswith(".tsbuildinfo")
+            or f in OPENCODE_OWNED
             or (f.startswith(f"{plan.as_posix()}/items/")
                 and (f.endswith((".report.md", ".feedback.md", ".metrics.json", ".quirks.md"))
                      or re.search(r"\.repair\d+\.md$", f))))

@@ -59,3 +59,12 @@ def test_lock_hashes_covers_tasks_and_checks(tmp_path):
                            (plan / "checks" / "check_t1.py").as_posix()}
     for path, digest in hashes.items():
         assert digest == hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def test_opencode_bootstrap_files_are_runner_owned():
+    plan = Path("plans/slug")
+    run_lock, metrics = plan / "plan.lock.json", Path("metrics.jsonl")
+    assert guards.runner_owned(".opencode/package.json", run_lock, plan, metrics)
+    assert guards.runner_owned(".opencode/package-lock.json", run_lock, plan, metrics)
+    assert not guards.runner_owned(".opencode/agent/x.md", run_lock, plan, metrics)
+    assert not guards.runner_owned("package.json", run_lock, plan, metrics)
