@@ -1,0 +1,5 @@
+capability = "multi-file-feature"
+lang = "typescript"
+source = "authored"
+licence = "MIT"
+description = "Large multi-package TypeScript feature task."

@@ -712,3 +712,116 @@ def test_plan_cost_reads_the_planners_nested_cost(tmp_path):
     assert cells._plan_cost(tmp_path) == 0.1234
     (tmp_path / "planner.json").write_text(json.dumps({"cost": 0.5}), encoding="utf-8")
     assert cells._plan_cost(tmp_path) == 0.5
+
+
+# ------------------------------------------------------------- task registry
+def test_discover_tasks_legacy_and_toml(tmp_path, monkeypatch):
+    import tasks
+    (tmp_path / "plain").mkdir()
+    (tmp_path / "_hidden").mkdir()
+    (tmp_path / "withtoml" / "plan_project").mkdir(parents=True)
+    (tmp_path / "withtoml" / "task.toml").write_text(
+        'capability = "bug-fix-prose"\nlang = "python"\nlicence = "MIT"\n', encoding="utf-8")
+    (tmp_path / "bad").mkdir()
+    (tmp_path / "bad" / "task.toml").write_text("capability = [", encoding="utf-8")
+    monkeypatch.setattr(tasks, "FIXTURES", tmp_path)
+    with pytest.raises(ValueError, match="task.toml"):
+        tasks.discover_tasks()
+    (tmp_path / "bad" / "task.toml").unlink()
+    found = tasks.discover_tasks()
+    assert set(found) == {"plain", "withtoml", "bad"}
+    assert found["plain"]["capability"] == "multi-file-feature"
+    assert found["plain"]["has_plan_project"] is False
+    assert found["withtoml"]["capability"] == "bug-fix-prose"
+    assert found["withtoml"]["lang"] == "python"
+    assert found["withtoml"]["has_plan_project"] is True
+
+
+def test_parse_arms_and_slugs():
+    import tasks
+    assert tasks.parse_arms("pi:a/b,claude") == [("pi", "a/b"), ("claude", "")]
+    assert tasks.model_slug("opencode/Muse Spark-1.3") == "opencode-muse-spark-1-3"
+    assert tasks.cell_slug("small", "serial", "pi", "", 1) == "suite-small-serial-pi-r1"
+    assert tasks.cell_slug("small", "serial", "pi", "opencode/x-free", 2) \
+        == "suite-small-serial-pi-opencode-x-free-r2"
+    rows = build_matrix(["small"], ["serial"], [("pi", "m/x"), "claude"], reps=1)
+    assert {r["slug"] for r in rows} == {"suite-small-serial-pi-m-x-r1", "suite-small-serial-claude-r1"}
+    assert {r["model"] for r in rows} == {"m/x", ""}
+
+
+def test_plan_args_model_wins_over_env(monkeypatch):
+    import cells
+    monkeypatch.setenv("HARNESS_EXECUTOR_MODEL", "env/model")
+    cell = {"slug": "s", "executor": "pi", "mode": "serial"}
+    args = cells._plan_args(dict(cell, model="cell/model"), Path("."))
+    assert args[args.index("--executor-model") + 1] == "cell/model"
+    args = cells._plan_args(cell, Path("."))
+    assert args[args.index("--executor-model") + 1] == "env/model"
+    assert cells.is_cell_slug("suite-small-serial-pi-cell-model-r1")
+    assert not cells.is_cell_slug("suite-fixes")
+
+
+def test_planner_forced_without_plan_project(tmp_path, monkeypatch, capsys):
+    import cells
+    meta = {"capability": "multi-file-feature", "has_plan_project": False}
+    monkeypatch.setattr(suite, "TASKS", {"x": dict(meta, id="x")})
+    monkeypatch.setattr(suite, "SIZES", ["x"])
+    seen = []
+    real = suite.build_matrix
+
+    def spy(*a, **kw):
+        seen.extend(real(*a, **kw))
+        return seen
+
+    monkeypatch.setattr(suite, "build_matrix", spy)
+    assert suite.main(["--dry", "--tasks", "x", "--modes", "serial", "--executors", "pi",
+                       "--reps", "1"]) == 0
+    assert [c["plan_source"] for c in seen] == ["planner"]
+    with pytest.raises(cells.ProjectError, match="use --plan-source planner"):
+        cells.plan_for_project({"size": "nosuch", "slug": "s"}, tmp_path)
+
+
+def test_report_first_try_and_capability():
+    base = {c: "" for c in report.COLUMNS}
+    rows = [
+        dict(base, size="t", mode="serial", executor="pi", model="m1", rep="1", status="pass",
+             attempts="1", tasks_total="1", capability="bug-fix-prose"),
+        dict(base, size="t", mode="serial", executor="pi", model="m1", rep="2", status="pass",
+             attempts="2", tasks_total="1", capability="bug-fix-prose"),
+        dict(base, size="t", mode="serial", executor="claude", model="claude", rep="1",
+             status="pass", attempts="1", tasks_total="1"),
+    ]
+    assert report.first_try(rows[0]) and not report.first_try(rows[1])
+    assert not report.first_try(dict(rows[0], attempts=""))
+    assert report.arm_label(rows[0]) == "pi:m1" and report.arm_label(rows[2]) == "claude"
+    out = report.build_report(rows)
+    assert "## Per capability" in out and "| bug-fix-prose | pi:m1 | 2 | 50% | 100% |" in out
+    assert "| ? | claude | 1 | 100% |" in out
+
+
+def test_short_slug_keeps_cell_shape_and_stays_short():
+    import sys
+    sys.path.insert(0, "bench/suite")
+    import cells
+    import tasks
+    long = tasks.cell_slug("fix-from-prose", "serial", "opencode", "opencode/muse-spark-1.3-contributor-free", 1)
+    cell = {"slug": long, "size": "fix-from-prose", "mode": "serial", "executor": "opencode", "rep": 1}
+    short = cells._short_slug(cell)
+    assert len(short) <= 48 and cells.is_cell_slug(short)
+    assert short == cells._short_slug(cell) and short != cells._short_slug({**cell, "slug": long + "x"})
+    small = {"slug": "suite-small-serial-pi-r1", "size": "small", "mode": "serial", "executor": "pi", "rep": 1}
+    assert cells._short_slug(small) == "suite-small-serial-pi-r1"
+
+
+def test_rewrite_slug_points_a_cached_plan_at_the_new_cell(tmp_path):
+    import sys
+    sys.path.insert(0, "bench/suite")
+    import cells
+    (tmp_path / "checks").mkdir()
+    (tmp_path / "plan.md").write_text("write .harness/plans/OLD/SUMMARY.md", encoding="utf-8")
+    (tmp_path / "tasks.json").write_text('{"slug": "OLD", "acceptance": ".harness/plans/OLD/SUMMARY.md"}', encoding="utf-8")
+    (tmp_path / "checks" / "check_t1.py").write_text("P = '.harness/plans/OLD'", encoding="utf-8")
+    cells._rewrite_slug(tmp_path, "OLD", "NEW")
+    for name in ("plan.md", "tasks.json", "checks/check_t1.py"):
+        text = (tmp_path / name).read_text(encoding="utf-8")
+        assert "NEW" in text and "OLD" not in text

@@ -23,7 +23,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT / ".harness") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / ".harness"))
 
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from runner import worktree  # noqa: E402
+from tasks import cell_slug  # noqa: E402
 
 SUITE_DIR = "bench/suite"
 WORK_PREFIX = f"{SUITE_DIR}/work"
@@ -31,7 +35,7 @@ TEMP_ROOT = Path(tempfile.gettempdir()) / "ufoz-bench"
 PLAN_CACHE = Path(REPO_ROOT) / "bench/suite/plan_cache"
 SIZES = ("small", "medium", "large")
 # only names build_matrix makes; plans like `suite-fixes` share the prefix and must never match
-CELL_SLUG = re.compile(r"^suite-(small|medium|large)-(serial|parallel|multi|window)-[a-z][a-z-]*-r\d+$")
+CELL_SLUG = re.compile(r"^suite-[a-z0-9][a-z0-9-]*-(serial|parallel|multi|window)-[a-z][a-z0-9-]*-r\d+$")
 
 
 def is_cell_slug(name):
@@ -606,7 +610,8 @@ def _blank(cell):
                 "tests_total": "", "attempts": "", "input": "", "output": "",
                 "reasoning": "", "cache_read": "", "cost": "", "window_opened": "",
                 "watch_ok": "", "peak_worktrees": "",
-                "model": os.environ.get("HARNESS_EXECUTOR_MODEL", cell["executor"]),
+                "model": (cell.get("model") or os.environ.get("HARNESS_EXECUTOR_MODEL")
+                          or EXECUTOR_MODELS.get(cell["executor"]) or cell["executor"]),
                 "harness_sha": "", "batch_wall_s": "", "tampered": "",
                 "fixture_hash": _fixture_hash(cell["size"]),
                 "plan_source": cell.get("plan_source", "fixture"),
@@ -629,7 +634,8 @@ def _plan_args(cell, wt, parallel=0, isolated=False):
     args = [sys.executable, ".harness/run_plan.py", cell["slug"], "--executor", cell["executor"]]
     if not isolated:
         args.append("--no-worktree")
-    if model := os.environ.get("HARNESS_EXECUTOR_MODEL") or EXECUTOR_MODELS.get(cell["executor"]):
+    if model := (cell.get("model") or os.environ.get("HARNESS_EXECUTOR_MODEL")
+                 or EXECUTOR_MODELS.get(cell["executor"])):
         args += ["--executor-model", model]
     if cell["mode"] != "window":
         args.append("--no-window")
@@ -719,7 +725,8 @@ def _run_multi(cell, repo_root, cell_timeout, keep=False):
     running = {}
     for size in SIZES:
         sub = dict(cell, size=size,
-                   slug=f"suite-{size}-{cell['mode']}-{cell['executor']}-r{cell['rep']}")
+                   slug=cell_slug(size, cell["mode"], cell["executor"], cell.get("model", ""),
+                                  cell["rep"]))
         wt = prepare_cell(sub, repo_root)
         args = _plan_args(sub, wt)
         fh = (log_dir / f"{sub['slug']}.log").open("w", encoding="utf-8")
@@ -846,6 +853,19 @@ def _preserve_project(cell, repo_root):
         _copy_tree(src / name, dst / name)
 
 
+MAX_FS_SLUG = 40
+
+
+def _short_slug(cell):
+    """The slug itself when short; else suite-<task>-<mode>-<exec>-<hash>-r<rep>, still a cell slug."""
+    slug = cell["slug"]
+    if len(slug) <= MAX_FS_SLUG:
+        return slug
+    digest = hashlib.sha1(slug.encode("utf-8")).hexdigest()[:6]
+    task = cell["size"][:12].rstrip("-")
+    return f"suite-{task}-{cell['mode']}-{cell['executor']}-{digest}-r{cell['rep']}"
+
+
 def run_cell(cell, repo_root=REPO_ROOT, cell_timeout=1800, keep=False):
     """Run one cell in its own temp project. Returns its row (a list of rows for legacy multi)."""
     repo_root = Path(repo_root)
@@ -854,8 +874,14 @@ def run_cell(cell, repo_root=REPO_ROOT, cell_timeout=1800, keep=False):
     if cell.get("mode") == "multi":
         print("  cells: mode multi still runs on the legacy lab worktree path")
         return _run_multi(cell, repo_root, cell_timeout, keep=keep)
+    # The real slug stays the results key; the filesystem (project dir, worktree, branch, plan
+    # dir) uses a short one, because Windows paths + the kit's deep skill dirs overflow 260 chars
+    # once a model name is in the slug.
+    orig_slug = cell["slug"]
+    cell = {**cell, "slug": _short_slug(cell)}
     try:
         row = _run_project(cell, repo_root, cell_timeout)
+        row["slug"] = orig_slug
         if not keep and row.get("status") != "pass" and cell.get("project"):
             _preserve_project(cell, repo_root)
         return row
@@ -973,11 +999,11 @@ def ensure_kit(repo_root=REPO_ROOT):
 
 
 def node_modules_cache(size, repo_root=REPO_ROOT):
-    if size == "small":
-        return None
     seed = Path(repo_root) / SUITE_DIR / "fixtures" / size / "seed"
     base = seed / "web" if size == "large" else seed
     lock = base / "package-lock.json"
+    if not lock.is_file():
+        return None
     key = hashlib.sha256(lock.read_bytes()).hexdigest()[:12]
     cache = TEMP_ROOT / "_nm" / key
     if not (cache / "node_modules").is_dir():
@@ -1068,6 +1094,18 @@ def cleanup_project(cell):
     _wipe(path)
 
 
+def _rewrite_slug(plan_dir, old, new):
+    """A cached plan carries the slug of the cell that generated it in its paths and acceptance
+    commands (SUMMARY.md path, log paths); point them at this cell's plan dir."""
+    plan_dir = Path(plan_dir)
+    files = [plan_dir / "plan.md", plan_dir / "tasks.json", *sorted((plan_dir / "checks").glob("*.py"))]
+    for path in files:
+        if path.is_file():
+            text = path.read_text(encoding="utf-8")
+            if old in text:
+                path.write_text(text.replace(old, new), encoding="utf-8")
+
+
 def _retag_plan(plan_dir, slug):
     path = plan_dir / "tasks.json"
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -1097,6 +1135,9 @@ def _planner_plan(cell, project, repo_root, kit_hash, runner):
         for name in ("plan.md", "tasks.json"):
             shutil.copy2(cache / name, dst / name)
         _copy_tree(cache / "checks", dst / "checks")
+        old = json.loads((cache / "meta.json").read_text(encoding="utf-8")).get("slug")
+        if old and old != slug:
+            _rewrite_slug(dst, old, slug)
         _retag_plan(dst, slug)
         return 0.0
 
@@ -1134,7 +1175,7 @@ def plan_for_project(cell, project, repo_root=REPO_ROOT, kit_hash="", runner=sub
     else:
         src = repo_root / SUITE_DIR / "fixtures" / size / "plan_project"
         if not src.is_dir():
-            raise ProjectError(f"missing fixture plan {src}")
+            raise ProjectError(f"missing fixture plan {src}; use --plan-source planner")
         _copy_files(src, dst)
         _retag_plan(dst, slug)
         cost = 0.0

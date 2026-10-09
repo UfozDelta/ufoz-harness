@@ -23,6 +23,7 @@ COLUMNS = [
     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
     "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
     "plan_source", "planner", "plan_cost", "regression_passed", "regression_total", "kit_hash",
+    "capability",
 ]
 
 TOKEN_COLUMNS = ["input", "output", "reasoning", "cache_read"]
@@ -99,10 +100,25 @@ def latest_per_cell(rows):
     """Last row in file order per (size, mode, executor, rep): a re-run supersedes the old row."""
     latest = {}
     for row in rows or []:
-        key = (row.get("size"), row.get("mode"), row.get("executor"), row.get("rep"))
+        key = (row.get("size"), row.get("mode"), row.get("executor"), row.get("model"),
+               row.get("rep"))
         latest.pop(key, None)
         latest[key] = row
     return list(latest.values())
+
+
+def arm_label(row):
+    """`executor` when the model is empty or equals it, else `executor:model`."""
+    executor, model = row.get("executor") or "?", row.get("model") or ""
+    return executor if not model or model == executor else f"{executor}:{model}"
+
+
+def first_try(row):
+    """Passed with no more attempts than tasks (no retry or repair pass)."""
+    if row.get("status") != "pass":
+        return False
+    attempts, total = _num(row.get("attempts")), _num(row.get("tasks_total"))
+    return attempts is not None and total is not None and attempts <= total
 
 
 def _newest_sha(rows):
@@ -144,8 +160,8 @@ def _regressions_cell(rows):
 def _grid_table(cells, k=3):
     k = max(1, _int(k, 1))
     lines = [
-        "| executor | size | mode | n | pass@1 | pass^{k} | wilson95 | median wall_s | cost/task | tokens/task | regressions |".format(k=k),
-        "|---|---|---|---|---|---|---|---|---|---|---|",
+        "| executor | size | mode | n | pass@1 | first_try | pass^{k} | wilson95 | median wall_s | cost/task | tokens/task | regressions |".format(k=k),
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for (executor, size, mode), rows in cells.items():
         graded = _graded(rows)
@@ -154,7 +170,7 @@ def _grid_table(cells, k=3):
         rate, low, high = wilson_ci(passes, n)
         fams = defaultdict(list)
         for r in graded:
-            fams[f"{r.get('size')}-{r.get('mode')}-{r.get('executor')}"].append(r)
+            fams[f"{r.get('size')}-{r.get('mode')}-{arm_label(r)}"].append(r)
         all3 = sum(1 for f in fams.values()
                    if f and all(x.get("status") == "pass" for x in f))
         if fams:
@@ -167,10 +183,12 @@ def _grid_table(cells, k=3):
         total_tokens = sum(sum(_int(r.get(c)) for c in TOKEN_COLUMNS) for r in solved)
         cost_per = total_cost / len(solved) if solved else None
         tok_per = total_tokens / len(solved) if solved else None
+        ft = sum(1 for r in graded if first_try(r))
         lines.append(
-            "| {e} | {s} | {m} | {n} | {rate} | {p3} | [{lo}, {hi}] | {wall} | {cost} | {tok} | {reg} |".format(
+            "| {e} | {s} | {m} | {n} | {rate} | {ft} | {p3} | [{lo}, {hi}] | {wall} | {cost} | {tok} | {reg} |".format(
                 e=executor, s=size, m=mode, n=n,
                 rate=f"{rate * 100:.0f}%" if n else "-",
+                ft=f"{ft / n * 100:.0f}%" if n else "-",
                 p3=passk,
                 lo=_fmt(low * 100, "{:.0f}%"), hi=_fmt(high * 100, "{:.0f}%"),
                 wall=_fmt(_median(walls), "{:.1f}"),
@@ -179,6 +197,27 @@ def _grid_table(cells, k=3):
                 reg=_regressions_cell(graded),
             )
         )
+    return lines
+
+
+def _scorecard(graded, field):
+    """`field` (capability or size) x arm: n, first_try, pass-after-retry, Wilson 95%."""
+    lines = [
+        f"| {field} | arm | n | first_try | pass-after-retry | wilson95 |",
+        "|---|---|---|---|---|---|",
+    ]
+    groups = defaultdict(list)
+    for row in graded:
+        groups[(row.get(field) or "?", arm_label(row))].append(row)
+    for key in sorted(groups):
+        rows = groups[key]
+        n = len(rows)
+        passes = sum(1 for r in rows if r.get("status") == "pass")
+        ft = sum(1 for r in rows if first_try(r))
+        rate, low, high = wilson_ci(passes, n)
+        lines.append("| {f} | {a} | {n} | {ft} | {p} | [{lo}, {hi}] |".format(
+            f=key[0], a=key[1], n=n, ft=f"{ft / n * 100:.0f}%",
+            p=f"{rate * 100:.0f}%", lo=_fmt(low * 100, "{:.0f}%"), hi=_fmt(high * 100, "{:.0f}%")))
     return lines
 
 
@@ -319,11 +358,20 @@ def build_report(rows, all_shas=False):
     lines.append("")
     grouped = defaultdict(list)
     for row in graded:
-        grouped[(row.get("executor") or "?", row.get("size") or "?", row.get("mode") or "?")].append(row)
+        grouped[(arm_label(row), row.get("size") or "?", row.get("mode") or "?")].append(row)
     ordered = OrderedDict()
     for key in sorted(grouped, key=lambda k: tuple(str(x) for x in k)):
         ordered[key] = grouped[key]
     lines.extend(_grid_table(ordered, _max_rep(rows)))
+    lines.append("")
+
+    lines.append("## Per capability")
+    lines.append("")
+    lines.extend(_scorecard(graded, "capability"))
+    lines.append("")
+    lines.append("## Per task")
+    lines.append("")
+    lines.extend(_scorecard(graded, "size"))
     lines.append("")
 
     lines.append("## Parallel speedup and multi overhead")

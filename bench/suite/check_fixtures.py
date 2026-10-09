@@ -1,7 +1,7 @@
 """Validate the harness-suite fixtures: seed must be RED under hidden tests, solution GREEN.
 
 Usage:
-    python bench/suite/check_fixtures.py            # all sizes that exist
+    python bench/suite/check_fixtures.py            # every task dir with seed/ and hidden_tests/
     python bench/suite/check_fixtures.py --size small
 """
 
@@ -17,7 +17,6 @@ from pathlib import Path
 
 SUITE = Path(__file__).resolve().parent
 FIXTURES = SUITE / "fixtures"
-SIZES = ["small", "medium", "large"]
 TMP_ROOT = SUITE / ".check-tmp"
 CMD_TIMEOUT = 600
 
@@ -216,18 +215,22 @@ def main(argv: list[str] | None = None) -> int:
             pass
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--size", choices=SIZES,
-                        help="only check this size (default: every size that exists)")
+    parser.add_argument("--size",
+                        help="only check this task id (default: every task that has seed/ and hidden_tests/)")
     parser.add_argument("--repeat", type=int, default=5,
                         help="GREEN runs per size that must agree (default 5, min 1)")
     args = parser.parse_args(argv)
     repeat = max(1, args.repeat)
 
     if args.size:
+        if not (FIXTURES / args.size).is_dir():
+            print(f"unknown task: {args.size}")
+            return 1
         sizes = [args.size]
     else:
-        sizes = [s for s in SIZES
-                 if (FIXTURES / s / "seed").is_dir() and (FIXTURES / s / "hidden_tests").is_dir()]
+        sizes = [d.name for d in sorted(FIXTURES.iterdir())
+                 if d.is_dir() and d.name[0] not in "_."
+                 and (d / "seed").is_dir() and (d / "hidden_tests").is_dir()]
     if not sizes:
         print("no fixtures found under bench/suite/fixtures")
         return 1

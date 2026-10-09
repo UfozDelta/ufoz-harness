@@ -1,0 +1,5 @@
+capability = "ambiguity"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Add a slugify helper from an underspecified request."

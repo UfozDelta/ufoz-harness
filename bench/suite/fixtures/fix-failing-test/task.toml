@@ -1,0 +1,5 @@
+capability = "bug-fix-test-given"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Fix a greedy word-wrap boundary bug; a failing test is given."

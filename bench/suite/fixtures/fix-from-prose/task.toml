@@ -1,0 +1,5 @@
+capability = "bug-fix-prose"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Fix money half-rounding from a prose symptom report."

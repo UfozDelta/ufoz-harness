@@ -1,0 +1,5 @@
+capability = "refactor"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Split a mixed log-report module into parse, summarize and render."

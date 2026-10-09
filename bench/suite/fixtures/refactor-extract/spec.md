@@ -1,0 +1,3 @@
+# Spec (refactor-extract): split the log report into parse, summarize and render
+
+The `report` package parses log lines, summarizes them, and renders the summary, but all three steps live in one file and are hard to test on their own. Please move them into separate modules named `report/parse.py`, `report/summarize.py` and `report/render.py`, each owning its function, and leave `report/__init__.py` as a thin re-export plus `build(text)`. `build` must keep producing byte-identical output for every input, and the public names `parse_lines`, `summarize`, `render` and `build` must still be importable from `report`.

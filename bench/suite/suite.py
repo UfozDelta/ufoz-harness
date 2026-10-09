@@ -18,9 +18,15 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT / ".harness") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / ".harness"))
 
-from runner.executors import REGISTRY  # noqa: E402
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-SIZES = ["small", "medium", "large"]
+from runner.executors import REGISTRY  # noqa: E402
+from tasks import cell_slug, discover_tasks, parse_arms  # noqa: E402
+
+TASKS = discover_tasks()
+SIZES = sorted(TASKS)
+LEGACY_SIZES = ["small", "medium", "large"]
 MODES = ["serial", "parallel", "multi", "window"]
 EXECUTORS = ["pi", "opencode", "cline", "cline-acp", "llama", "claude"]
 
@@ -32,6 +38,7 @@ COLUMNS = [
     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
     "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
     "plan_source", "planner", "plan_cost", "regression_passed", "regression_total", "kit_hash",
+    "capability",
 ]
 
 # results.csv is written with the resume key in front of the reported columns:
@@ -47,23 +54,28 @@ def _thread_safe(executor: str) -> bool:
 
 
 def build_matrix(sizes, modes, executors, reps, seed=0):
-    """All (size, mode, executor, rep) cells, shuffled deterministically."""
+    """All (size, mode, arm, rep) cells, shuffled deterministically. An arm is an
+    executor name or an (executor, model) tuple."""
     cells = []
     for size in sizes:
         for mode in modes:
-            for executor in executors:
+            for arm in executors:
+                executor, model = (arm, "") if isinstance(arm, str) else arm
                 for rep in range(1, reps + 1):
                     unsupported = (
                         (mode == "parallel" and not _thread_safe(executor))
                         or (mode in ("multi", "parallel") and executor == "llama")
                         or (mode == "window" and size != "small")
+                        or (mode == "multi" and size not in LEGACY_SIZES)
                     )
                     cells.append({
                         "size": size,
                         "mode": mode,
                         "executor": executor,
+                        "model": model,
+                        "capability": TASKS.get(size, {}).get("capability", ""),
                         "rep": rep,
-                        "slug": f"suite-{size}-{mode}-{executor}-r{rep}",
+                        "slug": cell_slug(size, mode, executor, model, rep),
                         "status": "unsupported" if unsupported else "pending",
                         "order_idx": 0,
                         "seed": seed,
@@ -126,9 +138,9 @@ def cumulative_cost(csv_path=RESULTS_CSV):
 
 
 def _multi_slugs(cell):
-    """The three per-size slugs one (executor, rep) multi batch produces."""
-    return [f"suite-{size}-{cell['mode']}-{cell['executor']}-r{cell['rep']}"
-            for size in SIZES]
+    """The three per-size slugs one (executor, model, rep) multi batch produces."""
+    return [cell_slug(size, cell["mode"], cell["executor"], cell.get("model", ""), cell["rep"])
+            for size in LEGACY_SIZES]
 
 
 class _ResultWriter:
@@ -183,7 +195,10 @@ def _csv_list(value, allowed, label):
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(prog="suite.py", description="executor capability suite")
     ap.add_argument("--executors", help=f"comma list from {','.join(EXECUTORS)} (default: all)")
+    ap.add_argument("--arms", help="comma list of executor[:model] (default: all executors, bare)")
     ap.add_argument("--sizes", help=f"comma list from {','.join(SIZES)} (default: all)")
+    ap.add_argument("--tasks", help="alias of --sizes")
+    ap.add_argument("--capability", help="comma list of capabilities; keeps only matching tasks")
     ap.add_argument("--modes", help=f"comma list from {','.join(MODES)} (default: all)")
     ap.add_argument("--reps", type=int, default=3, help="repetitions per cell (default 3)")
     ap.add_argument("--seed", type=int, default=0, help="matrix shuffle seed (default 0)")
@@ -252,15 +267,35 @@ def main(argv=None):
     args = parse_args(argv)
     if args.cleanup:
         return run_cleanup(REPO_ROOT)
-    sizes = _csv_list(args.sizes, SIZES, "sizes")
+    if args.sizes and args.tasks:
+        raise SystemExit("give --sizes or --tasks, not both")
+    if args.arms and args.executors:
+        raise SystemExit("give --arms or --executors, not both")
+    sizes = _csv_list(args.sizes or args.tasks, SIZES, "tasks")
+    if args.capability:
+        caps = {c.strip() for c in args.capability.split(",") if c.strip()}
+        sizes = [s for s in sizes if TASKS[s]["capability"] in caps]
+        if not sizes:
+            raise SystemExit(f"no tasks match --capability {args.capability}")
     modes = _csv_list(args.modes, MODES, "modes")
-    executors = _csv_list(args.executors, EXECUTORS, "executors")
+    if args.arms:
+        executors = parse_arms(args.arms)
+        unknown = [e for e, _ in executors if e not in EXECUTORS]
+        if unknown:
+            raise SystemExit(f"unknown executors: {', '.join(unknown)} (choose from {', '.join(EXECUTORS)})")
+    else:
+        executors = _csv_list(args.executors, EXECUTORS, "executors")
     reps = max(1, args.reps)
 
     cells = build_matrix(sizes, modes, executors, reps, seed=args.seed)
     for cell in cells:
         cell.update(plan_source=args.plan_source, planner=args.planner,
                     planner_model=args.planner_model, legacy=args.legacy)
+        if not TASKS[cell["size"]]["has_plan_project"] and cell["plan_source"] != "planner":
+            cell["plan_source"] = "planner"
+    for size in sizes:
+        if not TASKS[size]["has_plan_project"]:
+            print(f"note: task {size} has no plan_project; using --plan-source planner")
 
     if args.dry:
         planned = [c for c in cells if c["status"] != "unsupported"]
@@ -269,7 +304,7 @@ def main(argv=None):
         core_modes = [m for m in modes if m != "multi"]
         core_cells = [c for c in cells if c["mode"] != "multi"]
         multi_cells = [c for c in cells if c["mode"] == "multi"]
-        print(f"{len(sizes)} sizes x {len(core_modes)} modes x {len(executors)} executors x {reps} reps"
+        print(f"{len(sizes)} sizes x {len(core_modes)} modes x {len(executors)} arms x {reps} reps"
               f" = {len(core_cells)} cells, seed {args.seed}")
         if multi_cells:
             print(f"plus {len(multi_cells)} multi rows, batched per executor+rep at run time"
@@ -302,7 +337,7 @@ def main(argv=None):
         if cell["mode"] == "multi":
             # one batch per (executor, rep): the first multi cell runs it, the other
             # two slugs come back as extra rows and are then skipped as done.
-            pair = (cell["executor"], cell["rep"])
+            pair = (cell["executor"], cell.get("model", ""), cell["rep"])
             if pair in multi_done:
                 continue
             slugs = _multi_slugs(cell)

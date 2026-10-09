@@ -4,9 +4,18 @@ Capability matrix over every executor x fixture size x mode x rep. Each cell run
 `run_plan.py` plan in its own worktree, scores it with hidden tests + a tamper diff, and
 appends one row to `results.csv`; `report.py` turns that CSV into `RESULTS.md`.
 
-Fixtures: `fixtures/<size>/{seed,solution,plan,hidden_tests}` + `spec.md`
-(`check_fixtures.py --size <size>` proves each one is RED on the seed and GREEN on the
+Fixtures: `fixtures/<task>/{seed,solution,plan,hidden_tests}` + `spec.md`
+(`check_fixtures.py --size <task>` proves each one is RED on the seed and GREEN on the
 solution, so a cell can only fail for the executor's sake, not a broken fixture).
+
+## Task registry
+
+`tasks.py` discovers every dir under `fixtures/` (names starting `_` or `.` skipped). An optional
+`task.toml` per task sets `capability` (default `multi-file-feature`), `lang`, `source`,
+`licence`, `description`; bad TOML raises `ValueError` naming the file. `plan_project/` is
+optional: a task without it is planned with `--plan-source planner`. `small`/`medium`/`large`
+are the legacy tasks. An arm is `executor[:model]`; its cell slug is
+`suite-<task>-<mode>-<executor>[-<model-slug>]-r<rep>` (no model = the old slug).
 
 ## Usage
 
@@ -14,6 +23,7 @@ solution, so a cell can only fail for the executor's sake, not a broken fixture)
 python bench/suite/suite.py --dry                      # build+print the matrix, run nothing
 python bench/suite/suite.py --sizes small --modes serial --executors pi --reps 1
 python bench/suite/suite.py --executors pi,cline --modes serial,parallel --reps 3
+python bench/suite/suite.py --arms pi:opencode/x-free,claude --tasks small --capability multi-file-feature
 python bench/suite/suite.py --max-cost 20               # stop once cumulative cost exceeds it
 python bench/suite/suite.py --rerun-infra              # only rows whose status is infra_error
 python bench/suite/report.py                           # rebuild RESULTS.md from results.csv
@@ -23,9 +33,11 @@ Flags (`suite.py`):
 
 | flag | default | meaning |
 |---|---|---|
-| `--sizes` | all (`small,medium,large`) | subset of `SIZES` |
+| `--sizes` / `--tasks` | all discovered tasks | subset of task ids (give one, not both) |
+| `--capability` | all | comma list; keeps only tasks with that capability (none left = error) |
+| `--arms` | none | comma list of `executor[:model]`; not with `--executors` |
 | `--modes` | all (`serial,parallel,multi,window`) | subset of `MODES` |
-| `--executors` | all 6 | subset of `EXECUTORS` |
+| `--executors` | all 6 | bare arms, subset of `EXECUTORS` |
 | `--reps` | 3 | repetitions per cell (pass@1 vs pass^3) |
 | `--seed` | 0 | shuffle seed; `order_idx` is the post-shuffle position |
 | `--dry` | off | print the matrix with `[UNSUPPORTED]` marks + a run estimate, exit 0 |
@@ -40,7 +52,7 @@ Resume is on by default: a cell whose `slug` already has a row in `results.csv` 
 
 ## Work dir and `{work}` templating
 
-A cell's slug is `suite-<size>-<mode>-<executor>-r<rep>`. Its work dir is
+A cell's slug is `suite-<task>-<mode>-<executor>[-<model-slug>]-r<rep>`. Its work dir is
 `bench/suite/work/<slug>/` in the cell's worktree (`.worktrees/<slug>`) — **not**
 gitignored on purpose, so a run's output can be inspected and diffed by hand.
 
@@ -77,7 +89,7 @@ on the working tree; digging through git history is out of scope here.
 
 `build_matrix` marks a cell `unsupported` (never runs it) when: `mode == "parallel"` and the
 executor's registry class is not `thread_safe`; `mode` in `("multi", "parallel")` and the
-executor is `llama`; or `mode == "window"` and `size != "small"`.
+executor is `llama`; or `mode == "window"` and `size != "small"`; or `mode == "multi"` on a non-legacy task.
 
 ## Cleanup safety
 
@@ -90,10 +102,11 @@ root's `node_modules`. Use `--keep` to inspect a cell before it is removed.
 ## Outputs
 
 - `bench/suite/results.csv` — one row per cell, columns in `suite.COLUMNS` order
-  (`ts,size,mode,executor,rep,status,wall_s,tests_passed,tests_total,tasks_passed,tasks_total,attempts,input,output,reasoning,cache_read,cost,window_opened,watch_ok,peak_worktrees,model,harness_sha,batch_wall_s,tampered,seed,order_idx`).
+  (`ts,size,mode,executor,rep,status,...,kit_hash,capability`; `capability` is last, from `task.toml`).
   `window_opened`/`watch_ok` are only filled for `mode == "window"`, `batch_wall_s` only for
   `mode == "multi"`, and `tampered` is `"true"`/`"false"`.
-- `bench/suite/RESULTS.md` — `python bench/suite/report.py`: pass@1, pass^3, Wilson 95%
+- `bench/suite/RESULTS.md` — `python bench/suite/report.py`: pass@1, `first_try` (pass with
+  attempts <= tasks_total, no retry), per-capability and per-task scorecards by arm, pass^3, Wilson 95%
   CI, median wall, cost/tokens per solved task, parallel speedup, multi overhead, cost
   totals (Sonnet/`claude` called out separately) and a delta section between harness shas.
 - `bench/suite/work/<slug>/suite.log` — raw `run_plan.py` output per cell.

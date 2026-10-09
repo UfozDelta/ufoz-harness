@@ -1,0 +1,5 @@
+capability = "feature"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Add sorting and paging to an inventory listing across several modules."

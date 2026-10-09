@@ -1,0 +1,5 @@
+capability = "cross-file"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Rename a public loader across modules, callers and docs."

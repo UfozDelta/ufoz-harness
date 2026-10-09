@@ -1,0 +1,23 @@
+{"slug": "bench-registry", "tasks": [
+  {"id": "T1", "deps": [], "files": ["bench/suite/tasks.py", "bench/suite/fixtures/small/task.toml", "bench/suite/fixtures/medium/task.toml", "bench/suite/fixtures/large/task.toml"],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'bench/suite'); import tasks; t=tasks.discover_tasks(); assert {'small','medium','large'}<=set(t) and t['small']['capability']=='multi-file-feature' and t['large']['has_plan_project']; assert tasks.cell_slug('small','serial','pi','',1)=='suite-small-serial-pi-r1'; assert tasks.cell_slug('small','serial','pi','opencode/x-free',1)=='suite-small-serial-pi-opencode-x-free-r1'; assert tasks.parse_arms('pi:a/b,claude')==[('pi','a/b'),('claude','')]\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T2", "deps": ["T1"], "files": ["bench/suite/suite.py"],
+   "acceptance": "python -c \"import subprocess,sys; o=subprocess.run([sys.executable,'bench/suite/suite.py','--dry','--arms','pi:opencode/x-free,claude','--tasks','small','--modes','serial','--reps','1'],capture_output=True,text=True); assert o.returncode==0,o.stderr; assert 'suite-small-serial-pi-opencode-x-free-r1' in o.stdout and 'suite-small-serial-claude-r1' in o.stdout,o.stdout\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T3", "deps": ["T1"], "files": ["bench/suite/cells.py"],
+   "acceptance": "python -c \"import sys; from pathlib import Path; sys.path.insert(0,'bench/suite'); import cells; assert cells.is_cell_slug('suite-small-serial-pi-r1') and cells.is_cell_slug('suite-fix-failing-test-serial-opencode-opencode-muse-spark-1-3-contributor-free-r2') and not cells.is_cell_slug('suite-fixes'); a=cells._plan_args({'slug':'s','executor':'pi','model':'m/x','mode':'serial'},Path('.')); assert a[a.index('--executor-model')+1]=='m/x'\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T4", "deps": [], "files": ["bench/suite/report.py"],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'bench/suite'); import report; r=[dict({c:'' for c in report.COLUMNS},size='t',mode='serial',executor='pi',model='m1',rep=str(i),status='pass',attempts=str(i),tasks_total='1',capability='bug-fix-prose') for i in (1,2)]; o=report.build_report(r); assert 'first_try' in o and 'bug-fix-prose' in o and 'Per capability' in o, o\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T5", "deps": [], "files": ["bench/suite/check_fixtures.py", "bench/suite/README.md"],
+   "acceptance": "python -c \"import subprocess,sys; o=subprocess.run([sys.executable,'bench/suite/check_fixtures.py','--size','nosuch'],capture_output=True,text=True); assert o.returncode==1 and 'unknown task' in o.stdout+o.stderr, o\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T6", "deps": ["T1", "T2", "T3", "T4"], "files": ["tests/test_harness_suite.py"],
+   "acceptance": "python -m pytest -q tests/test_harness_suite.py -k \"discover_tasks_legacy or parse_arms_and_slugs or plan_args_model or planner_forced or report_first_try\"",
+   "red_first": false, "red_first_reason": "lean smoke check"},
+  {"id": "T7", "deps": ["T1", "T2", "T3", "T4", "T5", "T6"], "files": [".harness/plans/bench-registry/SUMMARY.md"],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/bench-registry/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false, "red_first_reason": "lean smoke check"}
+]}

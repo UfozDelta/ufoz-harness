@@ -1,0 +1,2 @@
+Task registry for the bench suite: tasks.py discovers fixtures/ dirs (+task.toml: capability, lang, source, licence) and builds arms (executor:model) and cell slugs. suite.py gets --arms/--tasks/--capability and a capability column; cells.py takes per-cell model; report.py adds first_try and per-capability/task scorecards; check_fixtures.py accepts any task id. Legacy slugs/CSVs still work. Tests and README updated.
+BUILD: pass

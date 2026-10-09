@@ -1,0 +1,5 @@
+capability = "scope-discipline"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Fix a rate limiter off-by-one without touching a similar legacy module."
