@@ -500,3 +500,77 @@ def test_report_main_keeps_existing_md_when_no_rows(monkeypatch, tmp_path):
     md = _report_paths(monkeypatch, tmp_path)
     assert report.main([]) == 1
     assert md.read_text(encoding="utf-8") == "# keep me\n"
+
+
+# ------------------------------------------------------------- bench-trust
+def test_writer_migrates_old_header(tmp_path):
+    csv_path = tmp_path / "results.csv"
+    csv_path.write_text("slug,ts\na,1\n", encoding="utf-8")
+
+    writer = suite._ResultWriter(csv_path)
+    writer.write({"slug": "b", "ts": "2"})
+
+    with open(csv_path, newline="", encoding="utf-8") as fh:
+        header = next(csv.reader(fh))
+    with open(csv_path, newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    assert header == suite.CSV_FIELDS
+    assert rows[0]["slug"] == "a" and rows[0]["ts"] == "1" and rows[0]["run_id"] == ""
+    assert rows[1]["slug"] == "b" and rows[1]["run_id"] == writer.run_id
+
+
+def test_latest_per_cell_and_newest_sha():
+    base = {"size": "small", "mode": "serial", "executor": "claude", "rep": "1",
+            "wall_s": "1", "cost": "1", "model": "claude-x"}
+    rows = [
+        dict(base, status="fail", harness_sha="A"),
+        dict(base, status="pass", harness_sha="A"),
+        dict(base, rep="2", status="harness_fail", harness_sha="B"),
+        dict(base, rep="3", status="pass", harness_sha="B"),
+    ]
+    latest = report.latest_per_cell(rows)
+    assert len(latest) == 3
+    assert latest[0]["status"] == "pass" and latest[0]["harness_sha"] == "A"
+    newest = report.newest_sha_rows(latest)
+    assert {r["harness_sha"] for r in newest} == {"B"}
+    assert report.newest_sha_rows([]) == []
+
+
+def test_harness_fail_excluded_from_rates():
+    base = {"size": "small", "mode": "serial", "executor": "pi", "rep": "1",
+            "wall_s": "1", "cost": "0", "model": "m", "harness_sha": "A"}
+    rows = [dict(base, status="pass"),
+            dict(base, rep="2", status="harness_fail"),
+            dict(base, rep="3", status="infra_error")]
+    graded = report._graded(rows)
+    assert [r["status"] for r in graded] == ["pass"]
+    text = report.build_report(rows, all_shas=True)
+    assert "1 counted" in text and "1 harness_fail excluded" in text
+
+
+def test_apply_window_verdict():
+    import cells  # noqa: PLC0415 (real module, pure helper)
+
+    row = {"mode": "window", "status": "pass", "window_opened": "true", "watch_ok": "false"}
+    cells._apply_window_verdict(row)
+    assert row["status"] == "harness_fail"
+
+    row = {"mode": "window", "status": "pass", "window_opened": "false", "watch_ok": "true"}
+    cells._apply_window_verdict(row)
+    assert row["status"] == "harness_fail"
+
+    row = {"mode": "window", "status": "pass", "window_opened": "true", "watch_ok": "true"}
+    cells._apply_window_verdict(row)
+    assert row["status"] == "pass"
+
+    row = {"mode": "serial", "status": "fail", "window_opened": "false", "watch_ok": "false"}
+    cells._apply_window_verdict(row)
+    assert row["status"] == "fail"
+
+
+def test_runs_agree():
+    import check_fixtures  # noqa: PLC0415
+
+    assert check_fixtures.runs_agree([{"pytest": 0, "vitest": 0}, {"pytest": 0, "vitest": 0}])
+    assert not check_fixtures.runs_agree([{"pytest": 0}, {"pytest": 1}])
+    assert check_fixtures.runs_agree([])

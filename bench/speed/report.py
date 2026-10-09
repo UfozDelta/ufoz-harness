@@ -34,8 +34,8 @@ def display(value):
 
 def table(title, rows, level=2):
     lines = [f"{'#' * level} {title}", ""]
-    lines.append("| " + " | ".join(label for _, label in COLUMNS) + " |")
-    lines.append("| " + " | ".join("---" for _ in COLUMNS) + " |")
+    lines.append("| Harness | " + " | ".join(label for _, label in COLUMNS) + " |")
+    lines.append("| " + " | ".join("---" for _ in range(len(COLUMNS) + 1)) + " |")
     for harness in sorted({row["harness"] for row in rows}):
         group = [row for row in rows if row["harness"] == harness]
         passed = sum(

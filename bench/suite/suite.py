@@ -9,6 +9,7 @@ import os
 import random
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -29,7 +30,7 @@ COLUMNS = [
     "tests_passed", "tests_total", "tasks_passed", "tasks_total", "attempts",
     "input", "output", "reasoning", "cache_read", "cost",
     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
-    "batch_wall_s", "tampered", "seed", "order_idx",
+    "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
 ]
 
 # results.csv is written with the resume key in front of the reported columns:
@@ -133,18 +134,37 @@ class _ResultWriter:
     """Append rows to results.csv the moment they exist, so a crash mid-matrix keeps
     every finished row and a resume skips them."""
 
-    def __init__(self, csv_path):
+    def __init__(self, csv_path, run_id=None):
         self.csv_path = Path(csv_path)
+        self.run_id = run_id or time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
         self.rows = 0
+
+    def _migrate_header(self):
+        """Rewrite a results.csv written with an older column set: old rows are kept,
+        the new columns are left empty."""
+        with open(self.csv_path, newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            old_rows = list(reader)
+        tmp = self.csv_path.with_suffix(self.csv_path.suffix + ".migrate")
+        with open(tmp, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(old_rows)
+        os.replace(tmp, self.csv_path)
 
     def write(self, row):
         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
         fresh = not self.csv_path.exists() or self.csv_path.stat().st_size == 0
+        if not fresh:
+            with open(self.csv_path, newline="", encoding="utf-8") as fh:
+                header = next(csv.reader(fh), [])
+            if header != CSV_FIELDS:
+                self._migrate_header()
         with open(self.csv_path, "a", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS, extrasaction="ignore")
             if fresh:
                 writer.writeheader()
-            writer.writerow(row)
+            writer.writerow(dict(row, run_id=self.run_id))
             fh.flush()
         self.rows += 1
 

@@ -6,6 +6,7 @@ diff, metrics.jsonl), cleanup_cell removes the worktree again. Nothing here touc
 state beyond `git worktree remove --force` and `git branch -D` on suite-* slugs.
 """
 import contextlib
+import hashlib
 import json
 import os
 import re
@@ -44,6 +45,7 @@ TAMPER_PATTERNS = (_TS + "ignore", _TS + "expect-error", "pytest.mark.skip",
                    "pytest.mark.xfail", "@pytest.mark.skip", "@pytest.mark.xfail",
                    "it.skip", "describe.skip", "test.skip", "test.todo", "xit(", "xdescribe(")
 SKIP_DIRS = ("node_modules", ".git", "__pycache__", ".pytest_cache", ".next", ".check-tmp")
+FIXTURE_SKIP_DIRS = {"__pycache__", ".pytest_cache", "node_modules"}
 # executors that read HARNESS_MODEL from .harness/.env and pick the wrong model
 EXECUTOR_MODELS = {"cline": "cline-free/deepseek-v4.1-flash",
                    "cline-acp": "stealth/space-bunny-alpha"}
@@ -101,8 +103,23 @@ def _git(*args, cwd=None):
 
 def _harness_sha(repo_root):
     sha = _git("rev-parse", "--short", "HEAD", cwd=repo_root).stdout.strip()
-    dirty = _git("status", "--porcelain", ".harness", cwd=repo_root).stdout.strip()
-    return f"{sha}-dirty" if dirty else sha
+    diff = _git("diff", "HEAD", cwd=repo_root).stdout
+    if diff.strip():
+        return f"{sha}+{hashlib.sha256(diff.encode('utf-8', 'replace')).hexdigest()[:6]}"
+    return sha
+
+
+def _fixture_hash(size, repo_root=REPO_ROOT):
+    root = Path(repo_root) / SUITE_DIR / "fixtures" / size
+    if not root.is_dir():
+        return ""
+    digest = hashlib.sha256()
+    files = sorted(p for p in root.rglob("*") if p.is_file()
+                   and not (set(p.relative_to(root).parts) & FIXTURE_SKIP_DIRS))
+    for path in files:
+        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()[:8]
 
 
 def _copy_tree(src, dst):
@@ -512,8 +529,18 @@ def _blank(cell):
                 "reasoning": "", "cache_read": "", "cost": "", "window_opened": "",
                 "watch_ok": "", "peak_worktrees": "",
                 "model": os.environ.get("HARNESS_EXECUTOR_MODEL", cell["executor"]),
-                "harness_sha": "", "batch_wall_s": "", "tampered": ""})
+                "harness_sha": "", "batch_wall_s": "", "tampered": "",
+                "fixture_hash": _fixture_hash(cell["size"])})
     return row
+
+
+def _apply_window_verdict(row):
+    """A window cell passes only if the window opened and the headless watch saw the plan finish."""
+    if row.get("mode") != "window" or row.get("status") != "pass":
+        return
+    if str(row.get("window_opened", "")).lower() == "false" or \
+            str(row.get("watch_ok", "")).lower() == "false":
+        row["status"] = "harness_fail"
 
 
 def _plan_args(cell, wt, parallel=0):
@@ -598,6 +625,7 @@ def _run_single(cell, repo_root, cell_timeout):
     if mode == "window":
         with contextlib.suppress(Exception):
             row["watch_ok"] = _watch_ok(slug, repo_root, wt)
+        _apply_window_verdict(row)
     return row
 
 

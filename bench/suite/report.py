@@ -21,13 +21,13 @@ COLUMNS = [
     "tests_passed", "tests_total", "tasks_passed", "tasks_total", "attempts",
     "input", "output", "reasoning", "cache_read", "cost",
     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
-    "batch_wall_s", "tampered", "seed", "order_idx",
+    "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
 ]
 
 TOKEN_COLUMNS = ["input", "output", "reasoning", "cache_read"]
 
 # Rows with these statuses are excluded from pass-rate math entirely.
-EXCLUDED_STATUSES = {"infra_error"}
+EXCLUDED_STATUSES = {"infra_error", "harness_fail"}
 
 
 def load_rows(csv_path=RESULTS_CSV):
@@ -92,6 +92,30 @@ def _fmt(value, spec="{:.2f}", dash="-"):
 def _graded(rows):
     """Rows that count towards pass-rate math (infra_error dropped)."""
     return [r for r in rows if (r.get("status") or "") not in EXCLUDED_STATUSES]
+
+
+def latest_per_cell(rows):
+    """Last row in file order per (size, mode, executor, rep): a re-run supersedes the old row."""
+    latest = {}
+    for row in rows or []:
+        key = (row.get("size"), row.get("mode"), row.get("executor"), row.get("rep"))
+        latest.pop(key, None)
+        latest[key] = row
+    return list(latest.values())
+
+
+def _newest_sha(rows):
+    shas = [r.get("harness_sha") for r in rows or [] if r.get("harness_sha")]
+    return shas[-1] if shas else ""
+
+
+def newest_sha_rows(rows):
+    """Only the rows of the newest harness_sha; no sha anywhere -> all rows."""
+    rows = list(rows or [])
+    newest = _newest_sha(rows)
+    if not newest:
+        return rows
+    return [r for r in rows if r.get("harness_sha") == newest]
 
 
 def _group(rows, key):
@@ -195,21 +219,25 @@ def _cost_section(graded):
         "|---|---|---|---|---|",
     ]
     by_exec = _group(graded, "executor")
-    sonnet = by_exec.get("claude", [])
-    sonnet_cost = sum(_num(r.get("cost"), 0.0) for r in sonnet)
+    paid = by_exec.get("claude", [])
+    paid_cost = sum(_num(r.get("cost"), 0.0) for r in paid)
     total = 0.0
     for executor, rows in sorted(by_exec.items()):
         cost = sum(_num(r.get("cost"), 0.0) for r in rows)
         total += cost
         solved = sum(1 for r in rows if r.get("status") == "pass")
-        notes = "Sonnet (paid-tier model) - reported separately" if executor == "claude" else ""
+        if executor == "claude":
+            models = ", ".join(sorted({r.get("model") for r in rows if r.get("model")})) or "unknown model"
+            notes = f"{models} (paid tier) - reported separately"
+        else:
+            notes = ""
         lines.append("| {e} | {n} | {c} | {cp} | {nt} |".format(
             e=executor, n=len(rows), c=_fmt(cost, "${:.2f}"),
             cp=_fmt(cost / solved if solved else None, "${:.3f}"), nt=notes))
     lines.append("| **total** | {n} | {c} |  |  |".format(
         n=len(graded), c=_fmt(total, "${:.2f}")))
     lines.append("")
-    lines.append(f"Excluding Sonnet (`claude`): {_fmt(total - sonnet_cost, '${:.2f}')}.")
+    lines.append(f"Excluding `claude`: {_fmt(total - paid_cost, '${:.2f}')}.")
     return lines
 
 
@@ -248,8 +276,11 @@ def _delta_section(rows):
     return lines
 
 
-def build_report(rows):
-    """Markdown report from results rows. Safe on empty input."""
+def build_report(rows, all_shas=False):
+    """Markdown report from results rows. Safe on empty input.
+
+    Rows are deduped to the latest run per cell; unless all_shas, only the newest
+    harness_sha is reported. The delta section always sees every revision."""
     rows = [r for r in (rows or []) if isinstance(r, dict)]
     lines = ["# harness-suite results", ""]
     if not rows:
@@ -257,9 +288,15 @@ def build_report(rows):
                      "`bench/suite/results.csv`.")
         return "\n".join(lines) + "\n"
 
-    graded = _graded(rows)
-    lines.append(f"Rows: {len(rows)} total, {len(graded)} counted "
-                 f"({len(rows) - len(graded)} infra_error excluded).")
+    deduped = latest_per_cell(rows)
+    scoped = deduped if all_shas else newest_sha_rows(deduped)
+    graded = _graded(scoped)
+    infra = sum(1 for r in scoped if r.get("status") == "infra_error")
+    harness_fail = sum(1 for r in scoped if r.get("status") == "harness_fail")
+    lines.append(f"Rows: {len(rows)} total, {len(deduped)} latest per cell, {len(graded)} counted "
+                 f"({infra} infra_error and {harness_fail} harness_fail excluded).")
+    if not all_shas and len(scoped) < len(deduped):
+        lines.append(f"Scope: harness_sha `{_newest_sha(deduped)}` only (`--all-shas` for every revision).")
     lines.append("")
 
     lines.append("## Per executor x size x mode")
@@ -285,22 +322,25 @@ def build_report(rows):
 
     lines.append("## Harness revision delta")
     lines.append("")
-    lines.extend(_delta_section(rows))
+    lines.extend(_delta_section(deduped))
     lines.append("")
 
-    excluded = len(rows) - len(graded)
+    excluded = len(scoped) - len(graded)
     if excluded:
-        lines.append(f"Note: {excluded} infra_error row(s) excluded from all pass-rate math.")
+        lines.append(f"Note: {excluded} infra_error/harness_fail row(s) excluded from all pass-rate math.")
     return "\n".join(lines) + "\n"
 
 
 def main(argv=None):
-    argparse.ArgumentParser(description="Rebuild RESULTS.md from results.csv.").parse_args(argv)
+    ap = argparse.ArgumentParser(description="Rebuild RESULTS.md from results.csv.")
+    ap.add_argument("--all-shas", action="store_true",
+                    help="report every harness_sha, not only the newest")
+    args = ap.parse_args(argv)
     rows = load_rows(RESULTS_CSV)
     if not rows and RESULTS_MD.exists():
         print(f"no rows in {RESULTS_CSV}; kept {RESULTS_MD}")
         return 1
-    text = build_report(rows)
+    text = build_report(rows, all_shas=args.all_shas)
     RESULTS_MD.parent.mkdir(parents=True, exist_ok=True)
     RESULTS_MD.write_text(text, encoding="utf-8")
     print(f"wrote {RESULTS_MD} ({len(rows)} rows)")

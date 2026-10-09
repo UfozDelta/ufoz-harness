@@ -1,0 +1,445 @@
+diff --git a/.harness/plans/bench-trust/SUMMARY.md b/.harness/plans/bench-trust/SUMMARY.md
+new file mode 100644
+index 0000000..1067beb
+--- /dev/null
++++ b/.harness/plans/bench-trust/SUMMARY.md
+@@ -0,0 +1,4 @@
++bench-trust: suite rows are now versioned and failures classified.
++Files: bench/suite/{cells,suite,report,check_fixtures}.py, bench/speed/report.py, tests/test_harness_suite.py.
++What: rows carry run_id, fixture_hash and a real harness_sha (+diff tag); window cells that open/watch badly become harness_fail (excluded from pass rate); report keeps latest row per cell and newest sha (--all-shas opts out), labels claude by its model column; speed table has a Harness column; check_fixtures --repeat flake gate.
++BUILD: pass
+diff --git a/bench/speed/report.py b/bench/speed/report.py
+index f2a3287..e638935 100644
+--- a/bench/speed/report.py
++++ b/bench/speed/report.py
+@@ -34,8 +34,8 @@ def display(value):
+ 
+ def table(title, rows, level=2):
+     lines = [f"{'#' * level} {title}", ""]
+-    lines.append("| " + " | ".join(label for _, label in COLUMNS) + " |")
+-    lines.append("| " + " | ".join("---" for _ in COLUMNS) + " |")
++    lines.append("| Harness | " + " | ".join(label for _, label in COLUMNS) + " |")
++    lines.append("| " + " | ".join("---" for _ in range(len(COLUMNS) + 1)) + " |")
+     for harness in sorted({row["harness"] for row in rows}):
+         group = [row for row in rows if row["harness"] == harness]
+         passed = sum(
+diff --git a/bench/suite/cells.py b/bench/suite/cells.py
+index 1b17386..925bffd 100644
+--- a/bench/suite/cells.py
++++ b/bench/suite/cells.py
+@@ -6,6 +6,7 @@ diff, metrics.jsonl), cleanup_cell removes the worktree again. Nothing here touc
+ state beyond `git worktree remove --force` and `git branch -D` on suite-* slugs.
+ """
+ import contextlib
++import hashlib
+ import json
+ import os
+ import re
+@@ -44,6 +45,7 @@ TAMPER_PATTERNS = (_TS + "ignore", _TS + "expect-error", "pytest.mark.skip",
+                    "pytest.mark.xfail", "@pytest.mark.skip", "@pytest.mark.xfail",
+                    "it.skip", "describe.skip", "test.skip", "test.todo", "xit(", "xdescribe(")
+ SKIP_DIRS = ("node_modules", ".git", "__pycache__", ".pytest_cache", ".next", ".check-tmp")
++FIXTURE_SKIP_DIRS = {"__pycache__", ".pytest_cache", "node_modules"}
+ # executors that read HARNESS_MODEL from .harness/.env and pick the wrong model
+ EXECUTOR_MODELS = {"cline": "cline-free/deepseek-v4.1-flash",
+                    "cline-acp": "stealth/space-bunny-alpha"}
+@@ -101,8 +103,23 @@ def _git(*args, cwd=None):
+ 
+ def _harness_sha(repo_root):
+     sha = _git("rev-parse", "--short", "HEAD", cwd=repo_root).stdout.strip()
+-    dirty = _git("status", "--porcelain", ".harness", cwd=repo_root).stdout.strip()
+-    return f"{sha}-dirty" if dirty else sha
++    diff = _git("diff", "HEAD", cwd=repo_root).stdout
++    if diff.strip():
++        return f"{sha}+{hashlib.sha256(diff.encode('utf-8', 'replace')).hexdigest()[:6]}"
++    return sha
++
++
++def _fixture_hash(size, repo_root=REPO_ROOT):
++    root = Path(repo_root) / SUITE_DIR / "fixtures" / size
++    if not root.is_dir():
++        return ""
++    digest = hashlib.sha256()
++    files = sorted(p for p in root.rglob("*") if p.is_file()
++                   and not (set(p.relative_to(root).parts) & FIXTURE_SKIP_DIRS))
++    for path in files:
++        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
++        digest.update(path.read_bytes())
++    return digest.hexdigest()[:8]
+ 
+ 
+ def _copy_tree(src, dst):
+@@ -512,10 +529,20 @@ def _blank(cell):
+                 "reasoning": "", "cache_read": "", "cost": "", "window_opened": "",
+                 "watch_ok": "", "peak_worktrees": "",
+                 "model": os.environ.get("HARNESS_EXECUTOR_MODEL", cell["executor"]),
+-                "harness_sha": "", "batch_wall_s": "", "tampered": ""})
++                "harness_sha": "", "batch_wall_s": "", "tampered": "",
++                "fixture_hash": _fixture_hash(cell["size"])})
+     return row
+ 
+ 
++def _apply_window_verdict(row):
++    """A window cell passes only if the window opened and the headless watch saw the plan finish."""
++    if row.get("mode") != "window" or row.get("status") != "pass":
++        return
++    if str(row.get("window_opened", "")).lower() == "false" or \
++            str(row.get("watch_ok", "")).lower() == "false":
++        row["status"] = "harness_fail"
++
++
+ def _plan_args(cell, wt, parallel=0):
+     args = [sys.executable, ".harness/run_plan.py", cell["slug"],
+             "--executor", cell["executor"], "--no-worktree"]
+@@ -598,6 +625,7 @@ def _run_single(cell, repo_root, cell_timeout):
+     if mode == "window":
+         with contextlib.suppress(Exception):
+             row["watch_ok"] = _watch_ok(slug, repo_root, wt)
++        _apply_window_verdict(row)
+     return row
+ 
+ 
+diff --git a/bench/suite/check_fixtures.py b/bench/suite/check_fixtures.py
+index f6c130d..bb0a657 100644
+--- a/bench/suite/check_fixtures.py
++++ b/bench/suite/check_fixtures.py
+@@ -114,7 +114,15 @@ def run_all(checks: list[tuple[str, list[str]]], work: Path) -> dict[str, int]:
+     return results
+ 
+ 
+-def check_size(size: str) -> bool:
++def runs_agree(results: list[dict[str, int]]) -> bool:
++    """True iff every run has the same {label: passed} map as the first run."""
++    if not results:
++        return True
++    first = {label: code == 0 for label, code in results[0].items()}
++    return all({label: code == 0 for label, code in run_.items()} == first for run_ in results[1:])
++
++
++def check_size(size: str, repeat: int = 5) -> bool:
+     print(f"[{size}] preparing work dir")
+     work = make_work(size)
+     try:
+@@ -133,7 +141,13 @@ def check_size(size: str) -> bool:
+             bad = ", ".join(label for label, code in green.items() if code != 0)
+             print(f"FAIL: {size} solution is not GREEN - failing: {bad}")
+             return False
+-        print(f"GREEN OK: {size}")
++        runs = [green]
++        for _ in range(repeat - 1):
++            runs.append(run_all(checks, work))
++        if not runs_agree(runs):
++            print(f"FAIL: {size} flaky - repeated GREEN runs disagree: {runs}")
++            return False
++        print(f"GREEN OK: {size} (x{repeat} runs agree)")
+         return True
+     finally:
+         shutil.rmtree(work, ignore_errors=True)
+@@ -149,7 +163,10 @@ def main(argv: list[str] | None = None) -> int:
+                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+     parser.add_argument("--size", choices=SIZES,
+                         help="only check this size (default: every size that exists)")
++    parser.add_argument("--repeat", type=int, default=5,
++                        help="GREEN runs per size that must agree (default 5, min 1)")
+     args = parser.parse_args(argv)
++    repeat = max(1, args.repeat)
+ 
+     if args.size:
+         sizes = [args.size]
+@@ -166,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
+         for size in sizes:
+             print(f"=== size: {size} ===")
+             try:
+-                ok = check_size(size)
++                ok = check_size(size, repeat)
+             except InfraError as exc:
+                 print(f"INFRA: {size}: {exc}")
+                 print("no verdict on this size - fix the environment and rerun")
+diff --git a/bench/suite/report.py b/bench/suite/report.py
+index dcc5604..73041b4 100644
+--- a/bench/suite/report.py
++++ b/bench/suite/report.py
+@@ -21,13 +21,13 @@ COLUMNS = [
+     "tests_passed", "tests_total", "tasks_passed", "tasks_total", "attempts",
+     "input", "output", "reasoning", "cache_read", "cost",
+     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
+-    "batch_wall_s", "tampered", "seed", "order_idx",
++    "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
+ ]
+ 
+ TOKEN_COLUMNS = ["input", "output", "reasoning", "cache_read"]
+ 
+ # Rows with these statuses are excluded from pass-rate math entirely.
+-EXCLUDED_STATUSES = {"infra_error"}
++EXCLUDED_STATUSES = {"infra_error", "harness_fail"}
+ 
+ 
+ def load_rows(csv_path=RESULTS_CSV):
+@@ -94,6 +94,30 @@ def _graded(rows):
+     return [r for r in rows if (r.get("status") or "") not in EXCLUDED_STATUSES]
+ 
+ 
++def latest_per_cell(rows):
++    """Last row in file order per (size, mode, executor, rep): a re-run supersedes the old row."""
++    latest = {}
++    for row in rows or []:
++        key = (row.get("size"), row.get("mode"), row.get("executor"), row.get("rep"))
++        latest.pop(key, None)
++        latest[key] = row
++    return list(latest.values())
++
++
++def _newest_sha(rows):
++    shas = [r.get("harness_sha") for r in rows or [] if r.get("harness_sha")]
++    return shas[-1] if shas else ""
++
++
++def newest_sha_rows(rows):
++    """Only the rows of the newest harness_sha; no sha anywhere -> all rows."""
++    rows = list(rows or [])
++    newest = _newest_sha(rows)
++    if not newest:
++        return rows
++    return [r for r in rows if r.get("harness_sha") == newest]
++
++
+ def _group(rows, key):
+     groups = defaultdict(list)
+     for row in rows:
+@@ -195,21 +219,25 @@ def _cost_section(graded):
+         "|---|---|---|---|---|",
+     ]
+     by_exec = _group(graded, "executor")
+-    sonnet = by_exec.get("claude", [])
+-    sonnet_cost = sum(_num(r.get("cost"), 0.0) for r in sonnet)
++    paid = by_exec.get("claude", [])
++    paid_cost = sum(_num(r.get("cost"), 0.0) for r in paid)
+     total = 0.0
+     for executor, rows in sorted(by_exec.items()):
+         cost = sum(_num(r.get("cost"), 0.0) for r in rows)
+         total += cost
+         solved = sum(1 for r in rows if r.get("status") == "pass")
+-        notes = "Sonnet (paid-tier model) - reported separately" if executor == "claude" else ""
++        if executor == "claude":
++            models = ", ".join(sorted({r.get("model") for r in rows if r.get("model")})) or "unknown model"
++            notes = f"{models} (paid tier) - reported separately"
++        else:
++            notes = ""
+         lines.append("| {e} | {n} | {c} | {cp} | {nt} |".format(
+             e=executor, n=len(rows), c=_fmt(cost, "${:.2f}"),
+             cp=_fmt(cost / solved if solved else None, "${:.3f}"), nt=notes))
+     lines.append("| **total** | {n} | {c} |  |  |".format(
+         n=len(graded), c=_fmt(total, "${:.2f}")))
+     lines.append("")
+-    lines.append(f"Excluding Sonnet (`claude`): {_fmt(total - sonnet_cost, '${:.2f}')}.")
++    lines.append(f"Excluding `claude`: {_fmt(total - paid_cost, '${:.2f}')}.")
+     return lines
+ 
+ 
+@@ -248,8 +276,11 @@ def _delta_section(rows):
+     return lines
+ 
+ 
+-def build_report(rows):
+-    """Markdown report from results rows. Safe on empty input."""
++def build_report(rows, all_shas=False):
++    """Markdown report from results rows. Safe on empty input.
++
++    Rows are deduped to the latest run per cell; unless all_shas, only the newest
++    harness_sha is reported. The delta section always sees every revision."""
+     rows = [r for r in (rows or []) if isinstance(r, dict)]
+     lines = ["# harness-suite results", ""]
+     if not rows:
+@@ -257,9 +288,15 @@ def build_report(rows):
+                      "`bench/suite/results.csv`.")
+         return "\n".join(lines) + "\n"
+ 
+-    graded = _graded(rows)
+-    lines.append(f"Rows: {len(rows)} total, {len(graded)} counted "
+-                 f"({len(rows) - len(graded)} infra_error excluded).")
++    deduped = latest_per_cell(rows)
++    scoped = deduped if all_shas else newest_sha_rows(deduped)
++    graded = _graded(scoped)
++    infra = sum(1 for r in scoped if r.get("status") == "infra_error")
++    harness_fail = sum(1 for r in scoped if r.get("status") == "harness_fail")
++    lines.append(f"Rows: {len(rows)} total, {len(deduped)} latest per cell, {len(graded)} counted "
++                 f"({infra} infra_error and {harness_fail} harness_fail excluded).")
++    if not all_shas and len(scoped) < len(deduped):
++        lines.append(f"Scope: harness_sha `{_newest_sha(deduped)}` only (`--all-shas` for every revision).")
+     lines.append("")
+ 
+     lines.append("## Per executor x size x mode")
+@@ -285,22 +322,25 @@ def build_report(rows):
+ 
+     lines.append("## Harness revision delta")
+     lines.append("")
+-    lines.extend(_delta_section(rows))
++    lines.extend(_delta_section(deduped))
+     lines.append("")
+ 
+-    excluded = len(rows) - len(graded)
++    excluded = len(scoped) - len(graded)
+     if excluded:
+-        lines.append(f"Note: {excluded} infra_error row(s) excluded from all pass-rate math.")
++        lines.append(f"Note: {excluded} infra_error/harness_fail row(s) excluded from all pass-rate math.")
+     return "\n".join(lines) + "\n"
+ 
+ 
+ def main(argv=None):
+-    argparse.ArgumentParser(description="Rebuild RESULTS.md from results.csv.").parse_args(argv)
++    ap = argparse.ArgumentParser(description="Rebuild RESULTS.md from results.csv.")
++    ap.add_argument("--all-shas", action="store_true",
++                    help="report every harness_sha, not only the newest")
++    args = ap.parse_args(argv)
+     rows = load_rows(RESULTS_CSV)
+     if not rows and RESULTS_MD.exists():
+         print(f"no rows in {RESULTS_CSV}; kept {RESULTS_MD}")
+         return 1
+-    text = build_report(rows)
++    text = build_report(rows, all_shas=args.all_shas)
+     RESULTS_MD.parent.mkdir(parents=True, exist_ok=True)
+     RESULTS_MD.write_text(text, encoding="utf-8")
+     print(f"wrote {RESULTS_MD} ({len(rows)} rows)")
+diff --git a/bench/suite/suite.py b/bench/suite/suite.py
+index 2782037..e1897e0 100644
+--- a/bench/suite/suite.py
++++ b/bench/suite/suite.py
+@@ -9,6 +9,7 @@ import os
+ import random
+ import subprocess
+ import sys
++import time
+ import urllib.error
+ import urllib.request
+ from pathlib import Path
+@@ -29,7 +30,7 @@ COLUMNS = [
+     "tests_passed", "tests_total", "tasks_passed", "tasks_total", "attempts",
+     "input", "output", "reasoning", "cache_read", "cost",
+     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
+-    "batch_wall_s", "tampered", "seed", "order_idx",
++    "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
+ ]
+ 
+ # results.csv is written with the resume key in front of the reported columns:
+@@ -133,18 +134,37 @@ class _ResultWriter:
+     """Append rows to results.csv the moment they exist, so a crash mid-matrix keeps
+     every finished row and a resume skips them."""
+ 
+-    def __init__(self, csv_path):
++    def __init__(self, csv_path, run_id=None):
+         self.csv_path = Path(csv_path)
++        self.run_id = run_id or time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+         self.rows = 0
+ 
++    def _migrate_header(self):
++        """Rewrite a results.csv written with an older column set: old rows are kept,
++        the new columns are left empty."""
++        with open(self.csv_path, newline="", encoding="utf-8") as fh:
++            reader = csv.DictReader(fh)
++            old_rows = list(reader)
++        tmp = self.csv_path.with_suffix(self.csv_path.suffix + ".migrate")
++        with open(tmp, "w", newline="", encoding="utf-8") as fh:
++            writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS, extrasaction="ignore")
++            writer.writeheader()
++            writer.writerows(old_rows)
++        os.replace(tmp, self.csv_path)
++
+     def write(self, row):
+         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
+         fresh = not self.csv_path.exists() or self.csv_path.stat().st_size == 0
++        if not fresh:
++            with open(self.csv_path, newline="", encoding="utf-8") as fh:
++                header = next(csv.reader(fh), [])
++            if header != CSV_FIELDS:
++                self._migrate_header()
+         with open(self.csv_path, "a", newline="", encoding="utf-8") as fh:
+             writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS, extrasaction="ignore")
+             if fresh:
+                 writer.writeheader()
+-            writer.writerow(row)
++            writer.writerow(dict(row, run_id=self.run_id))
+             fh.flush()
+         self.rows += 1
+ 
+diff --git a/tests/test_harness_suite.py b/tests/test_harness_suite.py
+index 2ac4538..7ad22e8 100644
+--- a/tests/test_harness_suite.py
++++ b/tests/test_harness_suite.py
+@@ -500,3 +500,77 @@ def test_report_main_keeps_existing_md_when_no_rows(monkeypatch, tmp_path):
+     md = _report_paths(monkeypatch, tmp_path)
+     assert report.main([]) == 1
+     assert md.read_text(encoding="utf-8") == "# keep me\n"
++
++
++# ------------------------------------------------------------- bench-trust
++def test_writer_migrates_old_header(tmp_path):
++    csv_path = tmp_path / "results.csv"
++    csv_path.write_text("slug,ts\na,1\n", encoding="utf-8")
++
++    writer = suite._ResultWriter(csv_path)
++    writer.write({"slug": "b", "ts": "2"})
++
++    with open(csv_path, newline="", encoding="utf-8") as fh:
++        header = next(csv.reader(fh))
++    with open(csv_path, newline="", encoding="utf-8") as fh:
++        rows = list(csv.DictReader(fh))
++    assert header == suite.CSV_FIELDS
++    assert rows[0]["slug"] == "a" and rows[0]["ts"] == "1" and rows[0]["run_id"] == ""
++    assert rows[1]["slug"] == "b" and rows[1]["run_id"] == writer.run_id
++
++
++def test_latest_per_cell_and_newest_sha():
++    base = {"size": "small", "mode": "serial", "executor": "claude", "rep": "1",
++            "wall_s": "1", "cost": "1", "model": "claude-x"}
++    rows = [
++        dict(base, status="fail", harness_sha="A"),
++        dict(base, status="pass", harness_sha="A"),
++        dict(base, rep="2", status="harness_fail", harness_sha="B"),
++        dict(base, rep="3", status="pass", harness_sha="B"),
++    ]
++    latest = report.latest_per_cell(rows)
++    assert len(latest) == 3
++    assert latest[0]["status"] == "pass" and latest[0]["harness_sha"] == "A"
++    newest = report.newest_sha_rows(latest)
++    assert {r["harness_sha"] for r in newest} == {"B"}
++    assert report.newest_sha_rows([]) == []
++
++
++def test_harness_fail_excluded_from_rates():
++    base = {"size": "small", "mode": "serial", "executor": "pi", "rep": "1",
++            "wall_s": "1", "cost": "0", "model": "m", "harness_sha": "A"}
++    rows = [dict(base, status="pass"),
++            dict(base, rep="2", status="harness_fail"),
++            dict(base, rep="3", status="infra_error")]
++    graded = report._graded(rows)
++    assert [r["status"] for r in graded] == ["pass"]
++    text = report.build_report(rows, all_shas=True)
++    assert "1 counted" in text and "1 harness_fail excluded" in text
++
++
++def test_apply_window_verdict():
++    import cells  # noqa: PLC0415 (real module, pure helper)
++
++    row = {"mode": "window", "status": "pass", "window_opened": "true", "watch_ok": "false"}
++    cells._apply_window_verdict(row)
++    assert row["status"] == "harness_fail"
++
++    row = {"mode": "window", "status": "pass", "window_opened": "false", "watch_ok": "true"}
++    cells._apply_window_verdict(row)
++    assert row["status"] == "harness_fail"
++
++    row = {"mode": "window", "status": "pass", "window_opened": "true", "watch_ok": "true"}
++    cells._apply_window_verdict(row)
++    assert row["status"] == "pass"
++
++    row = {"mode": "serial", "status": "fail", "window_opened": "false", "watch_ok": "false"}
++    cells._apply_window_verdict(row)
++    assert row["status"] == "fail"
++
++
++def test_runs_agree():
++    import check_fixtures  # noqa: PLC0415
++
++    assert check_fixtures.runs_agree([{"pytest": 0, "vitest": 0}, {"pytest": 0, "vitest": 0}])
++    assert not check_fixtures.runs_agree([{"pytest": 0}, {"pytest": 1}])
++    assert check_fixtures.runs_agree([])

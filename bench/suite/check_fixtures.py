@@ -114,7 +114,15 @@ def run_all(checks: list[tuple[str, list[str]]], work: Path) -> dict[str, int]:
     return results
 
 
-def check_size(size: str) -> bool:
+def runs_agree(results: list[dict[str, int]]) -> bool:
+    """True iff every run has the same {label: passed} map as the first run."""
+    if not results:
+        return True
+    first = {label: code == 0 for label, code in results[0].items()}
+    return all({label: code == 0 for label, code in run_.items()} == first for run_ in results[1:])
+
+
+def check_size(size: str, repeat: int = 5) -> bool:
     print(f"[{size}] preparing work dir")
     work = make_work(size)
     try:
@@ -133,7 +141,13 @@ def check_size(size: str) -> bool:
             bad = ", ".join(label for label, code in green.items() if code != 0)
             print(f"FAIL: {size} solution is not GREEN - failing: {bad}")
             return False
-        print(f"GREEN OK: {size}")
+        runs = [green]
+        for _ in range(repeat - 1):
+            runs.append(run_all(checks, work))
+        if not runs_agree(runs):
+            print(f"FAIL: {size} flaky - repeated GREEN runs disagree: {runs}")
+            return False
+        print(f"GREEN OK: {size} (x{repeat} runs agree)")
         return True
     finally:
         shutil.rmtree(work, ignore_errors=True)
@@ -149,7 +163,10 @@ def main(argv: list[str] | None = None) -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--size", choices=SIZES,
                         help="only check this size (default: every size that exists)")
+    parser.add_argument("--repeat", type=int, default=5,
+                        help="GREEN runs per size that must agree (default 5, min 1)")
     args = parser.parse_args(argv)
+    repeat = max(1, args.repeat)
 
     if args.size:
         sizes = [args.size]
@@ -166,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         for size in sizes:
             print(f"=== size: {size} ===")
             try:
-                ok = check_size(size)
+                ok = check_size(size, repeat)
             except InfraError as exc:
                 print(f"INFRA: {size}: {exc}")
                 print("no verdict on this size - fix the environment and rerun")
