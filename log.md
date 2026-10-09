@@ -128,3 +128,6 @@ Each entry: what happened → fix applied (or open).
 ## 2026-10-08 haiku-executor
 - Agent `isolation: "worktree"` branches from HEAD, so untracked `.harness/plans/<slug>/` is missing in the subagent's worktree. → Worked around: prompt passes the absolute main-tree plan dir; agent doc + CLAUDE.md say so. Open: no run_plan guards (scope, hash lock, retry feedback) on this path; Verify must check `git diff --stat` by hand.
 - haiku-executor e2e (plan haiku-e2e = suite small fixture, 2 tasks): both acceptance exit 0, hidden tests 39 passed, 80s, 25.5k subagent tokens.
+
+## 2026-10-08 claude-executor worktree base
+- Agent `isolation: "worktree"` branches from `origin/main`, NOT local HEAD: unpushed commits (bench-trust, hooks, plans) are missing in the subagent's worktree. bench-fixtures T3 edited a stale `check_fixtures.py`; `--check` T2 failed (plan `checks/` absent). → Open: push before spawning, or run via `run_plan.py --executor claude` (snapshots the working tree), or find a worktree base-ref setting. Do not spawn claude-executor with unpushed prerequisites.
