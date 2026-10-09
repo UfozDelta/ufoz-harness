@@ -1,14 +1,49 @@
 """Grade work done outside the runner (e.g. by @haiku-executor in a git worktree): the grader
 lock, the file scope, and every task's acceptance, run inside that worktree."""
+import json
 import os
 import subprocess
 from pathlib import Path
 
 from .acceptance import run_acceptance
+from .guards import GIT_MOVED, git_state, snapshot
 from .plan import Plan, in_scope
 
 # Paths the harness itself writes or Claude Code keeps: never part of a task's scope.
 IGNORED_PREFIXES = (".harness/plans/", ".claude/", ".worktrees/")
+# Main-tree paths a run may legitimately touch while an agent works in its worktree.
+IGNORED_MAIN = (".harness/plans/", ".harness/metrics.jsonl", ".worktrees/", ".claude/worktrees/")
+BASELINE = "main.baseline.json"
+
+
+def write_baseline(slug):
+    """Photograph the main tree (file hashes + git HEAD/branch) for `--check` to compare against.
+    Written by `--prepare`, because the agent is meant to touch only its worktree."""
+    plan_dir = Path(".harness/plans") / slug
+    plan_dir.mkdir(parents=True, exist_ok=True)
+    state = git_state()
+    (plan_dir / BASELINE).write_text(
+        json.dumps({"files": snapshot(), "git": list(state) if state else None}), encoding="utf-8")
+
+
+def main_changes(slug):
+    """Main-tree paths that differ from the `--prepare` photograph (plus GIT_MOVED if HEAD or the
+    branch moved). None when there is no photograph, i.e. the worktree was not made by --prepare."""
+    path = Path(".harness/plans") / slug / BASELINE
+    if not path.is_file():
+        return None
+    base = json.loads(path.read_text(encoding="utf-8"))
+    now = snapshot()
+    changed = []
+    if now is not None and base.get("files") is not None:
+        before = base["files"]
+        changed = sorted(f for f in before.keys() | now.keys()
+                         if before.get(f) != now.get(f)
+                         and not f.startswith(IGNORED_MAIN) and not f.endswith(".tsbuildinfo"))
+    state = git_state()
+    if base.get("git") and state and list(state) != base["git"]:
+        changed.append(GIT_MOVED)
+    return changed
 
 
 def changed_files(root):
@@ -54,6 +89,11 @@ def check(slug, root):
     violations = scope_violations(changed, allowed)
     for path in violations:
         print(f"SCOPE {path}")
+    moved = main_changes(slug) or []
+    for path in moved:
+        print(f"MAIN {path}")
+    if moved:
+        print("main tree changed since --prepare: an agent write outside the worktree, or your own edit")
     all_passed = True
     home = Path.cwd()
     os.chdir(root)  # acceptance commands run from the worktree root
@@ -66,4 +106,4 @@ def check(slug, root):
                 print(out.strip()[-500:])
     finally:
         os.chdir(home)
-    return 0 if all_passed and not broken and not violations else 1
+    return 0 if all_passed and not broken and not violations and not moved else 1

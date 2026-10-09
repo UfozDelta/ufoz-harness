@@ -81,3 +81,19 @@ def test_land_refuses_without_a_terminal():
     out = subprocess.run([sys.executable, str(ROOT / ".harness/run_plan.py"), "nope", "--land"],
                          cwd=ROOT, stdin=subprocess.DEVNULL, capture_output=True, text=True)
     assert out.returncode == 1 and "run it in a terminal" in out.stdout
+
+
+def _hook(event):
+    return subprocess.run([sys.executable, str(ROOT / ".harness/hooks/git_guard.py")],
+                          input=json.dumps(event), capture_output=True, text=True)
+
+
+def test_writes_must_stay_inside_a_worktree(tmp_path):
+    # tmp_path is outside any worktree whatever ROOT is (this repo may itself sit in .worktrees/)
+    inside = str(tmp_path / ".worktrees" / "p" / "a.py")
+    assert _hook({"tool_name": "Write", "tool_input": {"file_path": inside}}).returncode == 0
+    for bad in [str(tmp_path / "a.py"), ".worktrees/p/a.py", "a.py"]:
+        out = _hook({"tool_name": "Edit", "tool_input": {"file_path": bad}})
+        assert out.returncode == 2 and "outside a worktree" in out.stderr, bad
+    claude_wt = str(tmp_path / ".claude" / "worktrees" / "agent-1" / "a.py")
+    assert _hook({"tool_name": "Write", "tool_input": {"file_path": claude_wt}}).returncode == 0

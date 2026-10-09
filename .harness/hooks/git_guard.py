@@ -1,4 +1,5 @@
-"""PreToolUse hook for the claude-executor subagent: block git state changes and --land.
+"""PreToolUse hook for the claude-executor subagent: block git state changes and --land, and
+keep its file writes inside a worktree directory (.worktrees/<slug>, the runner's own layout).
 
 Registered in .claude/agents/claude-executor.md, so it only guards that agent; the main
 session keeps normal permission prompts. The deny list is .pi/deny.json (the same one the
@@ -37,12 +38,31 @@ def blocked(command, deny):
     return None
 
 
+WRITE_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit")
+WORKTREE_DIRS = (".worktrees", ".claude/worktrees")
+
+
+def outside_worktree(path):
+    """True when a path to write is not inside a worktree dir. Relative paths resolve against
+    the main tree, so they count as outside: the agent is told to use absolute paths."""
+    norm = "/" + str(path).replace("\\", "/").lstrip("/")
+    return not any(f"/{d}/" in norm for d in WORKTREE_DIRS) or not Path(str(path)).is_absolute()
+
+
 def main():
     try:
         event = json.load(sys.stdin)
     except ValueError:
         return 0  # not our event: never block on a parse error
-    command = (event.get("tool_input") or {}).get("command") or ""
+    tool_input = event.get("tool_input") or {}
+    if event.get("tool_name") in WRITE_TOOLS:
+        path = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
+        if path and outside_worktree(path):
+            print(f"blocked: write outside a worktree ({path}). Edit only under .worktrees/<slug>, "
+                  "with absolute paths.", file=sys.stderr)
+            return 2
+        return 0
+    command = tool_input.get("command") or ""
     hit = blocked(command, deny_list())
     if hit:
         print(f"blocked: {hit}. Executors never change git state or land; the user does.",

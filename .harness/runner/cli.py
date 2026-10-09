@@ -56,10 +56,13 @@ def build_parser():
     ap.add_argument("--relock-only", action="store_true",
                     help="Re-record plan.lock.json (here, and in the plan's worktree if there is "
                          "one) after you edited tasks.json or a check script; run nothing.")
-    ap.add_argument("--check", metavar="DIR",
-                    help="Grade work done outside the runner in the git worktree DIR (plan files from "
-                         "this tree): grader lock, file scope, each task's acceptance run in DIR. "
-                         "Runs nothing else.")
+    ap.add_argument("--check", metavar="DIR", nargs="?", const="",
+                    help="Grade work done outside the runner in the git worktree DIR (default: the plan's "
+                         "worktree; plan files from this tree): grader lock, file scope, each task's "
+                         "acceptance run in DIR. Runs nothing else.")
+    ap.add_argument("--prepare", action="store_true",
+                    help="Create the plan's worktree and print its path; run nothing; for executors "
+                         "that edit outside the runner.")
     ap.add_argument("--land", action="store_true",
                     help="The user's command, not ours: apply the worktree's code changes to "
                          "this tree, copy its plan records, remove the worktree and its branch.")
@@ -156,6 +159,18 @@ def relock_only(slug):
     return 0
 
 
+def prepare(slug):
+    if not worktree.in_git_repo():
+        print("not a git repo")
+        return 1
+    main = Path.cwd()
+    target = worktree.ensure(slug)
+    worktree.sync_plan(slug, target, main)
+    check.write_baseline(slug)
+    print(f"worktree: {target}")
+    return 0
+
+
 def main(argv=None):
     global _ACTIVE_RUN_LOCK
     ap = build_parser()
@@ -193,8 +208,10 @@ def _run(ap, args):
         sys.exit(land.land(args.slug))
     if args.relock_only:
         sys.exit(relock_only(args.slug))
-    if args.check:
-        sys.exit(check.check(args.slug, args.check))
+    if args.prepare:
+        sys.exit(prepare(args.slug))
+    if args.check is not None:
+        sys.exit(check.check(args.slug, args.check or str(worktree.path_for(args.slug))))
     if args.watch:
         sys.exit(watch.watch(watch_dir(args.slug)))
     if args.status:
