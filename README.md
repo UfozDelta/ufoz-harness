@@ -59,23 +59,26 @@ commits are identical; what differs is who types the code and who enforces the g
 
 ### Claude mode
 
-<img src="docs/mode-claude.svg" alt="Claude mode: Decide, Plan with @planner, Execute with @claude-executor, Check with --check, Land with --land --from" width="100%">
+<img src="docs/mode-claude.svg" alt="Claude mode: Decide, Plan with @planner, Execute with @claude-executor, Check with --check, Land with --land" width="100%">
 
-Stay inside Claude Code. After your go, the main session spawns the `claude-executor` subagent
-(`.claude/agents/claude-executor.md`) with `isolation: "worktree"` and `run_in_background: true`,
-so it shows up in the agents panel. It defaults to Haiku; pass `model: sonnet` or `model: opus`
-for harder work. It reads `plan.md` and `tasks.json` by absolute path (plan files are untracked,
-so a Claude worktree branched from HEAD does not contain them), edits only each task's `files`,
-and runs each acceptance command, retrying once. It is not a `run_plan.py` executor.
+Stay inside Claude Code. After your go, `run_plan.py <slug> --prepare` creates the same worktree the
+runner would use (`.worktrees/<slug>`, a snapshot of your tree with the plan files copied in), then
+the main session spawns the `claude-executor` subagent (`.claude/agents/claude-executor.md`) in the
+background so it shows up in the agents panel. It defaults to Haiku; pass `model: sonnet` or
+`model: opus` for harder work. It edits only each task's `files` inside that worktree, runs each acceptance command, and retries
+once. `--prepare` also records a baseline of your main tree, so `--check` fails (`MAIN <path>`) if
+the agent wrote anything outside its worktree or moved HEAD. A hook in the agent file also blocks
+this, but Claude Code does not always load agent hooks, so `--check` is the guarantee.
 
 ```
-python .harness/run_plan.py <slug> --check <worktree>          # grade it: lock, scope, acceptance
-python .harness/run_plan.py <slug> --land --from <worktree>    # you: apply plan-listed files, drop the worktree
+python .harness/run_plan.py <slug> --prepare    # worktree: <abs path>; run nothing
+python .harness/run_plan.py <slug> --check      # grade it: lock, scope, acceptance
+python .harness/run_plan.py <slug> --land       # you: the same land as runner mode
 ```
 
-Trade-off: the runner is not driving, so there is no automatic retry-with-feedback, repair pass
-or live lock during the run. `--check` and `--land --from` apply the lock, scope and acceptance
-checks afterwards, and `--land --from` refuses anything outside the plan's file list.
+Trade-off: the runner is not driving, so there is no automatic retry-with-feedback or repair pass.
+`--check` applies the lock, scope and acceptance checks afterwards. `--land --from DIR` still exists
+for a worktree made outside the runner; it runs `--check` first and applies only the plan's files.
 
 ### Runner mode (pi / opencode)
 

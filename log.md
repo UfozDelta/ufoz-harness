@@ -131,3 +131,7 @@ Each entry: what happened → fix applied (or open).
 
 ## 2026-10-08 claude-executor worktree base
 - Agent `isolation: "worktree"` branches from `origin/main`, NOT local HEAD: unpushed commits (bench-trust, hooks, plans) are missing in the subagent's worktree. bench-fixtures T3 edited a stale `check_fixtures.py`; `--check` T2 failed (plan `checks/` absent). → Open: push before spawning, or run via `run_plan.py --executor claude` (snapshots the working tree), or find a worktree base-ref setting. Do not spawn claude-executor with unpushed prerequisites.
+
+## 2026-10-09 claude-executor containment
+- Agent-frontmatter PreToolUse hook (`.harness/hooks/git_guard.py`) did NOT fire in two live probes: the agent wrote to the main tree (Write and Bash) and ran `git stash list` unblocked. Either frontmatter hooks are not loaded in this Claude Code version or the session cached the old agent file. → Mitigated: `--prepare` writes `main.baseline.json`; `--check` fails with `MAIN <path>` on any main-tree change or HEAD/branch move (verified live). Open: retest the hook in a fresh session.
+- The Write tool refuses SUMMARY.md inside a subagent ("write report files" rule). → Agent prompt/CLAUDE.md say to use a bash heredoc. Open.

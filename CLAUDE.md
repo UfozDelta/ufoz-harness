@@ -102,10 +102,12 @@ only when the user asks for it in that turn; `--land` needs a terminal or `--yes
    Acceptance must be a shell command that exits 0 only when the task is really done.
 3. **Approve.** Run `python .harness/run_plan.py <slug> --lint`; fix errors. Show the user the plan summary.
    Do not execute before they say go.
-   **"haiku" / "all-Claude" / "native" executor = ONLY the Agent tool**, never `run_plan.py` via Bash: `subagent_type: claude-executor`,
-   `isolation: "worktree"`, `run_in_background: true` (so it shows in the agents panel). Then verify with `run_plan.py <slug> --check <worktree>`.
-   Optional all-Claude executor: after go, spawn `@claude-executor` with `isolation: "worktree"`, passing the slug and the ABSOLUTE main-tree plan dir (plans are untracked, so the worktree lacks them). Haiku edits and runs
-   acceptance itself (no run_plan guards: at Verify, check `git diff --stat` stays inside each task's `files`).
+   **"haiku" / "all-Claude" / "native" executor** (same worktree, check and land as the runner): run
+   `python .harness/run_plan.py <slug> --prepare` (prints `worktree: <abs path>`), then spawn `claude-executor`
+   with the Agent tool, NO `isolation`, `run_in_background: true` (so it shows in the agents panel), passing the slug and that path.
+   Haiku edits inside `.worktrees/<slug>` and runs acceptance itself (the agent hook may not load; `--check` fails with `MAIN <path>` on any main-tree
+   write or HEAD move since `--prepare`). The agent's Write tool refuses SUMMARY.md: it uses a bash heredoc.
+   At Verify: `run_plan.py <slug> --check`; the user lands with `--land`.
 4. **Execute.** Run in the background: `python .harness/run_plan.py <slug>` (add `--only T2` for one task).
    A real run defaults to its own git worktree (`.worktrees/<slug>`, so plans can run in parallel) and to a
    live window; `--no-worktree` / `--no-window` (or `HARNESS_WORKTREE=0` / `HARNESS_WINDOW=0`) opt out.

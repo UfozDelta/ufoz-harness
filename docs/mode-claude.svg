@@ -27,11 +27,11 @@
   <g class="chip"><rect x="40" y="124" width="140" height="56" rx="10"/><text x="110" y="149">Decide</text><text class="s mono" x="110" y="167">you + Claude</text></g>
   <g class="chip"><rect x="230" y="124" width="140" height="56" rx="10"/><text x="300" y="149">Plan</text><text class="s mono" x="300" y="167">@planner · sonnet</text></g>
   <g class="chip hot"><rect x="420" y="124" width="140" height="56" rx="10"/><text x="490" y="149">Execute</text><text class="s mono" x="490" y="167">@claude-executor</text></g>
-  <g class="chip"><rect x="610" y="124" width="140" height="56" rx="10"/><text x="680" y="149">Check</text><text class="s mono" x="680" y="167">--check DIR</text></g>
-  <g class="chip you"><rect x="800" y="124" width="140" height="56" rx="10"/><text x="870" y="149">Land</text><text class="s mono" x="870" y="167">--land --from DIR</text></g>
+  <g class="chip"><rect x="610" y="124" width="140" height="56" rx="10"/><text x="680" y="149">Check</text><text class="s mono" x="680" y="167">--check</text></g>
+  <g class="chip you"><rect x="800" y="124" width="140" height="56" rx="10"/><text x="870" y="149">Land</text><text class="s mono" x="870" y="167">--land</text></g>
 
-  <text class="note mono" x="40" y="238">• executor = subagent on haiku by default (model: sonnet | opus to override); isolation: worktree, runs in the background</text>
-  <text class="note mono" x="40" y="260">• plan files stay in the main tree; the agent reads them by absolute path and cannot edit its own grader</text>
-  <text class="note mono" x="40" y="282">• --check grades lock, file scope and every acceptance command; --land --from applies only plan-listed files</text>
+  <text class="note mono" x="40" y="238">• --prepare makes .worktrees/&lt;slug&gt;; the executor is a subagent on haiku by default (model: sonnet | opus), in the background</text>
+  <text class="note mono" x="40" y="260">• --prepare photographs your tree; --check fails if the agent wrote outside .worktrees/ or moved git HEAD</text>
+  <text class="note mono" x="40" y="282">• --check grades lock, file scope and every acceptance command; --land is the same command as runner mode</text>
   <text class="note mono" x="40" y="304">• you land and commit; no agent ever does</text>
 </svg>
