@@ -5,6 +5,7 @@ Usage: python packages/ufoz-harness/export_kit.py
 Copies the harness files into packages/ufoz-harness/kit/, clearing it first
 so stale files never survive. Run from the repo root.
 """
+import argparse
 import shutil
 import sys
 from pathlib import Path
@@ -96,7 +97,17 @@ def export():
     print(f"kit exported: {count} files -> {KIT}")
 
 
-def main():
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Export the harness kit.")
+    parser.add_argument("--kit-dir", dest="kit_dir", default=None)
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    global KIT
+    args = parse_args(argv)
+    if args.kit_dir:
+        KIT = Path(args.kit_dir)
     export()
 
 

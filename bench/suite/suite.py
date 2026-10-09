@@ -31,6 +31,7 @@ COLUMNS = [
     "input", "output", "reasoning", "cache_read", "cost",
     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
     "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
+    "plan_source", "planner", "plan_cost", "regression_passed", "regression_total", "kit_hash",
 ]
 
 # results.csv is written with the resume key in front of the reported columns:
@@ -194,6 +195,11 @@ def parse_args(argv=None):
     ap.add_argument("--rerun-infra", action="store_true", help="rerun only rows whose status is infra_error")
     ap.add_argument("--cleanup", action="store_true",
                     help="remove leftover suite worktrees/branches/work dirs, then exit")
+    ap.add_argument("--plan-source", choices=["fixture", "planner"], default="fixture",
+                    help="plan each cell from its fixture plan (default) or with a real planner")
+    ap.add_argument("--planner", default="claude", help="planner for --plan-source planner")
+    ap.add_argument("--planner-model", default="sonnet", help="model for --plan-source planner")
+    ap.add_argument("--legacy", action="store_true", help="run cells on the old lab worktree path")
     return ap.parse_args(argv)
 
 
@@ -232,6 +238,13 @@ def run_cleanup(repo_root=REPO_ROOT):
         print(f"cleanup: {slug}")
         cells_mod.cleanup_cell({"slug": slug}, repo_root)
     print(f"cleaned {len(slugs)} leftover suite cell(s)")
+    temp = cells_mod.TEMP_ROOT
+    projects = [p for p in sorted(temp.iterdir()) if p.is_dir() and not p.name.startswith("_")] \
+        if temp.is_dir() else []
+    for project in projects:
+        print(f"cleanup: project {project.name}")
+        cells_mod.cleanup_project({"project": str(project)})
+    print(f"cleaned {len(projects)} leftover temp project(s)")
     return 0
 
 
@@ -245,6 +258,9 @@ def main(argv=None):
     reps = max(1, args.reps)
 
     cells = build_matrix(sizes, modes, executors, reps, seed=args.seed)
+    for cell in cells:
+        cell.update(plan_source=args.plan_source, planner=args.planner,
+                    planner_model=args.planner_model, legacy=args.legacy)
 
     if args.dry:
         planned = [c for c in cells if c["status"] != "unsupported"]

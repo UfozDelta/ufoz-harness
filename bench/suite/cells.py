@@ -11,8 +11,10 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -25,6 +27,8 @@ from runner import worktree  # noqa: E402
 
 SUITE_DIR = "bench/suite"
 WORK_PREFIX = f"{SUITE_DIR}/work"
+TEMP_ROOT = Path(tempfile.gettempdir()) / "ufoz-bench"
+PLAN_CACHE = Path(REPO_ROOT) / "bench/suite/plan_cache"
 SIZES = ("small", "medium", "large")
 # only names build_matrix makes; plans like `suite-fixes` share the prefix and must never match
 CELL_SLUG = re.compile(r"^suite-(small|medium|large)-(serial|parallel|multi|window)-[a-z][a-z-]*-r\d+$")
@@ -45,6 +49,7 @@ TAMPER_PATTERNS = (_TS + "ignore", _TS + "expect-error", "pytest.mark.skip",
                    "pytest.mark.xfail", "@pytest.mark.skip", "@pytest.mark.xfail",
                    "it.skip", "describe.skip", "test.skip", "test.todo", "xit(", "xdescribe(")
 SKIP_DIRS = ("node_modules", ".git", "__pycache__", ".pytest_cache", ".next", ".check-tmp")
+KIT_DIRS = (".claude", ".harness", ".worktrees", ".opencode", ".pi", ".agents")
 FIXTURE_SKIP_DIRS = {"__pycache__", ".pytest_cache", "node_modules"}
 # executors that read HARNESS_MODEL from .harness/.env and pick the wrong model
 EXECUTOR_MODELS = {"cline": "cline-free/deepseek-v4.1-flash",
@@ -349,11 +354,13 @@ def _vitest_root(start, work):
 
 
 def _ts_dirs(work):
-    """Every dir under work that holds a tsconfig.json (node_modules etc. skipped)."""
+    """Every dir under work that holds a tsconfig.json (node_modules etc. skipped, and the
+    installed kit's own dirs: its skills carry tsconfigs that are not the project's)."""
     work = Path(work)
     out = []
+    skip = SKIP_DIRS + KIT_DIRS
     for dirpath, dirnames, filenames in os.walk(work):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        dirnames[:] = [d for d in dirnames if d not in skip]
         if "tsconfig.json" in filenames:
             out.append(Path(dirpath))
     return sorted(out)
@@ -449,6 +456,77 @@ def _tampered(work, seed, allowed):
     return bool(hits)
 
 
+def _regression_counts(project, size, repo_root):
+    """Pristine seed tests restored over the landed tree and counted like the hidden ones,
+    so a landed change that breaks an existing test scores lower."""
+    seed = Path(repo_root) / SUITE_DIR / "fixtures" / size / "seed"
+    if not seed.is_dir():
+        return 0, 0
+    project = Path(project)
+    py_groups, ts_groups = _hidden_layout(seed)
+    for rels in (*py_groups.values(), *ts_groups.values()):
+        for rel in rels:
+            (project / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(seed / rel, project / rel)
+    passed = total = 0
+    py_names = [str(rel) for rels in py_groups.values() for rel in rels]
+    if py_names:
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            passed, total = _pytest_counts(project, py_names)
+    for rel_dir, rels in sorted(ts_groups.items()):
+        cwd = _vitest_root(project / rel_dir, project)
+        names = [r.relative_to(cwd.relative_to(project)) for r in rels]
+        try:
+            ts_passed, ts_total = _vitest_counts(cwd, [str(n) for n in names])
+        except SystemExit:  # no npx: the ts checks cannot pass
+            ts_passed, ts_total = 0, 1
+        passed += ts_passed
+        total += ts_total
+    return passed, total
+
+
+TAMPER_EXCLUDES = (".harness", ".claude", ".pi", ".opencode", ".agents", "CLAUDE.md",
+                   "AGENTS.md", "opencode.json", "skills-lock.json", ".gitignore")
+
+
+def _tamper_change(kind, rel, allowed):
+    name = Path(rel).name
+    if kind == "A":
+        return _looks_like_test(name) and rel not in allowed
+    return name in TAMPER_SENSITIVE and rel not in allowed
+
+
+def _tampered_git(project, seed_commit, base_commit, allowed):
+    """Git-based tamper check on the landed tree: changes against the seed (tracked and
+    untracked), plus suppressions added since the plan commit. Harness/agent dirs are out."""
+    project = Path(project)
+    allowed = {str(a).replace("\\", "/").strip("/") for a in allowed or ()}
+    scope = ["--", ".", *(f":(exclude){p}" for p in TAMPER_EXCLUDES)]
+    hits = []
+    for line in _git("diff", "--name-status", seed_commit, *scope, cwd=project).stdout.splitlines():
+        status, *paths = line.split("\t")
+        if status[:1] in ("R", "C"):
+            changes = [("D", paths[0]), ("A", paths[1])]
+        else:
+            changes = [(status[:1], paths[0])]
+        hits += [rel for kind, rel in changes if _tamper_change(kind, rel, allowed)]
+    for rel in _git("ls-files", "--others", "--exclude-standard", *scope,
+                    cwd=project).stdout.splitlines():
+        path = project / rel
+        text = path.read_text(encoding="utf-8", errors="ignore") if path.is_file() else ""
+        if _tamper_change("A", rel, allowed) or any(pat in text for pat in TAMPER_PATTERNS):
+            hits.append(rel)
+    current = ""
+    for line in _git("diff", "-U0", base_commit, *scope, cwd=project).stdout.splitlines():
+        if line.startswith("+++ b/"):
+            current = line[6:]
+        elif line.startswith("+") and any(pat in line for pat in TAMPER_PATTERNS):
+            hits.append(current)
+    if hits:
+        print(f"  cells: tamper: {', '.join(sorted(set(hits))[:5])}")
+    return bool(hits)
+
+
 def _metrics(slug, wt, repo_root):
     """Totals for one slug from metrics.jsonl. Missing file/field -> 0, never raises."""
     out = {"attempts": 0, "seconds": 0.0, "cost": 0.0, "tasks_passed": 0, "tasks_total": 0,
@@ -530,7 +608,11 @@ def _blank(cell):
                 "watch_ok": "", "peak_worktrees": "",
                 "model": os.environ.get("HARNESS_EXECUTOR_MODEL", cell["executor"]),
                 "harness_sha": "", "batch_wall_s": "", "tampered": "",
-                "fixture_hash": _fixture_hash(cell["size"])})
+                "fixture_hash": _fixture_hash(cell["size"]),
+                "plan_source": cell.get("plan_source", "fixture"),
+                "planner": cell.get("planner", ""), "plan_cost": "",
+                "regression_passed": "", "regression_total": "",
+                "kit_hash": cell.get("kit_hash", "")})
     return row
 
 
@@ -543,9 +625,10 @@ def _apply_window_verdict(row):
         row["status"] = "harness_fail"
 
 
-def _plan_args(cell, wt, parallel=0):
-    args = [sys.executable, ".harness/run_plan.py", cell["slug"],
-            "--executor", cell["executor"], "--no-worktree"]
+def _plan_args(cell, wt, parallel=0, isolated=False):
+    args = [sys.executable, ".harness/run_plan.py", cell["slug"], "--executor", cell["executor"]]
+    if not isolated:
+        args.append("--no-worktree")
     if model := os.environ.get("HARNESS_EXECUTOR_MODEL") or EXECUTOR_MODELS.get(cell["executor"]):
         args += ["--executor-model", model]
     if cell["mode"] != "window":
@@ -685,7 +768,103 @@ def _run_multi(cell, repo_root, cell_timeout, keep=False):
     return rows
 
 
+def _score_project(cell, row, project, repo_root, reports):
+    slug, size = cell["slug"], cell["size"]
+    tampered = _tampered_git(project, cell["seed_commit"], cell["base_commit"],
+                             _task_files(slug, project))
+    row["tampered"] = "true" if tampered else "false"
+    if not reports:
+        row["status"] = "infra_error"
+        return
+    row["regression_passed"], row["regression_total"] = _regression_counts(project, size, repo_root)
+    passed, total = _run_tests(project, size, repo_root)
+    row["tests_passed"], row["tests_total"] = passed, total
+    ok = (total and passed == total and row["tasks_passed"] == row["tasks_total"]
+          and row["regression_passed"] == row["regression_total"])
+    row["status"] = "pass" if ok else "fail"
+
+
+def _run_project(cell, repo_root, cell_timeout):
+    """Isolated path: a temp git project with the kit installed and the plan committed,
+    run_plan inside it, then --land and score the landed tree. A project failure is an
+    infra_error and runs no executor."""
+    row = _blank(cell)
+    slug, mode = cell["slug"], cell["mode"]
+    try:
+        project = make_project(cell, repo_root)
+        row["kit_hash"] = cell["kit_hash"]
+        row["plan_cost"] = plan_for_project(cell, project, repo_root, kit_hash=cell["kit_hash"])
+    except ProjectError as exc:
+        print(f"  cells: project error: {exc}")
+        row["status"] = "infra_error"
+        return row
+    wt = project / ".worktrees" / slug
+    log = Path(repo_root) / SUITE_DIR / "work" / "_logs" / f"{slug}.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    args = _plan_args(cell, project, parallel=3 if mode == "parallel" else 0, isolated=True)
+    proc = subprocess.Popen(args, cwd=str(project), stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, text=True, encoding="utf-8",
+                            errors="replace", stdin=subprocess.DEVNULL)
+    with log.open("w", encoding="utf-8") as fh:
+        thread = _pump(proc.stdout, fh)
+        if mode == "window":
+            row["window_opened"] = _window_opened(slug)
+        t0 = time.time()
+        timed_out = _poll_until(proc, t0 + cell_timeout)
+        if timed_out:
+            _stop_tree(proc)
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                proc.wait(timeout=30)
+        thread.join(timeout=30)
+        row["wall_s"] = round(time.time() - t0, 1)
+    _stop_tree(proc)
+    reports = sorted(_plan_dir(wt, slug).glob("items/*.report.md"))
+    metrics = _metrics(slug, wt, project)
+    row.update({k: metrics[k] for k in METRIC_FIELDS})
+    if timed_out:
+        row["status"] = "timeout"
+    else:
+        landed = subprocess.run([sys.executable, ".harness/run_plan.py", slug, "--land", "--yes"],
+                                cwd=str(project), capture_output=True, text=True,
+                                encoding="utf-8", errors="replace")
+        if landed.returncode != 0:
+            row["status"] = "harness_fail"
+        else:
+            _score_project(cell, row, project, repo_root, reports)
+    row["harness_sha"] = _harness_sha(repo_root)
+    if mode == "window":
+        with contextlib.suppress(Exception):
+            row["watch_ok"] = _watch_ok(slug, repo_root, wt)
+        _apply_window_verdict(row)
+    return row
+
+
+def _preserve_project(cell, repo_root):
+    src = Path(cell["project"]) / ".worktrees" / cell["slug"] / ".harness" / "plans" / cell["slug"]
+    dst = Path(repo_root) / SUITE_DIR / "failed" / cell["slug"]
+    for name in ("items", "logs"):
+        _copy_tree(src / name, dst / name)
+
+
 def run_cell(cell, repo_root=REPO_ROOT, cell_timeout=1800, keep=False):
+    """Run one cell in its own temp project. Returns its row (a list of rows for legacy multi)."""
+    repo_root = Path(repo_root)
+    if cell.get("legacy"):
+        return _run_legacy_cell(cell, repo_root, cell_timeout, keep)
+    if cell.get("mode") == "multi":
+        print("  cells: mode multi still runs on the legacy lab worktree path")
+        return _run_multi(cell, repo_root, cell_timeout, keep=keep)
+    try:
+        row = _run_project(cell, repo_root, cell_timeout)
+        if not keep and row.get("status") != "pass" and cell.get("project"):
+            _preserve_project(cell, repo_root)
+        return row
+    finally:
+        if not keep:
+            cleanup_project(cell)
+
+
+def _run_legacy_cell(cell, repo_root, cell_timeout=1800, keep=False):
     """Run one cell. Returns its row (a list of rows, one per size, for mode 'multi')."""
     repo_root = Path(repo_root)
     if cell.get("mode") == "multi":
@@ -753,3 +932,213 @@ def cleanup_cell(cell, repo_root=REPO_ROOT, sleep_fn=time.sleep):
     work = _work_dir(repo_root, slug)
     if work.is_dir() and work.parent.name == "work":
         shutil.rmtree(work, ignore_errors=True)
+
+
+class ProjectError(Exception):
+    pass
+
+
+_KIT_CACHE = {}
+
+
+def _tree_hash(root):
+    digest = hashlib.sha256()
+    for path in sorted(p for p in Path(root).rglob("*") if p.is_file()):
+        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()[:8]
+
+
+def ensure_kit(repo_root=REPO_ROOT):
+    repo_root = Path(repo_root)
+    key = str(repo_root)
+    if key in _KIT_CACHE:
+        return _KIT_CACHE[key]
+    pkg = repo_root / "packages" / "ufoz-harness"
+    root = TEMP_ROOT / "_kit"
+    kit = root / "kit"
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+        for name in ("index.js", "package.json"):
+            shutil.copy2(pkg / name, root / name)
+    except OSError as exc:
+        raise ProjectError(f"kit copy failed: {exc}") from exc
+    done = subprocess.run([sys.executable, str(pkg / "export_kit.py"), "--kit-dir", str(kit)],
+                          cwd=str(repo_root), capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    if done.returncode != 0:
+        raise ProjectError(f"kit export failed: {done.stderr.strip()[-300:]}")
+    _KIT_CACHE[key] = (root, _tree_hash(kit))
+    return _KIT_CACHE[key]
+
+
+def node_modules_cache(size, repo_root=REPO_ROOT):
+    if size == "small":
+        return None
+    seed = Path(repo_root) / SUITE_DIR / "fixtures" / size / "seed"
+    base = seed / "web" if size == "large" else seed
+    lock = base / "package-lock.json"
+    key = hashlib.sha256(lock.read_bytes()).hexdigest()[:12]
+    cache = TEMP_ROOT / "_nm" / key
+    if not (cache / "node_modules").is_dir():
+        cache.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(base / "package.json", cache / "package.json")
+        shutil.copy2(lock, cache / "package-lock.json")
+        done = subprocess.run([node_tool("npm"), "ci"], cwd=str(cache), capture_output=True,
+                              text=True, encoding="utf-8", errors="replace")
+        if done.returncode != 0:
+            shutil.rmtree(cache / "node_modules", ignore_errors=True)
+            raise ProjectError(f"npm ci failed: {done.stderr.strip()[-300:]}")
+    return cache / "node_modules"
+
+
+def _must_git(project, *args):
+    done = _git(*args, cwd=project)
+    if done.returncode != 0:
+        raise ProjectError(f"git {args[0]} failed: {done.stderr.strip()[-300:]}")
+    return done.stdout.strip()
+
+
+def _link_dir(link, target):
+    try:
+        if os.name == "nt":
+            done = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)],
+                                  capture_output=True, text=True)
+            if done.returncode != 0:
+                raise ProjectError(f"mklink failed: {done.stderr.strip()}")
+        else:
+            os.symlink(target, link, target_is_directory=True)
+    except OSError as exc:
+        raise ProjectError(f"link failed: {exc}") from exc
+
+
+def _clear_readonly(func, path, _exc):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
+def _wipe(path):
+    _remove_leftover(path)
+    if path.exists():
+        shutil.rmtree(path, onerror=_clear_readonly)
+
+
+def make_project(cell, repo_root=REPO_ROOT, kit=None):
+    repo_root = Path(repo_root)
+    size, slug = cell["size"], cell["slug"]
+    kit_root, kit_hash = kit or ensure_kit(repo_root)
+    seed = repo_root / SUITE_DIR / "fixtures" / size / "seed"
+    if not seed.is_dir():
+        raise ProjectError(f"missing fixture seed {seed}")
+    project = TEMP_ROOT / slug.removeprefix("suite-")
+    _wipe(project)
+    TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(seed, project)
+    (project / ".gitignore").write_text("node_modules/\n.next/\n__pycache__/\n", encoding="utf-8")
+    _must_git(project, "init", "-b", "main")
+    _must_git(project, "config", "user.name", "ufoz-bench")
+    _must_git(project, "config", "user.email", "bench@localhost")
+    _must_git(project, "config", "commit.gpgsign", "false")
+    _must_git(project, "add", "-A")
+    _must_git(project, "commit", "-q", "-m", "seed")
+    cell["seed_commit"] = _must_git(project, "rev-parse", "HEAD")
+    done = subprocess.run([node_tool("node"), str(kit_root / "index.js"), "--yes", "--dir", str(project)],
+                          cwd=str(project), capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    if done.returncode != 0:
+        raise ProjectError(f"kit install failed: {done.stderr.strip()[-300:]}")
+    _must_git(project, "add", "-A")
+    _must_git(project, "commit", "-q", "--allow-empty", "-m", "harness")
+    cache = node_modules_cache(size, repo_root)
+    if cache is not None:
+        where = project / "web" if size == "large" else project
+        _link_dir(where / "node_modules", cache)
+    cell["project"] = str(project)
+    cell["kit_hash"] = kit_hash
+    return project
+
+
+def cleanup_project(cell):
+    project = cell.get("project")
+    if not project:
+        return
+    path = Path(project)
+    if TEMP_ROOT not in path.parents:
+        raise ValueError(f"cleanup_project: refusing path outside {TEMP_ROOT}: {path}")
+    _wipe(path)
+
+
+def _retag_plan(plan_dir, slug):
+    path = plan_dir / "tasks.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["slug"] = slug
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def _plan_cost(plan_dir):
+    path = plan_dir / "planner.json"
+    if not path.is_file():
+        return 0.0
+    data = json.loads(path.read_text(encoding="utf-8"))
+    # the planner nests it: {"tokens": {..., "cost": x}}
+    return float((data.get("tokens") or {}).get("cost", data.get("cost", 0.0)))
+
+
+def _planner_plan(cell, project, repo_root, kit_hash, runner):
+    size, slug = cell["size"], cell["slug"]
+    model = cell.get("planner_model")
+    spec = repo_root / SUITE_DIR / "fixtures" / size / "spec.md"
+    sha = hashlib.sha256(spec.read_bytes()).hexdigest()[:8]
+    key = f"{size}-{cell['planner']}-{model or 'default'}-{sha}-{kit_hash}"
+    cache = PLAN_CACHE / key
+    dst = project / ".harness" / "plans" / slug
+    if (cache / "meta.json").is_file():
+        dst.mkdir(parents=True, exist_ok=True)
+        for name in ("plan.md", "tasks.json"):
+            shutil.copy2(cache / name, dst / name)
+        _copy_tree(cache / "checks", dst / "checks")
+        _retag_plan(dst, slug)
+        return 0.0
+
+    spec_copy = TEMP_ROOT / "_specs" / f"{size}-{sha}.md"
+    spec_copy.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(spec, spec_copy)
+    cmd = [sys.executable, ".harness/run_plan.py", slug, "--plan", str(spec_copy),
+           "--planner", cell["planner"]]
+    if model:
+        cmd += ["--planner-model", model]
+    try:
+        done = runner(cmd, cwd=str(project), timeout=1800, capture_output=True, text=True,
+                      encoding="utf-8", errors="replace")
+    except subprocess.TimeoutExpired as exc:
+        raise ProjectError(f"planner timed out: {exc}") from exc
+    if done.returncode != 0 or not (dst / "plan.md").is_file() \
+            or not (dst / "tasks.json").is_file():
+        raise ProjectError(f"planner produced no plan (rc {done.returncode})")
+    _retag_plan(dst, slug)
+    cost = _plan_cost(dst)
+    cache.mkdir(parents=True, exist_ok=True)
+    for name in ("plan.md", "tasks.json"):
+        shutil.copy2(dst / name, cache / name)
+    _copy_tree(dst / "checks", cache / "checks")
+    (cache / "meta.json").write_text(json.dumps({"cost": cost, "slug": slug}), encoding="utf-8")
+    return cost
+
+
+def plan_for_project(cell, project, repo_root=REPO_ROOT, kit_hash="", runner=subprocess.run):
+    repo_root, project = Path(repo_root), Path(project)
+    size, slug = cell["size"], cell["slug"]
+    dst = project / ".harness" / "plans" / slug
+    if cell.get("plan_source", "fixture") == "planner":
+        cost = _planner_plan(cell, project, repo_root, kit_hash, runner)
+    else:
+        src = repo_root / SUITE_DIR / "fixtures" / size / "plan_project"
+        if not src.is_dir():
+            raise ProjectError(f"missing fixture plan {src}")
+        _copy_files(src, dst)
+        _retag_plan(dst, slug)
+        cost = 0.0
+    _must_git(project, "add", "-A")
+    _must_git(project, "commit", "-q", "--allow-empty", "-m", "plan")
+    cell["base_commit"] = _must_git(project, "rev-parse", "HEAD")
+    return cost

@@ -15,6 +15,7 @@ node_modules/
 bench/suite/work/_logs/
 bench/suite/.check-tmp/
 bench/suite/failed/
+bench/suite/plan_cache/
 .harness/suite-*.tsbuildinfo
 bench/suite/work/
 # raw bench output (summaries in RESULTS.md / LATENCY.md stay tracked)

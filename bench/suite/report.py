@@ -22,6 +22,7 @@ COLUMNS = [
     "input", "output", "reasoning", "cache_read", "cost",
     "window_opened", "watch_ok", "peak_worktrees", "model", "harness_sha",
     "batch_wall_s", "tampered", "seed", "order_idx", "run_id", "fixture_hash",
+    "plan_source", "planner", "plan_cost", "regression_passed", "regression_total", "kit_hash",
 ]
 
 TOKEN_COLUMNS = ["input", "output", "reasoning", "cache_read"]
@@ -131,11 +132,20 @@ def _max_rep(rows):
     return max(reps) if reps else 1
 
 
+def _regressions_cell(rows):
+    with_reg = [r for r in rows if r.get("regression_total") not in (None, "")]
+    if not with_reg:
+        return "-"
+    broke = sum(1 for r in with_reg
+                if _int(r.get("regression_passed")) < _int(r.get("regression_total")))
+    return str(broke)
+
+
 def _grid_table(cells, k=3):
     k = max(1, _int(k, 1))
     lines = [
-        "| executor | size | mode | n | pass@1 | pass^{k} | wilson95 | median wall_s | cost/task | tokens/task |".format(k=k),
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "| executor | size | mode | n | pass@1 | pass^{k} | wilson95 | median wall_s | cost/task | tokens/task | regressions |".format(k=k),
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for (executor, size, mode), rows in cells.items():
         graded = _graded(rows)
@@ -158,7 +168,7 @@ def _grid_table(cells, k=3):
         cost_per = total_cost / len(solved) if solved else None
         tok_per = total_tokens / len(solved) if solved else None
         lines.append(
-            "| {e} | {s} | {m} | {n} | {rate} | {p3} | [{lo}, {hi}] | {wall} | {cost} | {tok} |".format(
+            "| {e} | {s} | {m} | {n} | {rate} | {p3} | [{lo}, {hi}] | {wall} | {cost} | {tok} | {reg} |".format(
                 e=executor, s=size, m=mode, n=n,
                 rate=f"{rate * 100:.0f}%" if n else "-",
                 p3=passk,
@@ -166,6 +176,7 @@ def _grid_table(cells, k=3):
                 wall=_fmt(_median(walls), "{:.1f}"),
                 cost=_fmt(cost_per, "${:.3f}"),
                 tok=_fmt(tok_per, "{:.0f}"),
+                reg=_regressions_cell(graded),
             )
         )
     return lines
@@ -238,6 +249,8 @@ def _cost_section(graded):
         n=len(graded), c=_fmt(total, "${:.2f}")))
     lines.append("")
     lines.append(f"Excluding `claude`: {_fmt(total - paid_cost, '${:.2f}')}.")
+    plan_cost = sum(_num(r.get("plan_cost"), 0.0) for r in graded)
+    lines.append(f"Planner cost (not billed to executors): {_fmt(plan_cost, '${:.2f}')}.")
     return lines
 
 
@@ -297,6 +310,9 @@ def build_report(rows, all_shas=False):
                  f"({infra} infra_error and {harness_fail} harness_fail excluded).")
     if not all_shas and len(scoped) < len(deduped):
         lines.append(f"Scope: harness_sha `{_newest_sha(deduped)}` only (`--all-shas` for every revision).")
+    kits = sorted({r.get("kit_hash") for r in scoped if r.get("kit_hash")})
+    if kits:
+        lines.append(f"Kit hash: {', '.join(kits)}.")
     lines.append("")
 
     lines.append("## Per executor x size x mode")

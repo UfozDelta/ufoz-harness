@@ -1,5 +1,7 @@
 """Tests for the harness-suite matrix/report plumbing (no executor, no network)."""
 import csv
+import json
+import subprocess
 import sys
 import types
 from pathlib import Path
@@ -574,3 +576,139 @@ def test_runs_agree():
     assert check_fixtures.runs_agree([{"pytest": 0, "vitest": 0}, {"pytest": 0, "vitest": 0}])
     assert not check_fixtures.runs_agree([{"pytest": 0}, {"pytest": 1}])
     assert check_fixtures.runs_agree([])
+
+
+def test_seed_checks_for(tmp_path):
+    import check_fixtures  # noqa: PLC0415
+
+    py_dir = tmp_path / "py"
+    py_dir.mkdir()
+    (py_dir / "test_x.py").write_text("", encoding="utf-8")
+    assert [label for label, _ in check_fixtures.seed_checks_for(py_dir)] == ["pytest"]
+
+    ts_dir = tmp_path / "ts"
+    ts_dir.mkdir()
+    (ts_dir / "a.test.ts").write_text("", encoding="utf-8")
+    assert [label for label, _ in check_fixtures.seed_checks_for(ts_dir)] == ["vitest"]
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert check_fixtures.seed_checks_for(empty) == []
+
+
+# ----------------------------------------------------------------- isolated projects
+def _run_git(cwd, *args):
+    return subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, text=True,
+                          check=True)
+
+
+def _write(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def _fake_kit(root):
+    _write(root / "index.js",
+           "const fs=require('fs');const i=process.argv.indexOf('--dir');"
+           "fs.writeFileSync(process.argv[i+1]+'/HARNESS.txt','kit');")
+    return root, "fake1234"
+
+
+def test_make_project_commits(tmp_path, monkeypatch):
+    import cells
+    monkeypatch.setattr(cells, "TEMP_ROOT", tmp_path / "ufoz-bench")
+    cell = {"slug": "suite-small-serial-pi-r97", "size": "small", "mode": "serial",
+            "executor": "pi", "rep": 97}
+    project = cells.make_project(cell, kit=_fake_kit(tmp_path / "kit"))
+    try:
+        assert _run_git(project, "log", "--format=%s").stdout.split() == ["harness", "seed"]
+        assert (project / "HARNESS.txt").is_file()
+        assert cell["project"] and cell["seed_commit"]
+    finally:
+        cells.cleanup_project(cell)
+    assert not project.exists()
+
+
+def test_plan_cache_hit_once(tmp_path, monkeypatch):
+    import cells
+    monkeypatch.setattr(cells, "TEMP_ROOT", tmp_path / "ufoz-bench")
+    monkeypatch.setattr(cells, "PLAN_CACHE", tmp_path / "plan_cache")
+    calls = []
+
+    def runner(cmd, cwd=None, **kw):
+        calls.append(cmd)
+        slug = cmd[2]
+        plan_dir = Path(cwd) / ".harness" / "plans" / slug
+        _write(plan_dir / "plan.md", "# Plan")
+        _write(plan_dir / "tasks.json", json.dumps({"slug": slug, "tasks": []}))
+        _write(plan_dir / "planner.json", json.dumps({"cost": 0.7}))
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    costs = []
+    for rep in (95, 96):
+        cell = {"slug": f"suite-small-serial-pi-r{rep}", "size": "small", "mode": "serial",
+                "executor": "pi", "rep": rep, "plan_source": "planner",
+                "planner": "claude", "planner_model": "sonnet"}
+        project = cells.make_project(cell, kit=_fake_kit(tmp_path / f"kit{rep}"))
+        try:
+            costs.append(cells.plan_for_project(cell, project, kit_hash="fake1234",
+                                                runner=runner))
+        finally:
+            cells.cleanup_project(cell)
+    assert costs == [0.7, 0.0]
+    assert len(calls) == 1
+
+
+def test_tampered_git_flags(tmp_path):
+    import cells
+    pat = cells.TAMPER_PATTERNS[0]
+
+    def fresh(name):
+        d = tmp_path / name
+        d.mkdir()
+        _run_git(d, "init", "-q", "-b", "main")
+        _run_git(d, "config", "user.email", "a@b.c")
+        _run_git(d, "config", "user.name", "x")
+        _write(d / "package.json", "{}")
+        _write(d / "app.py", "x = 1\n")
+        _run_git(d, "add", "-A")
+        _run_git(d, "commit", "-qm", "seed")
+        return d, _run_git(d, "rev-parse", "HEAD").stdout.strip()
+
+    cases = {
+        "sensitive_seed_edited": (lambda d: _write(d / "package.json", '{"a":1}'), True),
+        "harness_dir_ignored": (lambda d: _write(d / ".harness" / "n.md", pat), False),
+        "added_test_file": (lambda d: _write(d / "test_new.py", "def test_a(): pass\n"), True),
+        "suppression_added": (lambda d: _write(d / "app.py", "x = 1\n# " + pat + "\n"), True),
+        "plain_edit": (lambda d: _write(d / "app.py", "x = 2\n"), False),
+    }
+    for name, (mutate, expect) in cases.items():
+        d, seed = fresh(name)
+        mutate(d)
+        assert cells._tampered_git(d, seed, seed, set()) is expect, name
+
+
+def test_report_regressions():
+    row = dict(size="small", mode="serial", executor="pi", rep="1", status="fail",
+               regression_passed="1", regression_total="2", plan_cost="0.5", kit_hash="ab12")
+    text = report.build_report([row])
+    assert "| regressions |" in text
+    assert "Planner cost (not billed to executors): $0.50" in text
+    assert "Kit hash: ab12" in text
+    grid = [line for line in text.splitlines() if line.startswith("| pi | small | serial |")]
+    assert grid and grid[0].endswith("| 1 |")
+    old = report.build_report([dict(size="small", mode="serial", executor="pi", rep="1",
+                                    status="pass")])
+    assert "Planner cost" in old
+
+
+def test_plan_cost_reads_the_planners_nested_cost(tmp_path):
+    import json
+    import sys
+    sys.path.insert(0, "bench/suite")
+    import cells
+    assert cells._plan_cost(tmp_path) == 0.0
+    (tmp_path / "planner.json").write_text(json.dumps({"tokens": {"cost": 0.1234}}), encoding="utf-8")
+    assert cells._plan_cost(tmp_path) == 0.1234
+    (tmp_path / "planner.json").write_text(json.dumps({"cost": 0.5}), encoding="utf-8")
+    assert cells._plan_cost(tmp_path) == 0.5
