@@ -369,8 +369,13 @@ change. A real env var already set in your shell always wins over the same key i
   denied git state commands and writes/edits outside cwd, and runs with the rules in `AGENTS.md`:
   only the brief's files, never `.harness/`, finish with `DONE:` or `BLOCKED:`. Reads outside cwd
   are not blocked.
-- `.claude/settings.json` denies `git add/commit/push/reset/checkout/switch/restore/stash/clean/rebase/merge/branch/worktree`
-  and `run_plan.py ... --land` for Claude too. You land and commit from your own terminal.
+- The runner fails any task that moves git HEAD or the branch, even if no file changed.
+- `@claude-executor` is guarded by `.harness/hooks/git_guard.py`, a PreToolUse hook set in its
+  agent file; it reads the same `.pi/deny.json` and also blocks `--land`.
+- `--land` refuses unless stdin is a terminal (or you pass `--yes`), so an agent's Bash tool cannot run it.
+- The kit ships no `.claude/settings.json`, so installing never overwrites your permissions.
+  `.claude/settings.strict.json` holds the old hard denies if you want them: copy it over.
+- The main session commits or lands only when you ask (rule in `CLAUDE.md`).
 - Claude's own reports are never taken as proof; reports come from the runner.
 
 ## Requirements
@@ -409,7 +414,9 @@ docs/hero.svg, bench-cost.svg README banner and benchmark chart
 docs/mode-claude.svg         Claude mode diagram (native subagent executor)
 docs/mode-runner.svg         Runner mode diagram (pi / opencode)
 docs/harness.css             shared style for the docs pages
-.claude/settings.json        allow the runner; deny git state changes
+.claude/settings.json        allow the runner (no denies; see settings.strict.json)
+.claude/settings.strict.json optional: the same allows plus hard git/--land denies
+.harness/hooks/git_guard.py  PreToolUse hook that keeps @claude-executor off git state
 .claude/agents/planner.md    plan writer (sonnet)
 .claude/agents/claude-executor.md  native executor subagent (haiku default), see Run modes
 .claude/agents/reviewer.md   post-run checklist reviewer (sonnet), used by --review

@@ -3,6 +3,12 @@ name: claude-executor
 description: Claude (haiku by default; pass model: sonnet|opus to override) as the plan executor, fully inside Claude. Reads .harness/plans/<slug>/plan.md + tasks.json and implements the tasks itself with Edit/Write, running each task's acceptance command. Spawn with isolation "worktree". Use only after the user said go. Never commits, lands or touches the plan files.
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: haiku
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: python .harness/hooks/git_guard.py
 ---
 Caveman style for replies. Code written normal.
 You implement an approved plan. Input: plan slug (optionally one task id).

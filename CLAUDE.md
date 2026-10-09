@@ -72,8 +72,10 @@ plans. The pi executor (`opencode/space-bunny-free`, free, effort `medium`) writ
 task, no warm session), `--executor cline-acp` the same CLI over ACP (warm: one process for the
 whole plan, `CLINE_MODEL` picks the model), `--executor opencode` a warm `opencode serve`,
 `--executor llama` a local llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model),
-`--executor claude` `claude -p`. Claude never writes code for delegable work. Nobody commits: no agent
-runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews commits separately.
+`--executor claude` `claude -p`. Claude never writes code for delegable work. Executors never commit: they run no
+`git add/commit/push/reset/checkout/stash/clean/rebase` (`.pi/deny.json`, the runner's HEAD check,
+and `.harness/hooks/git_guard.py` for `@claude-executor`). The main session commits, pushes or lands
+only when the user asks for it in that turn; `--land` needs a terminal or `--yes`.
 
 **Delegate** (plan it, then run it):
 - Well-specified changes: boilerplate, CRUD, mechanical edits, renames

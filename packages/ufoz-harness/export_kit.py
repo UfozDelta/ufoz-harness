@@ -14,7 +14,8 @@ KIT = Path(__file__).resolve().parent / "kit"
 
 FILES = ["CLAUDE.md", "AGENTS.md", "opencode.json",
          ".claude/agents/planner.md", ".claude/agents/reviewer.md",
-         ".claude/settings.json",
+         ".claude/agents/claude-executor.md", ".claude/settings.strict.json",
+         ".harness/hooks/git_guard.py",
          ".pi/deny.json", ".pi/executor.md",
          ".pi/extensions/deny-list.ts", ".pi/extensions/deny-match.ts",
          ".opencode/package.json", ".opencode/package-lock.json",

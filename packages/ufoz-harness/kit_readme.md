@@ -119,8 +119,9 @@ overrides the executor model, `HARNESS_PI` the path to pi, `HARNESS_LLAMA_URL` t
 - The executor (`.pi/executor.md` with the `.pi/deny.json` deny list) is denied git state commands and runs
   with the rules in `AGENTS.md`: only the brief's files, never `.harness/`, finish
   with `DONE:` or `BLOCKED:`.
-- `.claude/settings.json` denies `git add/commit/push/reset/checkout/stash/clean/rebase`
-  for Claude too. You commit from your own terminal.
+- The runner fails any task that moves git HEAD or the branch. `@claude-executor` is guarded by
+  `.harness/hooks/git_guard.py`. `--land` needs a terminal (or `--yes`). No `.claude/settings.json`
+  is installed; copy `.claude/settings.strict.json` over it if you want hard git denies.
 - Claude's own reports are never taken as proof; reports come from the runner.
 
 ## Files
@@ -128,7 +129,8 @@ overrides the executor model, `HARNESS_PI` the path to pi, `HARNESS_LLAMA_URL` t
 ```
 CLAUDE.md                    main-session rules and the plan → execute loop
 AGENTS.md                    executor rules (~10 lines on purpose; add a line only when a failure earns it)
-.claude/settings.json        allow the runner; deny git state changes
+.claude/settings.strict.json optional hard git/--land denies for the main session
+.harness/hooks/git_guard.py  keeps @claude-executor off git state
 .claude/agents/planner.md    plan writer (sonnet)
 .claude/agents/reviewer.md   post-run checklist reviewer (sonnet), used by --review
 .claude/skills/              caveman, adhd, animation/design skills

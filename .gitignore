@@ -19,6 +19,7 @@ bench/suite/failed/
 bench/suite/work/
 # raw bench output (summaries in RESULTS.md / LATENCY.md stay tracked)
 bench/suite/results*.csv
+bench/suite/archive/
 bench/speed/results*.csv
 bench/speed/latency.jsonl
 bench/speed/run.log
