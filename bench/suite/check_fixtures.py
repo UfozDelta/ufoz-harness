@@ -8,6 +8,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
@@ -49,17 +50,19 @@ def copy_into(src: Path, dst: Path) -> None:
             shutil.copy2(entry, target)
 
 
-def make_work(size: str) -> Path:
+def make_work(size: str, extra: tuple[str, ...] = ("hidden_tests",)) -> Path:
     seed = FIXTURES / size / "seed"
     if not seed.is_dir():
         raise InfraError(f"missing seed dir for size {size}: {seed}")
-    hidden = FIXTURES / size / "hidden_tests"
-    if not hidden.is_dir():
-        raise InfraError(f"missing hidden_tests dir for size {size}: {hidden}")
+    for name in extra:
+        layer = FIXTURES / size / name
+        if not layer.is_dir():
+            raise InfraError(f"missing {name} dir for size {size}: {layer}")
     work = TMP_ROOT / f"{size}-{uuid.uuid4().hex[:8]}"
     work.mkdir(parents=True)
     copy_into(seed, work)
-    copy_into(FIXTURES / size / "hidden_tests", work)
+    for name in extra:
+        copy_into(FIXTURES / size / name, work)
     return work
 
 
@@ -99,6 +102,45 @@ def checks_for(size: str, work: Path) -> list[tuple[str, list[str]]]:
     return checks
 
 
+def seed_checks_for(work: Path) -> list[tuple[str, list[str]]]:
+    """Only the seed's own tests: pytest if it has test_*.py, vitest if it has *.test.ts(x)."""
+    checks: list[tuple[str, list[str]]] = []
+    if any(work.rglob("test_*.py")):
+        checks.append(("pytest", [sys.executable, "-m", "pytest", "-q",
+                                 "-p", "no:cacheprovider", "--rootdir", str(work)]))
+    if any(work.rglob("*.test.ts")) or any(work.rglob("*.test.tsx")):
+        checks.append(("vitest", [node_tool("npx"), "--no-install", "vitest", "run"]))
+    return checks
+
+
+PACKAGE_DIRS = {"medium": "seed", "large": "seed/web"}
+
+
+def check_package(size: str) -> bool:
+    rel = PACKAGE_DIRS.get(size)
+    if rel is None:
+        return True
+    pkg_dir = FIXTURES / size / rel
+    try:
+        pkg = json.loads((pkg_dir / "package.json").read_text(encoding="utf-8"))
+        lock = json.loads((pkg_dir / "package-lock.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"FAIL: {size} package files unreadable in {pkg_dir}: {exc}")
+        return False
+    if lock.get("packages", {}).get("", {}).get("devDependencies") != pkg.get("devDependencies"):
+        print(f"FAIL: {size} package-lock.json devDependencies differ from package.json")
+        return False
+    return True
+
+
+def _seed_checks_pass(size: str, extra: tuple[str, ...]) -> bool:
+    work = make_work(size, extra)
+    try:
+        return all(code == 0 for code in run_all(seed_checks_for(work), work).values())
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def run_all(checks: list[tuple[str, list[str]]], work: Path) -> dict[str, int]:
     results: dict[str, int] = {}
     for label, cmd in checks:
@@ -123,6 +165,14 @@ def runs_agree(results: list[dict[str, int]]) -> bool:
 
 
 def check_size(size: str, repeat: int = 5) -> bool:
+    if not check_package(size):
+        return False
+
+    print(f"[{size}] SEED check (seed alone)")
+    if not _seed_checks_pass(size, ()):
+        print(f"FAIL: {size} seed's own tests are not green on the seed")
+        return False
+
     print(f"[{size}] preparing work dir")
     work = make_work(size)
     try:
@@ -148,6 +198,11 @@ def check_size(size: str, repeat: int = 5) -> bool:
             print(f"FAIL: {size} flaky - repeated GREEN runs disagree: {runs}")
             return False
         print(f"GREEN OK: {size} (x{repeat} runs agree)")
+
+        print(f"[{size}] SOLUTION check (seed + solution, no hidden_tests)")
+        if not _seed_checks_pass(size, ("solution",)):
+            print(f"FAIL: {size} seed+solution tests are not green without hidden_tests")
+            return False
         return True
     finally:
         shutil.rmtree(work, ignore_errors=True)
