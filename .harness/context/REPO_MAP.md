@@ -1,5 +1,5 @@
 # Repo map
-fingerprint: c8d435a66e14
+fingerprint: 937b12517344
 Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before exploring.
 
 ## Routes
@@ -54,8 +54,16 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/speed/run.log
 - bench/suite/README.md
 - bench/suite/RESULTS.md
+- bench/suite/archive/results-oc-agent-rep1.csv
+- bench/suite/archive/results-oc-agent-rep2.csv
+- bench/suite/archive/results-oc-default-rep1.csv
+- bench/suite/archive/results-oc-default-rep2.csv
+- bench/suite/archive/results-oc-tools-rep1.csv
+- bench/suite/archive/results-oc-tools-rep2.csv
+- bench/suite/archive/results-rep1-buggy.csv
+- bench/suite/archive/results-rep1-clean-partial.csv
 - bench/suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
-- bench/suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, check_size, main
+- bench/suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, runs_agree, check_size, main
 - bench/suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
 - bench/suite/fixtures/large/hidden_tests/vitest.config.ts
 - bench/suite/fixtures/large/hidden_tests/web/api-client.test.ts
@@ -124,15 +132,8 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
 - bench/suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
 - bench/suite/fixtures/small/spec.md
-- bench/suite/report.py: load_rows, wilson_ci, build_report, main
-- bench/suite/results-oc-agent-rep1.csv
-- bench/suite/results-oc-agent-rep2.csv
-- bench/suite/results-oc-default-rep1.csv
-- bench/suite/results-oc-default-rep2.csv
-- bench/suite/results-oc-tools-rep1.csv
-- bench/suite/results-oc-tools-rep2.csv
-- bench/suite/results-rep1-buggy.csv
-- bench/suite/results-rep1-clean-partial.csv
+- bench/suite/report.py: load_rows, wilson_ci, latest_per_cell, newest_sha_rows, build_report, main
+- bench/suite/results.csv
 - bench/suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
 - bench/suite/work/_logs/suite-large-multi-claude-r1.log
 - bench/suite/work/_logs/suite-large-multi-cline-acp-r1.log
@@ -151,6 +152,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/work/_logs/suite-medium-multi-opencode-r1.log
 - bench/suite/work/_logs/suite-medium-multi-pi-r1.log
 - bench/suite/work/_logs/suite-medium-parallel-claude-r1.log
+- bench/suite/work/_logs/suite-medium-serial-claude-r1.log
 - bench/suite/work/_logs/suite-medium-serial-cline-acp-r1.log
 - bench/suite/work/_logs/suite-medium-serial-opencode-r1.log
 - bench/suite/work/_logs/suite-medium-serial-pi-r1.log
@@ -160,6 +162,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/work/_logs/suite-small-multi-opencode-r1.log
 - bench/suite/work/_logs/suite-small-multi-pi-r1.log
 - bench/suite/work/_logs/suite-small-parallel-pi-r1.log
+- bench/suite/work/_logs/suite-small-serial-claude-r1.log
 - bench/suite/work/_logs/suite-small-serial-cline-acp-r1.log
 - bench/suite/work/_logs/suite-small-serial-opencode-r1.log
 - bench/suite/work/_logs/suite-small-serial-opencode-r2.log
@@ -175,6 +178,8 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - docs/harness.css
 - docs/hero.svg
 - docs/mermaid.md
+- docs/mode-claude.svg
+- docs/mode-runner.svg
 - docs/session-flows.html
 - log.md
 - opencode.json
@@ -220,6 +225,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - tests/test_acceptance.py: test_non_codepage_output_does_not_crash, test_timeout_with_held_grandchild_pipe_returns_fast
 - tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
 - tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
+- tests/test_git_guard.py: test_blocks_git_state_commands, test_blocks_land, test_allows_read_only_and_other_commands, test_hook_exit_codes, test_deny_json_is_the_source, test_git_state_sees_a_commit_that_changes_no_file_hash, test_git_state_none_outside_a_repo, test_land_refuses_without_a_terminal
 - tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
 - tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
 - tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
