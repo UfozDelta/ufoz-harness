@@ -103,7 +103,7 @@ def record_metrics(plan, args, tid, usage, timings, repairs, result, attempts, s
                              "executor": args.executor, "result": result, "attempts": attempts, "repairs": repairs, "seconds": seconds,
                              "exec_s": row["exec_s"], "accept_s": row["accept_s"], "retry_s": row["retry_s"],
                              "mode": ("parallel" if args.parallel > 1
-                                      else ("warm" if args.warm and sessions else "fresh")),
+                                      else ("warm" if not args.fresh and sessions else "fresh")),
                              "tokens": usage}) + "\n")
 
 

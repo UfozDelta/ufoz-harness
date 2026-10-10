@@ -169,7 +169,7 @@ class TaskRunner:
             self._add_usage(st, res.usage)
             if not quota_ok:
                 break
-        if args.warm:
+        if not args.fresh:
             # "" means the executor rotated the session; None means it had none to give
             session = res.session if res.session is not None else session
         self._add_usage(st, res.usage)

@@ -56,7 +56,7 @@ def make_plan(tmp_path, succeed_on):
     plan.prepare()
     plan.lock_grader()
     args = argparse.Namespace(slug="slug", executor="fake", timeout=60, retries=1, repair=1,
-                              warm=False, parallel=1)
+                              fresh=True, parallel=1)
     executor = FakeExecutor(plan_dir, done, succeed_on)
     return plan, args, executor
 
@@ -148,7 +148,7 @@ class SessionExecutor(FakeExecutor):
 
 def _warm_run(tmp_path, returned):
     plan, args, executor = make_plan(tmp_path, succeed_on=1)
-    args.warm = True
+    args.fresh = False
     executor = SessionExecutor(executor.plan_dir, executor.done, returned)
     _ok, _lines, session = task_runner.TaskRunner(plan, args, executor).run(
         plan.tasks[0], session="old-session")

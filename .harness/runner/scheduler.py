@@ -31,14 +31,14 @@ def run_all(plan, args, runner):
 
 
 def _serial(plan, args, runner, todo, done, summary, result):
-    session = args.session if args.warm else None
+    session = args.session if not args.fresh else None
     for t in todo:
         missing = [d for d in t.deps if d not in done]
         if missing:
             summary.append(f"{t.id} BLOCKED: deps not passed {missing}")
             result.failed = True
             break
-        ok, lines, session = runner.run(t, session if args.warm else None)
+        ok, lines, session = runner.run(t, session if not args.fresh else None)
         summary += lines
         if ok:
             done.add(t.id)
