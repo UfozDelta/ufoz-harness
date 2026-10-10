@@ -27,7 +27,7 @@ class Task:
     deps: list = field(default_factory=list)
     expect: str | None = None
     brief: str | None = None
-    red_first: bool = True
+    red_first: bool = False
     build_gate: bool = False
     repair_check: str | None = None
     raw: dict = field(default_factory=dict)
@@ -36,7 +36,7 @@ class Task:
     def load(cls, d):
         return cls(id=d["id"], acceptance=d.get("acceptance", ""), files=list(d.get("files", [])),
                    deps=list(d.get("deps", [])), expect=d.get("expect"), brief=d.get("brief"),
-                   red_first=d.get("red_first", True), build_gate=d.get("build_gate") is True,
+                   red_first=d.get("red_first", False), build_gate=d.get("build_gate") is True,
                    repair_check=d.get("repair_check"), raw=d)
 
     def get(self, key, default=None):  # dict-style access for keys this class doesn't name

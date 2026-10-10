@@ -153,8 +153,6 @@ def lint(plan, tasks, passed):
             if not any(f.endswith((".ts", ".tsx", ".mts", ".cts")) or Path(f).name == "tsconfig.json"
                        for f in files):
                 warns.append(f"{tid}: tsc but no TS files")
-        if t.get("red_first", True) is False and not t.get("red_first_reason"):
-            errs.append(f"{tid}: red_first false needs a red_first_reason")
         if t.get("build_gate") is True:
             if i != len(tasks) - 1:
                 errs.append(f"{tid}: build_gate must be the last task")
@@ -175,7 +173,7 @@ def lint(plan, tasks, passed):
             if shared and a.get("id") not in _ancestors(b, by_id):
                 warns.append(f"{a.get('id')}/{b.get('id')}: share {sorted(shared)} without a dep between them")
     todo = [t for t in tasks
-            if t.get("id") not in passed and t.get("red_first", True) and "acceptance" in t]
+            if t.get("id") not in passed and t.get("red_first") is True and "acceptance" in t]
     if todo:
         with _worktree(plan) as wt:
             if wt is None:

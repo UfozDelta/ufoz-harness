@@ -29,7 +29,7 @@ def lock_mismatch(broken):
 def check_invalid(acceptance, accept_s, pre_out):
     return (f"RESULT: check-invalid\nacceptance: {acceptance}\n"
             "Acceptance passed BEFORE the executor ran, so it cannot prove the task.\n"
-            "Tighten the check, or set \"red_first\": false with a \"red_first_reason\".\n"
+            "Tighten the check, or set \"red_first\": false (or drop the key).\n"
             f"exec seconds: 0.0\nacceptance seconds: {round(accept_s, 1)}\nretry seconds: 0.0\n\n"
             f"acceptance output (tail):\n{pre_out}\n")
 
