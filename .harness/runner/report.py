@@ -45,6 +45,15 @@ def retry_feedback(attempt, executor, t, code, suppressed, out):
             + (f"errors:\n" + "\n".join(errors) + "\n" if errors else ""))
 
 
+def stray_feedback(allowed, stray):
+    """Retry brief for an attempt that only failed by touching out-of-scope files: the runner
+    already reverted them, so say what was reverted and what is left to touch."""
+    return ("Attempt reverted: you touched files outside FILES.\n"
+            "allowed files:\n" + "\n".join(sorted(allowed)) + "\n"
+            "reverted files:\n" + "\n".join(sorted(stray)) + "\n"
+            "use only the allowed paths exactly\n")
+
+
 def repair_feedback(repair, tid, t, out, suppressed, repair_allowed):
     errors = parse_errors(out)
     return (f"Repair pass {repair} for {tid}.\n"
@@ -58,7 +67,7 @@ def repair_feedback(repair, tid, t, out, suppressed, repair_allowed):
 
 
 def final_report(t, result, executor, code, attempts, repairs, seconds, usage, exec_s, accept_s,
-                 retry_s, touched, stray, broken, build_line, log, out):
+                 retry_s, touched, stray, broken, build_line, log, out, reverted=()):
     return (f"RESULT: {result}\n"
             f"{executor} exit: {code}\n"
             f"attempts: {attempts}\n"
@@ -71,6 +80,7 @@ def final_report(t, result, executor, code, attempts, repairs, seconds, usage, e
             f"acceptance: {t.acceptance}\n"
             f"files touched: {touched or 'n/a (not a git repo)'}\n"
             f"out-of-scope files: {stray or 'none'}\n"
+            f"reverted stray files: {list(reverted) or 'none'}\n"
             f"lock: {('CHANGED ' + str(broken)) if broken else 'ok'}\n"
             + (f"{build_line}\n" if build_line else "")
             + f"log: {log.as_posix()}\n\n"
