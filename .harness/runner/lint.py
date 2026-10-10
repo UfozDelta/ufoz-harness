@@ -112,13 +112,7 @@ def lint(plan, tasks, passed):
             if not t.get("repair_check"):
                 errs.append(f"{tid}: build_gate needs repair_check")
             by_id = {task.get("id"): task for task in tasks}
-            ancestors, pending = set(), list(t.get("deps", []))
-            while pending:
-                dep = pending.pop()
-                if dep in ancestors or dep not in by_id:
-                    continue
-                ancestors.add(dep)
-                pending.extend(by_id[dep].get("deps", []))
+            ancestors = _ancestors(t, by_id)
             if not {task.get("id") for task in tasks[:i]} <= ancestors:
                 errs.append(f"{tid}: build_gate must depend on all earlier tasks")
         if tid in seen:
