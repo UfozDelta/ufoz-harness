@@ -1,7 +1,11 @@
-"""Static plan validation + red-first proof on the untouched tree."""
+"""Static plan validation + red-first proof on a throwaway worktree."""
+import contextlib
+import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from .acceptance import run_acceptance
@@ -52,6 +56,45 @@ def _too_broad(entry):
     if tracked > MAX_TRACKED_UNDER_DIR:
         return f"{tracked} tracked files under it, max {MAX_TRACKED_UNDER_DIR}"
     return None
+
+
+@contextlib.contextmanager
+def _worktree(plan):
+    """A throwaway detached worktree of HEAD, chdir'd into; None if it cannot be made.
+
+    red-first acceptance runs there, never in the main tree."""
+    main = os.getcwd()
+    tmp = wt = None
+    try:
+        tmp = tempfile.mkdtemp()
+        wt = os.path.join(tmp, "wt")
+        if subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True,
+                          cwd=main).returncode != 0:
+            yield None
+            return
+        r = subprocess.run(["git", "worktree", "add", "--detach", wt, "HEAD"],
+                           capture_output=True, text=True, cwd=main)
+        if r.returncode != 0:
+            yield None
+            return
+        # the checks/ scripts a task's acceptance calls live in the plan dir: bring them along
+        try:
+            rel = Path(plan).resolve().relative_to(Path(main).resolve())
+        except ValueError:
+            rel = None
+        if rel is not None:
+            shutil.copytree(Path(plan), Path(wt) / rel, dirs_exist_ok=True)
+        os.chdir(wt)
+        try:
+            yield wt
+        finally:
+            os.chdir(main)
+    finally:
+        if wt is not None:
+            subprocess.run(["git", "worktree", "remove", "--force", wt],
+                           capture_output=True, text=True, cwd=main)
+        if tmp is not None:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 def lint(plan, tasks, passed):
@@ -131,10 +174,17 @@ def lint(plan, tasks, passed):
             shared = {x for x in fa if in_scope(x, fb)} | {y for y in fb if in_scope(y, fa)}
             if shared and a.get("id") not in _ancestors(b, by_id):
                 warns.append(f"{a.get('id')}/{b.get('id')}: share {sorted(shared)} without a dep between them")
-    for t in tasks:
-        if t.get("id") in passed or not t.get("red_first", True) or "acceptance" not in t:
-            continue
-        if run_acceptance(t["acceptance"], t.get("expect"))[0]:
-            errs.append(f"{t['id']}: acceptance already passes on the untouched tree (check-invalid)")
+    todo = [t for t in tasks
+            if t.get("id") not in passed and t.get("red_first", True) and "acceptance" in t]
+    if todo:
+        with _worktree(plan) as wt:
+            if wt is None:
+                for t in todo:
+                    warns.append(f"{t.get('id')}: skipped red-first: no throwaway worktree available")
+            else:
+                for t in todo:
+                    if run_acceptance(t["acceptance"], t.get("expect"))[0]:
+                        errs.append(f"{t['id']}: acceptance already passes on the untouched tree"
+                                    " (check-invalid)")
     print("\n".join([f"ERROR {e}" for e in errs] + [f"WARN {w}" for w in warns]) or "lint OK")
     return 1 if errs else 0
