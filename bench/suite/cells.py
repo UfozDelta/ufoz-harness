@@ -29,6 +29,8 @@ if str(Path(__file__).resolve().parent) not in sys.path:
 from runner import worktree  # noqa: E402
 from tasks import cell_slug  # noqa: E402
 
+os.environ.setdefault("HARNESS_QUOTA_MAX_WAIT", "180")
+
 SUITE_DIR = "bench/suite"
 WORK_PREFIX = f"{SUITE_DIR}/work"
 TEMP_ROOT = Path(tempfile.gettempdir()) / "ufoz-bench"
@@ -604,6 +606,32 @@ METRIC_FIELDS = ("attempts", "input", "output", "reasoning", "cache_read", "cost
                  "tasks_passed", "tasks_total")
 
 
+def _junk_status(row):
+    """If status is timeout, or fail with wall_s < 20, and input+output tokens are 0/blank, set status to infra_error."""
+    status = row.get("status")
+    input_tokens = row.get("input", 0)
+    output_tokens = row.get("output", 0)
+    wall_s = row.get("wall_s", 0)
+
+    # Normalize wall_s to a number for comparison (empty string becomes 0)
+    try:
+        wall_s_num = float(wall_s) if wall_s else 0
+    except (TypeError, ValueError):
+        wall_s_num = 0
+
+    # Check if input/output tokens are 0 or blank
+    tokens_zero = (
+        (input_tokens == 0 or input_tokens == "") and
+        (output_tokens == 0 or output_tokens == "")
+    )
+
+    if tokens_zero:
+        if status == "timeout" and wall_s_num > 0:
+            row["status"] = "infra_error"
+        elif status == "fail" and wall_s_num < 20:
+            row["status"] = "infra_error"
+
+
 def _blank(cell):
     row = dict(cell)
     row.update({"ts": time.strftime("%Y-%m-%dT%H:%M:%S"), "wall_s": "", "tests_passed": "",
@@ -715,6 +743,7 @@ def _run_single(cell, repo_root, cell_timeout):
         with contextlib.suppress(Exception):
             row["watch_ok"] = _watch_ok(slug, repo_root, wt)
         _apply_window_verdict(row)
+    _junk_status(row)
     return row
 
 
@@ -765,9 +794,10 @@ def _run_multi(cell, repo_root, cell_timeout, keep=False):
             metrics = _metrics(sub["slug"], wt, repo_root)
             row.update({k: metrics[k] for k in METRIC_FIELDS})
             row["harness_sha"] = _harness_sha(repo_root)
-            rows.append(row)
         else:
-            rows.append(_finish(sub, row, wt, repo_root, reports))
+            _finish(sub, row, wt, repo_root, reports)
+        _junk_status(row)
+        rows.append(row)
         if not keep:
             if row["status"] != "pass":
                 _preserve_failed(sub, repo_root)
@@ -843,6 +873,7 @@ def _run_project(cell, repo_root, cell_timeout):
         with contextlib.suppress(Exception):
             row["watch_ok"] = _watch_ok(slug, repo_root, wt)
         _apply_window_verdict(row)
+    _junk_status(row)
     return row
 
 

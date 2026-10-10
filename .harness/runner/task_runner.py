@@ -121,8 +121,10 @@ class TaskRunner:
                 else:
                     st.retry_s += time.time() - started
                 break
-            self.executor.wait_for_quota(log.as_posix())  # rate-limited: wait it out, rerun uncounted
+            quota_ok = self.executor.wait_for_quota(log.as_posix())
             self._add_usage(st, res.usage)
+            if not quota_ok:
+                break
         if args.warm:
             # "" means the executor rotated the session; None means it had none to give
             session = res.session if res.session is not None else session

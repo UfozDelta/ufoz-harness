@@ -4,6 +4,7 @@ The run loop (task_runner/scheduler) only ever sees this: run a brief, find out 
 code, what it cost, and which session to continue next time. Which model actually wrote
 the code — pi, claude, an HTTP server — is the subclass's business.
 """
+import os
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -36,8 +37,11 @@ class Executor(ABC):
     def probe(self) -> bool:
         """One tiny call: True if the model answers right now (False when rate-limited)."""
 
-    def wait_for_quota(self, log, max_wait=6 * 3600) -> None:
-        """Block until the model answers again (probe every 60 s). Appends to `log`."""
+    def wait_for_quota(self, log, max_wait=None) -> bool:
+        """Block until the model answers again (probe every 60 s). Appends to `log`.
+        Returns True once probe ok, False on give-up. max_wait None = HARNESS_QUOTA_MAX_WAIT env var, else 6*3600."""
+        if max_wait is None:
+            max_wait = int(os.environ.get("HARNESS_QUOTA_MAX_WAIT", 6 * 3600))
         t0 = time.time()
         while time.time() - t0 < max_wait:
             time.sleep(60)
@@ -46,7 +50,8 @@ class Executor(ABC):
                 f.write(f"[runner] quota probe after {int(time.time() - t0)}s: "
                         f"{'ok' if ok else 'still rate-limited'}\n".encode())
             if ok:
-                return
+                return True
+        return False
 
     def start(self) -> None:
         """Bring up anything the backend needs before the first run (default: nothing)."""

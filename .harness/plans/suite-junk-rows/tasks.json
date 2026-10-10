@@ -1,0 +1,39 @@
+{
+ "slug": "suite-junk-rows",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/executors/base.py",
+    ".harness/runner/task_runner.py"
+   ],
+   "acceptance": "grep -q HARNESS_QUOTA_MAX_WAIT .harness/runner/executors/base.py && python -m pytest -q tests/test_task_runner.py",
+   "red_first": false,
+   "red_first_reason": "smoke"
+  },
+  {
+   "id": "T2",
+   "deps": [],
+   "files": [
+    "bench/suite/cells.py"
+   ],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'bench/suite'); import cells; a={'status':'timeout','input':0,'output':0,'wall_s':1800}; cells._junk_status(a); assert a['status']=='infra_error'; b={'status':'fail','input':5,'output':0,'wall_s':5}; cells._junk_status(b); assert b['status']=='fail'; c={'status':'fail','input':'','output':'','wall_s':9}; cells._junk_status(c); assert c['status']=='infra_error'\" && python -c \"print(open('bench/suite/cells.py',encoding='utf-8').read().count('_junk_status(row)')==4 or exit(1))\"",
+   "red_first": false,
+   "red_first_reason": "smoke"
+  },
+  {
+   "id": "T3",
+   "deps": [
+    "T1",
+    "T2"
+   ],
+   "files": [
+    ".harness/plans/suite-junk-rows/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/suite-junk-rows/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8'))<=600\" && python -m pytest -q tests/test_task_runner.py tests/test_harness_suite.py",
+   "red_first": false,
+   "red_first_reason": "summary + smoke"
+  }
+ ]
+}

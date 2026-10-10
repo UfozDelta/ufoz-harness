@@ -1,0 +1,17 @@
+{
+  "slug": "suite-junk-rows",
+  "task": "T3",
+  "result": "pass",
+  "attempts": 3,
+  "repairs": 1,
+  "exec_s": 179.7,
+  "accept_s": 66.5,
+  "retry_s": 273.3,
+  "tokens": {
+    "input": 42852,
+    "output": 34764,
+    "reasoning": 27386,
+    "cache_read": 1856629,
+    "cost": 0.04023349
+  }
+}
