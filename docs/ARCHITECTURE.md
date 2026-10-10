@@ -294,11 +294,11 @@ there, so reports, logs and `SUMMARY.md` live in `.worktrees/<slug>/.harness/pla
 Outside a git repo the run stays in place. On Windows `watch.open_window` also opens one shared
 Windows Terminal window with a tab per plan (`--no-window` / `HARNESS_WINDOW=0` to skip).
 
-`--land` (`land.py`) is the user's command: it refuses while `run.lock` exists, writes the
-worktree's changes as a binary patch to `.harness/plans/<slug>/land.patch`, `git apply --check`s
-it, and on success applies it, copies the plan records back, and removes the junctions, the
-worktree and its branch. On a conflict it exits 1 and changes nothing; the patch, worktree and
-branch stay for a manual fix.
+`--land` (`land.py`) is the user's command: it refuses while `run.lock` exists, copies the
+plan records into `.harness/plans/<slug>/`, then `git merge --ff-only harness/<slug>` to bring
+the worktree's commits into the main tree. On success it removes the junctions, the worktree and
+its branch. On a conflict (the main tree moved) it exits 1 and changes nothing; the worktree and
+branch stay for a manual rebase or merge.
 
 ## 4. Lint (`--lint`)
 

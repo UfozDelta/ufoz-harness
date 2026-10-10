@@ -1,9 +1,11 @@
 """Per-plan git worktrees under .worktrees/, so several plans can run at once.
 
-The worktree is a snapshot of the current tree (uncommitted edits and untracked,
-non-ignored files included) built with a temporary index, so the user's index, HEAD
-and branches are never touched. Nobody commits here: the user reviews and merges by
-hand. Every git call goes through subprocess.run(..., check=False).
+A plan's worktree starts at real HEAD, so the tree must be clean when it is created:
+the runner refuses to start on uncommitted edits, and everything the runner does inside
+the worktree is ordinary git that can be reviewed with git log/git diff and landed with
+git merge --ff-only. The synthetic snapshot path (_snapshot) stays only for throwaway
+worktrees made with `exclude`/`orphan`, which are never landed. Every git call goes
+through subprocess.run(..., check=False).
 """
 import os
 import shutil
@@ -144,6 +146,42 @@ def _lf_agents(target):
             f.write_bytes(raw.replace(b"\r\n", b"\n"))
 
 
+def _dirty_paths():
+    """Porcelain paths of uncommitted edits and untracked non-ignored files."""
+    out = _git("status", "--porcelain").stdout
+    paths = []
+    for line in out.splitlines():
+        entry = line[3:].strip() if len(line) > 3 else ""
+        if " -> " in entry:
+            entry = entry.split(" -> ", 1)[1]
+        if entry:
+            paths.append(entry)
+    return paths
+
+
+def _require_clean_tree():
+    """Hard refuse: a plan worktree starts at HEAD, so uncommitted edits cannot be part
+    of it. Commit or stash them, then rerun."""
+    dirty = _dirty_paths()
+    if dirty:
+        sys.exit("worktree: the tree has uncommitted changes and a plan worktree starts at "
+                 f"HEAD:\n  {chr(10).join('  ' + p for p in dirty)}\n"
+                 "commit or stash them, then rerun")
+
+
+def _prune_stale(target, slug):
+    """A directory at `target` git does not know: let git prune it, then drop what is
+    left over when it is not a worktree. A dir git knows is never touched."""
+    _git("worktree", "prune")
+    if not target.exists():
+        return
+    if not (target / ".git").exists():
+        shutil.rmtree(target, ignore_errors=True)
+        return
+    sys.exit(f"worktree: {path_for(slug)} exists but git does not know it as a worktree; "
+             f"remove or rename it, or run: git worktree prune")
+
+
 def ensure(slug, exclude=(), orphan=False):
     """Create (or reuse) the worktree for `slug` and return its absolute path.
     `exclude`/`orphan`: see _snapshot (used by harness-suite; plans that land use neither)."""
@@ -152,15 +190,18 @@ def ensure(slug, exclude=(), orphan=False):
     if target in _known_worktrees():
         return target
     if target.exists():
-        sys.exit(f"worktree: {path_for(slug)} exists but git does not know it as a worktree; "
-                 f"remove or rename it, or run: git worktree prune")
+        _prune_stale(target, slug)
     if _git("rev-parse", "--verify", "--quiet", f"refs/heads/harness/{slug}").returncode == 0:
         sys.exit(f"worktree: branch harness/{slug} already exists but {path_for(slug)} does not; "
                  f"delete the branch or use another slug")
-    sha = _snapshot(slug, exclude, orphan)
+    if exclude or orphan:
+        base = _snapshot(slug, exclude, orphan)
+    else:
+        _require_clean_tree()
+        base = "HEAD"
     r = None
     for attempt in range(3):
-        r = _git("worktree", "add", "-b", f"harness/{slug}", str(path_for(slug)), sha)
+        r = _git("worktree", "add", "-b", f"harness/{slug}", str(path_for(slug)), base)
         if r.returncode == 0 or ".lock" not in (r.stderr or ""):
             break
         # several plans starting at once contend on git's lock files

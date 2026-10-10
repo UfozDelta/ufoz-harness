@@ -235,18 +235,20 @@ metrics. Read both before changing harness internals.
 
 A real run (`run_plan.py <slug>`, no `--lint`/`--plan`/`--stats`/`--watch`) happens in its own git
 worktree at `.worktrees/<slug>` on branch `harness/<slug>`, so several plans can run at once, and
-opens a shared Windows Terminal window with a tab per plan. Opt out per run with `--no-worktree` /
-`--no-window`, or globally with `HARNESS_WORKTREE=0` / `HARNESS_WINDOW=0`. Outside a git repo the
-run stays in place (`not a git repo: running in place`).
+opens a shared Windows Terminal window with a tab per plan. **The tree must be clean** (no unstaged
+changes or untracked files outside `.gitignore`); if not, `worktree.ensure()` refuses with a message
+naming the dirty paths and exits. Opt out per run with `--no-worktree` / `--no-window`, or globally
+with `HARNESS_WORKTREE=0` / `HARNESS_WINDOW=0`. Outside a git repo the run stays in place
+(`not a git repo: running in place`).
 
 <details>
 <summary>What the worktree contains</summary>
 
 The plan's own files are copied into the worktree, so its reports, logs and `SUMMARY.md` live in
 `.worktrees/<slug>/.harness/plans/<slug>/` (the copy in your main tree stays as the source). The
-base is a snapshot of the current tree including uncommitted edits and untracked, non-ignored
-files, built with a temporary index: your index, HEAD and branches are untouched. `.worktrees/`
-goes into `.git/info/exclude` (local, no tracked file changes), and shared, gitignored dirs
+base is the current HEAD: the worktree branch `harness/<slug>` starts at HEAD and all downstream
+commits are real git. Your index, HEAD and branches stay untouched. `.worktrees/` goes into
+`.git/info/exclude` (local, no tracked file changes), and shared, gitignored dirs
 (`node_modules`, `.venv`, `.opencode/node_modules`) are junctioned into the worktree, not copied.
 
 </details>
@@ -260,16 +262,15 @@ git worktree remove .worktrees/<slug>
 
 ### Landing a finished run: `--land`
 
-`python .harness/run_plan.py <slug> --land` brings a finished run into the main tree. In order it:
+`python .harness/run_plan.py <slug> --land` brings a finished run into the main tree using a
+fast-forward merge. In order it:
 
 1. checks that `.worktrees/<slug>` is a real worktree and no run is in progress (no `run.lock`),
-2. writes the run's code changes (binary patch, new files included) to
-   `.harness/plans/<slug>/land.patch` in the main tree,
-3. `git apply --check`s that patch: on success it applies it here; on a conflict nothing in your
-   tree changes, `land.patch` is kept and the worktree and branch stay, so you can resolve by hand
-   (`git apply .harness/plans/<slug>/land.patch`, or rebase the worktree),
-4. copies the plan's records (reports, logs, `SUMMARY.md`) into `.harness/plans/<slug>/`,
-5. removes the shared-dir junctions (never their targets), the worktree and the branch
+2. copies the plan's records (reports, logs, `SUMMARY.md`) into `.harness/plans/<slug>/`,
+3. `git merge --ff-only harness/<slug>` to fast-forward your HEAD to the branch tip: on success
+   the merged commits are now in your tree; on failure (your main tree moved after the plan started),
+   nothing changes, the worktree and branch stay, and you can rebase the worktree or resolve by hand,
+4. removes the shared-dir junctions (never their targets), the worktree and the branch
    `harness/<slug>`, then prints `landed <slug>: <n> files`.
 
 The agent never runs `--land`; you do, once you are happy with the diff.

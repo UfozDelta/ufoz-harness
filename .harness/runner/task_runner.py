@@ -4,6 +4,8 @@ The retry loop and the repair loop differ only in which brief, which acceptance 
 which file scope they pass in, so they share a single `_attempt()`.
 """
 import functools
+import os
+import subprocess
 import threading
 import time
 from dataclasses import dataclass, field
@@ -14,6 +16,45 @@ from .guards import (GIT_MOVED, attribute, git_state, marker_counts, runner_owne
                      suppression_markers, written_paths)
 from .plan import in_scope
 from .procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS
+from .worktree import IDENTITY
+
+
+def commit_task(slug, tid, title, files):
+    """Commit the given files after a task passes. Returns the new commit sha, or None
+    if there was nothing to commit. Uses the harness identity in the git environment."""
+    if not files:
+        return None
+
+    # Stage only the files listed in the task
+    add_res = subprocess.run(["git", "add", "-A", "--", *files], capture_output=True, check=False)
+    if add_res.returncode != 0:
+        return None
+
+    # Check if there's anything staged
+    check_res = subprocess.run(["git", "diff", "--cached", "--name-only"], capture_output=True,
+                               text=True, check=False)
+    if not check_res.stdout.strip():
+        return None  # nothing to commit
+
+    # Build the commit message based on HARNESS_COMMIT_STYLE
+    style = os.environ.get("HARNESS_COMMIT_STYLE", "full")
+    if style == "short":
+        message = f"{tid}: {title}"
+    else:
+        # default to "full" for any unrecognized value
+        message = f"harness({slug}): {tid} {title}"
+
+    # Commit with the harness identity
+    env = dict(os.environ, **IDENTITY)
+    commit_res = subprocess.run(["git", "commit", "-m", message], capture_output=True,
+                                text=True, env=env, check=False)
+    if commit_res.returncode != 0:
+        return None
+
+    # Get the sha of the new commit
+    sha_res = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True,
+                             check=False)
+    return sha_res.stdout.strip() if sha_res.returncode == 0 else None
 
 
 @dataclass
@@ -244,6 +285,13 @@ class TaskRunner:
                                            got.build_line, log, got.out), encoding="utf-8")
         lines = report.summary_lines(tid, args.executor, ok, got.code, attempt + 1 + st.repairs,
                                      st.repairs, seconds, st.usage, got.stray, got.broken, log)
+
+        # commit passing task with its files
+        if ok:
+            sha = commit_task(plan.slug, tid, t.get("title", ""), list(t.norm_files))
+            if sha:
+                lines[0] = f"{lines[0]} [{sha[:7]}]"
+
         if got.unattributed:
             lines.append(f"{tid} note: strays not in its trace (not failing it): {got.unattributed}")
         return ok, lines, session

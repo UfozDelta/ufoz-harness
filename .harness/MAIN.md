@@ -35,6 +35,10 @@ llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model), `--execut
 `claude -p`. The main session never writes code for delegable work. Nobody commits: no agent
 runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews commits separately.
 
+**Clean tree required.** A run needs a clean working tree: no uncommitted changes or untracked files
+(outside `.gitignore`). If the tree is dirty, `run_plan.py` exits with a message naming the dirty
+paths and refuses to run.
+
 **Delegate** (plan it, then run it):
 - Well-specified changes: boilerplate, CRUD, mechanical edits, renames
 - Writing or extending tests for known behavior

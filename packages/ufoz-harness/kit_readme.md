@@ -24,7 +24,7 @@ main session (Claude)          decides with you, approves plans, reviews results
    │                           FILES / MUST / TEST) and tasks.json. No brief files.
    │
    ▼
-python .harness/run_plan.py <slug>
+python .harness/run_plan.py <slug>  (requires clean tree: no uncommitted edits or untracked files)
    │  first run: hashes tasks.json (+ checks/ if any) into plan.lock.json
    │  per task, in order:
    │    lock unchanged?            else RESULT: lock-mismatch
@@ -34,9 +34,11 @@ python .harness/run_plan.py <slug>
    │    file touched outside the task's `files`?  → fail
    │    plain failure → one retry with items/T<n>.feedback.md
    │    writes items/T<n>.report.md (result, seconds, tokens, cost)
+   │    on task pass: commits the changes (in the worktree)
    │  --review: one Sonnet pass over touched files → REVIEW.md
    ▼
 you read the reports and the diff. Nobody in this chain commits.
+python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff-only)
 ```
 
 ## Using it

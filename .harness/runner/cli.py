@@ -64,8 +64,8 @@ def build_parser():
                     help="Create the plan's worktree and print its path; run nothing; for executors "
                          "that edit outside the runner.")
     ap.add_argument("--land", action="store_true",
-                    help="The user's command, not ours: apply the worktree's code changes to "
-                         "this tree, copy its plan records, remove the worktree and its branch.")
+                    help="The user's command, not ours: merge the worktree's branch into this "
+                         "tree with --ff-only, copy its plan records, remove the worktree and branch.")
     ap.add_argument("--yes", action="store_true",
                     help="With --land: skip the interactive-terminal requirement (CI). Without it "
                          "--land refuses when stdin is not a terminal, e.g. under an agent's Bash tool.")

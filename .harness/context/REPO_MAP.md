@@ -1,5 +1,5 @@
 # Repo map
-fingerprint: 3c0e9e111149
+fingerprint: 4b70218672bf
 Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before exploring.
 
 ## Routes
@@ -64,6 +64,102 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/archive/results-rep1-clean-partial.csv
 - bench/suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell, ProjectError, ensure_kit, node_modules_cache, make_project, cleanup_project, ...
 - bench/suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, seed_checks_for, check_package, run_all, runs_agree, ...
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/items/T1.metrics.json
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/items/T1.report.md
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/items/T2.metrics.json
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/items/T2.report.md
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/items/T3.metrics.json
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/items/T3.report.md
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/items/T4.report.md
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/logs/T1.claude.log
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/logs/T2.claude.log
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/logs/T3.claude.log
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r1/logs/T4.claude.log
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r3/items/T1.report.md
+- bench/suite/failed/suite-api-rename-serial-claude-haiku-r3/logs/T1.claude.log
+- bench/suite/failed/suite-fix-failing-serial-claude-5cb98e-r3/items/T1.report.md
+- bench/suite/failed/suite-fix-failing-serial-claude-5cb98e-r3/logs/T1.claude.log
+- bench/suite/failed/suite-fix-failing-serial-claude-cd9340-r1/items/T1.report.md
+- bench/suite/failed/suite-fix-failing-serial-claude-cd9340-r1/logs/T1.claude.log
+- bench/suite/failed/suite-large-serial-claude-haiku-r1/items/T1.report.md
+- bench/suite/failed/suite-large-serial-claude-haiku-r1/logs/T1.claude.log
+- bench/suite/failed/suite-large-serial-claude-haiku-r2/items/T1.report.md
+- bench/suite/failed/suite-large-serial-claude-haiku-r2/logs/T1.claude.log
+- bench/suite/failed/suite-large-serial-claude-haiku-r3/items/T1.report.md
+- bench/suite/failed/suite-large-serial-claude-haiku-r3/logs/T1.claude.log
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/items/T1.metrics.json
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/items/T1.report.md
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/items/T2.metrics.json
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/items/T2.report.md
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/items/T3.feedback.md
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/items/T3.report.md
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/logs/T1.claude.log
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/logs/T2.claude.log
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/logs/T3.claude.log
+- bench/suite/failed/suite-large-serial-claude-sonnet-r1/logs/T3.retry1.claude.log
+- bench/suite/failed/suite-multi-file-f-serial-claude-0170cf-r2/items/T1.report.md
+- bench/suite/failed/suite-multi-file-f-serial-claude-0170cf-r2/logs/T1.claude.log
+- bench/suite/failed/suite-multi-file-f-serial-claude-8b7130-r3/items/T1.report.md
+- bench/suite/failed/suite-multi-file-f-serial-claude-8b7130-r3/logs/T1.claude.log
+- bench/suite/failed/suite-multi-file-f-serial-claude-dbf680-r1/items/T1.report.md
+- bench/suite/failed/suite-multi-file-f-serial-claude-dbf680-r1/logs/T1.claude.log
+- bench/suite/failed/suite-refactor-extract-serial-claude-claude-haiku-5-5-r1/logs/T1.repair1.claude.log
+- bench/suite/failed/suite-refactor-extract-serial-claude-claude-haiku-5-5-r1/logs/T1.retry1.claude.log
+- bench/suite/failed/suite-small-serial-claude-haiku-r1/items/T1.report.md
+- bench/suite/failed/suite-small-serial-claude-haiku-r1/logs/T1.claude.log
+- bench/suite/failed/suite-small-serial-claude-haiku-r3/items/T1.report.md
+- bench/suite/failed/suite-small-serial-claude-haiku-r3/logs/T1.claude.log
+- bench/suite/failed/suite-speed-up-serial-claude-haiku-r1/items/T1.report.md
+- bench/suite/failed/suite-speed-up-serial-claude-haiku-r1/logs/T1.claude.log
+- bench/suite/fixtures/ambiguous-spec/hidden_tests/test_hidden.py: test_output_is_valid_slug_or_empty, test_hello_world, test_whitespace_runs_collapse_to_one_hyphen, test_leading_and_trailing_separators_are_stripped, test_idempotent_over_samples, test_accents_are_kept_transliterated_or_dropped, test_punctuation_only_gives_valid_or_empty, test_non_latin_input_gives_valid_or_empty
+- bench/suite/fixtures/ambiguous-spec/seed/tests/test_case.py: test_capitalises_each_word, test_lowercases_rest_of_word, test_collapses_whitespace, test_empty_string
+- bench/suite/fixtures/ambiguous-spec/seed/textkit/__init__.py
+- bench/suite/fixtures/ambiguous-spec/seed/textkit/case.py: title_case
+- bench/suite/fixtures/ambiguous-spec/solution/textkit/__init__.py
+- bench/suite/fixtures/ambiguous-spec/solution/textkit/slug.py: slugify
+- bench/suite/fixtures/ambiguous-spec/spec.md
+- bench/suite/fixtures/ambiguous-spec/task.toml
+- bench/suite/fixtures/api-rename/hidden_tests/test_hidden.py: write, test_load_config_merges_file_over_defaults, test_load_config_missing_file_returns_defaults, test_load_config_does_not_mutate_defaults, test_load_config_bad_json_raises, test_load_config_exported_from_package, test_old_name_removed_from_package, test_old_name_absent_from_package_sources, test_docs_use_new_name_only, test_callers_still_work
+- bench/suite/fixtures/api-rename/seed/README.md
+- bench/suite/fixtures/api-rename/seed/appcfg/__init__.py
+- bench/suite/fixtures/api-rename/seed/appcfg/cli.py: run
+- bench/suite/fixtures/api-rename/seed/appcfg/config.py: load_cfg
+- bench/suite/fixtures/api-rename/seed/appcfg/jobs.py: job_settings
+- bench/suite/fixtures/api-rename/seed/appcfg/server.py: server_settings
+- bench/suite/fixtures/api-rename/seed/docs/usage.md
+- bench/suite/fixtures/api-rename/seed/tests/test_appcfg.py: write, test_server_settings_override_defaults, test_job_settings_override_defaults, test_cli_reads_path_from_argv, test_missing_file_gives_defaults, test_bad_json_raises
+- bench/suite/fixtures/api-rename/solution/README.md
+- bench/suite/fixtures/api-rename/solution/appcfg/__init__.py
+- bench/suite/fixtures/api-rename/solution/appcfg/cli.py: run
+- bench/suite/fixtures/api-rename/solution/appcfg/config.py: load_config
+- bench/suite/fixtures/api-rename/solution/appcfg/jobs.py: job_settings
+- bench/suite/fixtures/api-rename/solution/appcfg/server.py: server_settings
+- bench/suite/fixtures/api-rename/solution/docs/usage.md
+- bench/suite/fixtures/api-rename/spec.md
+- bench/suite/fixtures/api-rename/task.toml
+- bench/suite/fixtures/deprecation-cleanup/hidden_tests/test_hidden.py: call_recording_warnings, test_pytest_ini_is_untouched, test_from_timestamp_zero_is_epoch, test_from_timestamp_known_value, test_from_timestamp_is_naive, test_from_timestamp_emits_no_deprecation_warning, test_now_utc_is_naive_and_current, test_now_utc_emits_no_deprecation_warning, test_age_seconds_defaults_to_now_without_warning, test_now_utc_runs_with_warnings_as_errors, ...
+- bench/suite/fixtures/deprecation-cleanup/seed/clock/__init__.py
+- bench/suite/fixtures/deprecation-cleanup/seed/clock/stamps.py: now_utc, from_timestamp, age_seconds
+- bench/suite/fixtures/deprecation-cleanup/seed/pytest.ini
+- bench/suite/fixtures/deprecation-cleanup/seed/tests/test_clock.py: test_age_seconds_between_two_times, test_age_seconds_is_zero_for_same_time, test_age_seconds_across_days
+- bench/suite/fixtures/deprecation-cleanup/solution/clock/stamps.py: now_utc, from_timestamp, age_seconds
+- bench/suite/fixtures/deprecation-cleanup/spec.md
+- bench/suite/fixtures/deprecation-cleanup/task.toml
+- bench/suite/fixtures/fix-failing-test/hidden_tests/test_hidden.py: test_line_that_exactly_fills_width_is_kept, test_full_line_then_next_word_wraps, test_exact_fit_inside_a_paragraph, test_one_character_over_width_wraps, test_single_word_equal_to_width, test_long_word_alone_is_not_split, test_empty_string_gives_empty_list, test_repeated_spaces_collapse
+- bench/suite/fixtures/fix-failing-test/seed/tests/test_wrap.py: test_short_text_stays_on_one_line, test_empty_text_gives_no_lines, test_wraps_when_words_do_not_fit, test_long_word_stays_on_its_own_line, test_wraps_long_sentence
+- bench/suite/fixtures/fix-failing-test/seed/textkit/__init__.py
+- bench/suite/fixtures/fix-failing-test/seed/textkit/wrap.py: word_wrap
+- bench/suite/fixtures/fix-failing-test/solution/textkit/wrap.py: word_wrap
+- bench/suite/fixtures/fix-failing-test/spec.md
+- bench/suite/fixtures/fix-failing-test/task.toml
+- bench/suite/fixtures/fix-from-prose/hidden_tests/test_hidden.py: test_positive_half_rounds_up, test_negative_half_rounds_away_from_zero, test_half_with_zero_places_rounds_up, test_half_with_zero_places_negative, test_non_half_values_round_normally, test_float_input_uses_its_decimal_text, test_format_money_shows_half_cent_rounded_up, test_format_money_negative_half_cent, test_format_money_thousands_with_tie, test_format_money_tie_rounds_up_to_next_dollar
+- bench/suite/fixtures/fix-from-prose/seed/moneyfmt/__init__.py
+- bench/suite/fixtures/fix-from-prose/seed/moneyfmt/fmt.py: format_money
+- bench/suite/fixtures/fix-from-prose/seed/moneyfmt/round.py: round_money
+- bench/suite/fixtures/fix-from-prose/seed/tests/test_money.py: test_round_money_drops_extra_digits, test_round_money_rounds_up_above_half, test_round_money_whole_units, test_format_money_thousands_separator, test_format_money_zero, test_format_money_negative
+- bench/suite/fixtures/fix-from-prose/solution/moneyfmt/round.py: round_money
+- bench/suite/fixtures/fix-from-prose/spec.md
+- bench/suite/fixtures/fix-from-prose/task.toml
 - bench/suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
 - bench/suite/fixtures/large/hidden_tests/vitest.config.ts
 - bench/suite/fixtures/large/hidden_tests/web/api-client.test.ts
@@ -101,6 +197,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/large/solution/web/components/ItemList.tsx: ItemListProps, ItemList
 - bench/suite/fixtures/large/solution/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
 - bench/suite/fixtures/large/spec.md
+- bench/suite/fixtures/large/task.toml
 - bench/suite/fixtures/medium/hidden_tests/todo-list.test.tsx
 - bench/suite/fixtures/medium/hidden_tests/todos-route.test.ts
 - bench/suite/fixtures/medium/hidden_tests/todos-store.test.ts
@@ -126,6 +223,35 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/medium/solution/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
 - bench/suite/fixtures/medium/solution/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
 - bench/suite/fixtures/medium/spec.md
+- bench/suite/fixtures/medium/task.toml
+- bench/suite/fixtures/multi-file-feature/hidden_tests/test_hidden.py: make_inv, skus, test_sort_by_each_key, test_name_sort_is_case_insensitive_with_sku_tie_break, test_reverse_flips_sorted_order, test_reverse_without_sort_flips_insertion_order, test_no_arguments_keeps_insertion_order, test_unknown_sort_key_raises_in_list_items, test_unknown_sort_key_raises_in_store, test_first_page, ...
+- bench/suite/fixtures/multi-file-feature/seed/inventory/__init__.py
+- bench/suite/fixtures/multi-file-feature/seed/inventory/api.py: list_items
+- bench/suite/fixtures/multi-file-feature/seed/inventory/models.py: Item
+- bench/suite/fixtures/multi-file-feature/seed/inventory/store.py: Inventory
+- bench/suite/fixtures/multi-file-feature/seed/tests/test_inventory.py: make_inv, test_items_keep_insertion_order, test_list_items_without_arguments_is_insertion_order, test_items_returns_a_copy
+- bench/suite/fixtures/multi-file-feature/solution/inventory/api.py: list_items, count_pages
+- bench/suite/fixtures/multi-file-feature/solution/inventory/models.py: Item
+- bench/suite/fixtures/multi-file-feature/solution/inventory/store.py: Inventory
+- bench/suite/fixtures/multi-file-feature/spec.md
+- bench/suite/fixtures/multi-file-feature/task.toml
+- bench/suite/fixtures/refactor-extract/hidden_tests/test_hidden.py: test_build_golden_output, test_function_lives_in_its_own_module, test_submodule_importable, test_parse_module_does_not_import_render, test_build_equals_composition, test_package_init_is_small
+- bench/suite/fixtures/refactor-extract/seed/report/__init__.py: parse_lines, summarize, render, build
+- bench/suite/fixtures/refactor-extract/seed/tests/test_report.py: test_parse_lines_skips_bad_lines, test_summarize_counts_levels_and_durations, test_render_contains_levels_block, test_build_matches_golden_output
+- bench/suite/fixtures/refactor-extract/solution/report/__init__.py: build
+- bench/suite/fixtures/refactor-extract/solution/report/parse.py: parse_lines
+- bench/suite/fixtures/refactor-extract/solution/report/render.py: render
+- bench/suite/fixtures/refactor-extract/solution/report/summarize.py: summarize
+- bench/suite/fixtures/refactor-extract/spec.md
+- bench/suite/fixtures/refactor-extract/task.toml
+- bench/suite/fixtures/scope-bait/hidden_tests/test_hidden.py: run, test_exact_limit_is_allowed, test_one_request_over_limit_is_refused, test_limit_one_refuses_second_request, test_limit_zero_refuses_everything, test_window_rollover_restores_full_allowance, test_boundary_tick_one_before_window_end_is_same_window, test_keys_are_isolated, test_refused_requests_do_not_consume_allowance, test_legacy_module_is_untouched
+- bench/suite/fixtures/scope-bait/seed/lib/__init__.py
+- bench/suite/fixtures/scope-bait/seed/lib/legacy.py: LegacyLimiter
+- bench/suite/fixtures/scope-bait/seed/lib/limiter.py: RateLimiter
+- bench/suite/fixtures/scope-bait/seed/tests/test_limiter.py: test_allows_requests_under_limit, test_three_requests_inside_window_are_allowed, test_window_resets_after_window_passes, test_keys_are_counted_separately
+- bench/suite/fixtures/scope-bait/solution/lib/limiter.py: RateLimiter
+- bench/suite/fixtures/scope-bait/spec.md
+- bench/suite/fixtures/scope-bait/task.toml
 - bench/suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
 - bench/suite/fixtures/small/plan/plan.md
 - bench/suite/fixtures/small/plan/tasks.json
@@ -141,12 +267,121 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
 - bench/suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
 - bench/suite/fixtures/small/spec.md
+- bench/suite/fixtures/small/task.toml
+- bench/suite/fixtures/speed-up/hidden_tests/test_hidden.py: brute, test_matches_brute_force_on_random_inputs, test_half_target_duplicates, test_does_not_mutate_input, test_large_input_is_fast
+- bench/suite/fixtures/speed-up/seed/pairsum/__init__.py
+- bench/suite/fixtures/speed-up/seed/pairsum/core.py: count_pairs
+- bench/suite/fixtures/speed-up/seed/tests/test_core.py: test_basic, test_duplicates_are_separate_indices, test_negatives_and_zero, test_empty_and_single
+- bench/suite/fixtures/speed-up/solution/pairsum/core.py: count_pairs
+- bench/suite/fixtures/speed-up/spec.md
+- bench/suite/fixtures/speed-up/task.toml
+- bench/suite/free_arms.log
+- bench/suite/free_arms.t0
+- bench/suite/plan_cache/ambiguous-spec-claude-sonnet-1b998a5c-ba95f25b/meta.json
+- bench/suite/plan_cache/ambiguous-spec-claude-sonnet-1b998a5c-ba95f25b/plan.md
+- bench/suite/plan_cache/ambiguous-spec-claude-sonnet-1b998a5c-ba95f25b/tasks.json
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718-ba95f25b/meta.json
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718-ba95f25b/plan.md
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718-ba95f25b/tasks.json
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718-ddbc2109/meta.json
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718-ddbc2109/plan.md
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718-ddbc2109/tasks.json
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718/meta.json
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718/plan.md
+- bench/suite/plan_cache/api-rename-claude-sonnet-aee17718/tasks.json
+- bench/suite/plan_cache/deprecation-cleanup-claude-sonnet-39811a39-ba95f25b/meta.json
+- bench/suite/plan_cache/deprecation-cleanup-claude-sonnet-39811a39-ba95f25b/plan.md
+- bench/suite/plan_cache/deprecation-cleanup-claude-sonnet-39811a39-ba95f25b/tasks.json
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20-ba95f25b/meta.json
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20-ba95f25b/plan.md
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20-ba95f25b/tasks.json
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20-ddbc2109/meta.json
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20-ddbc2109/plan.md
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20-ddbc2109/tasks.json
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20/meta.json
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20/plan.md
+- bench/suite/plan_cache/fix-failing-test-claude-sonnet-fa30ff20/tasks.json
+- bench/suite/plan_cache/fix-from-prose-claude-sonnet-ef8fc585-ba95f25b/meta.json
+- bench/suite/plan_cache/fix-from-prose-claude-sonnet-ef8fc585-ba95f25b/plan.md
+- bench/suite/plan_cache/fix-from-prose-claude-sonnet-ef8fc585-ba95f25b/tasks.json
+- bench/suite/plan_cache/fix-from-prose-claude-sonnet-ef8fc585-ddbc2109/meta.json
+- bench/suite/plan_cache/fix-from-prose-claude-sonnet-ef8fc585-ddbc2109/plan.md
+- bench/suite/plan_cache/fix-from-prose-claude-sonnet-ef8fc585-ddbc2109/tasks.json
+- bench/suite/plan_cache/large-claude-sonnet-8fd84681/meta.json
+- bench/suite/plan_cache/large-claude-sonnet-8fd84681/plan.md
+- bench/suite/plan_cache/large-claude-sonnet-8fd84681/tasks.json
+- bench/suite/plan_cache/multi-file-feature-claude-sonnet-9fa57ed7-ddbc2109/checks/check_t2.py
+- bench/suite/plan_cache/multi-file-feature-claude-sonnet-9fa57ed7-ddbc2109/meta.json
+- bench/suite/plan_cache/multi-file-feature-claude-sonnet-9fa57ed7-ddbc2109/plan.md
+- bench/suite/plan_cache/multi-file-feature-claude-sonnet-9fa57ed7-ddbc2109/tasks.json
+- bench/suite/plan_cache/multi-file-feature-claude-sonnet-9fa57ed7/meta.json
+- bench/suite/plan_cache/multi-file-feature-claude-sonnet-9fa57ed7/plan.md
+- bench/suite/plan_cache/multi-file-feature-claude-sonnet-9fa57ed7/tasks.json
+- bench/suite/plan_cache/refactor-extract-claude-sonnet-98f18b46-ba95f25b/checks/check_t4.py
+- bench/suite/plan_cache/refactor-extract-claude-sonnet-98f18b46-ba95f25b/meta.json
+- bench/suite/plan_cache/refactor-extract-claude-sonnet-98f18b46-ba95f25b/plan.md
+- bench/suite/plan_cache/refactor-extract-claude-sonnet-98f18b46-ba95f25b/tasks.json
+- bench/suite/plan_cache/refactor-extract-claude-sonnet-98f18b46-ddbc2109/meta.json
+- bench/suite/plan_cache/refactor-extract-claude-sonnet-98f18b46-ddbc2109/plan.md
+- bench/suite/plan_cache/refactor-extract-claude-sonnet-98f18b46-ddbc2109/tasks.json
+- bench/suite/plan_cache/scope-bait-claude-sonnet-a141b6c6-ba95f25b/meta.json
+- bench/suite/plan_cache/scope-bait-claude-sonnet-a141b6c6-ba95f25b/plan.md
+- bench/suite/plan_cache/scope-bait-claude-sonnet-a141b6c6-ba95f25b/tasks.json
+- bench/suite/plan_cache/scope-bait-claude-sonnet-a141b6c6-ddbc2109/meta.json
+- bench/suite/plan_cache/scope-bait-claude-sonnet-a141b6c6-ddbc2109/plan.md
+- bench/suite/plan_cache/scope-bait-claude-sonnet-a141b6c6-ddbc2109/tasks.json
 - bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-b4e5256c/meta.json
 - bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-b4e5256c/plan.md
 - bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-b4e5256c/tasks.json
-- bench/suite/report.py: load_rows, wilson_ci, latest_per_cell, newest_sha_rows, build_report, main
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-ddbc2109/meta.json
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-ddbc2109/plan.md
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-ddbc2109/tasks.json
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34/checks/check_t1.py
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34/checks/check_t2.py
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34/meta.json
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34/plan.md
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34/tasks.json
+- bench/suite/plan_cache/speed-up-claude-sonnet-db055a99-ddbc2109/meta.json
+- bench/suite/plan_cache/speed-up-claude-sonnet-db055a99-ddbc2109/plan.md
+- bench/suite/plan_cache/speed-up-claude-sonnet-db055a99-ddbc2109/tasks.json
+- bench/suite/plan_cache/speed-up-claude-sonnet-db055a99/checks/check_t1.py: brute
+- bench/suite/plan_cache/speed-up-claude-sonnet-db055a99/meta.json
+- bench/suite/plan_cache/speed-up-claude-sonnet-db055a99/plan.md
+- bench/suite/plan_cache/speed-up-claude-sonnet-db055a99/tasks.json
+- bench/suite/report.py: load_rows, wilson_ci, latest_per_cell, arm_label, first_try, newest_sha_rows, build_report, main
 - bench/suite/results.csv
+- bench/suite/results.pre-rerate.csv
 - bench/suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
+- bench/suite/tasks.py: discover_tasks, model_slug, cell_slug, parse_arms
+- bench/suite/work/_logs/suite-ambiguous-spec-serial-pi-r1.log
+- bench/suite/work/_logs/suite-api-rename-serial-claude-haiku-r1.log
+- bench/suite/work/_logs/suite-api-rename-serial-claude-haiku-r2.log
+- bench/suite/work/_logs/suite-api-rename-serial-claude-haiku-r3.log
+- bench/suite/work/_logs/suite-api-rename-serial-claude-sonnet-r1.log
+- bench/suite/work/_logs/suite-api-rename-serial-opencode-e52737-r1.log
+- bench/suite/work/_logs/suite-api-rename-serial-opencode-f136fd-r1.log
+- bench/suite/work/_logs/suite-api-rename-serial-opencode-r1.log
+- bench/suite/work/_logs/suite-api-rename-serial-opencode-r2.log
+- bench/suite/work/_logs/suite-api-rename-serial-pi-5b6c79-r1.log
+- bench/suite/work/_logs/suite-api-rename-serial-pi-r1.log
+- bench/suite/work/_logs/suite-deprecation-cleanup-serial-pi-r1.log
+- bench/suite/work/_logs/suite-fix-failing-serial-claude-22bd4f-r2.log
+- bench/suite/work/_logs/suite-fix-failing-serial-claude-5cb98e-r3.log
+- bench/suite/work/_logs/suite-fix-failing-serial-claude-cd9340-r1.log
+- bench/suite/work/_logs/suite-fix-failing-serial-claude-ea6b1e-r1.log
+- bench/suite/work/_logs/suite-fix-failing-serial-opencode-0faa80-r3.log
+- bench/suite/work/_logs/suite-fix-failing-serial-opencode-4f9a36-r1.log
+- bench/suite/work/_logs/suite-fix-failing-serial-opencode-63f668-r2.log
+- bench/suite/work/_logs/suite-fix-failing-serial-pi-1fd1f6-r1.log
+- bench/suite/work/_logs/suite-fix-failing-test-serial-pi-r1.log
+- bench/suite/work/_logs/suite-fix-failing-test-serial-pi-r2.log
+- bench/suite/work/_logs/suite-fix-failing-test-serial-pi-r3.log
+- bench/suite/work/_logs/suite-fix-from-pro-serial-opencode-b5e2b6-r1.log
+- bench/suite/work/_logs/suite-fix-from-prose-serial-claude-claude-haiku-5-5-r1.log
+- bench/suite/work/_logs/suite-fix-from-prose-serial-claude-sonnet-r1.log
+- bench/suite/work/_logs/suite-fix-from-prose-serial-opencode-opencode-muse-spark-1-3-contributor-free-r1.log
+- bench/suite/work/_logs/suite-fix-from-prose-serial-pi-opencode-space-bunny-free-r1.log
+- bench/suite/work/_logs/suite-fix-from-prose-serial-pi-r1.log
 - bench/suite/work/_logs/suite-large-multi-claude-r1.log
 - bench/suite/work/_logs/suite-large-multi-cline-acp-r1.log
 - bench/suite/work/_logs/suite-large-multi-cline-r1.log
@@ -154,10 +389,18 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/work/_logs/suite-large-multi-pi-r1.log
 - bench/suite/work/_logs/suite-large-parallel-opencode-r1.log
 - bench/suite/work/_logs/suite-large-parallel-pi-r1.log
+- bench/suite/work/_logs/suite-large-serial-claude-haiku-r1.log
+- bench/suite/work/_logs/suite-large-serial-claude-haiku-r2.log
+- bench/suite/work/_logs/suite-large-serial-claude-haiku-r3.log
 - bench/suite/work/_logs/suite-large-serial-claude-r1.log
+- bench/suite/work/_logs/suite-large-serial-claude-sonnet-r1.log
 - bench/suite/work/_logs/suite-large-serial-cline-r1.log
+- bench/suite/work/_logs/suite-large-serial-opencode-dddd6a-r1.log
 - bench/suite/work/_logs/suite-large-serial-opencode-r1.log
+- bench/suite/work/_logs/suite-large-serial-opencode-r3.log
+- bench/suite/work/_logs/suite-large-serial-pi-545895-r1.log
 - bench/suite/work/_logs/suite-large-serial-pi-r1.log
+- bench/suite/work/_logs/suite-large-serial-pi-r3.log
 - bench/suite/work/_logs/suite-medium-multi-claude-r1.log
 - bench/suite/work/_logs/suite-medium-multi-cline-acp-r1.log
 - bench/suite/work/_logs/suite-medium-multi-cline-r1.log
@@ -168,19 +411,67 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/work/_logs/suite-medium-serial-cline-acp-r1.log
 - bench/suite/work/_logs/suite-medium-serial-opencode-r1.log
 - bench/suite/work/_logs/suite-medium-serial-pi-r1.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-claude-0170cf-r2.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-claude-767d45-r1.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-claude-8b7130-r3.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-claude-dbf680-r1.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-opencode-1db11f-r1.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-opencode-4c6a90-r2.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-opencode-60ca79-r1.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-opencode-aaaa5e-r1.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-opencode-fe744d-r3.log
+- bench/suite/work/_logs/suite-multi-file-f-serial-pi-88c0e7-r1.log
+- bench/suite/work/_logs/suite-multi-file-feature-serial-pi-r1.log
+- bench/suite/work/_logs/suite-multi-file-feature-serial-pi-r2.log
+- bench/suite/work/_logs/suite-multi-file-feature-serial-pi-r3.log
+- bench/suite/work/_logs/suite-refactor-ext-serial-claude-584150-r1.log
+- bench/suite/work/_logs/suite-refactor-ext-serial-claude-b50a5c-r1.log
+- bench/suite/work/_logs/suite-refactor-ext-serial-opencode-b3c4cf-r1.log
+- bench/suite/work/_logs/suite-refactor-ext-serial-pi-ef9dcd-r1.log
+- bench/suite/work/_logs/suite-refactor-extract-serial-claude-claude-haiku-5-5-r1.log
+- bench/suite/work/_logs/suite-refactor-extract-serial-claude-sonnet-r1.log
+- bench/suite/work/_logs/suite-refactor-extract-serial-opencode-opencode-muse-spark-1-3-contributor-free-r1.log
+- bench/suite/work/_logs/suite-refactor-extract-serial-pi-opencode-space-bunny-free-r1.log
+- bench/suite/work/_logs/suite-refactor-extract-serial-pi-r1.log
+- bench/suite/work/_logs/suite-scope-bait-serial-claude-claude-haiku-5-5-r1.log
+- bench/suite/work/_logs/suite-scope-bait-serial-claude-sonnet-r1.log
+- bench/suite/work/_logs/suite-scope-bait-serial-opencode-b54e37-r1.log
+- bench/suite/work/_logs/suite-scope-bait-serial-opencode-opencode-muse-spark-1-3-contributor-free-r1.log
+- bench/suite/work/_logs/suite-scope-bait-serial-pi-opencode-space-bunny-free-r1.log
+- bench/suite/work/_logs/suite-scope-bait-serial-pi-r1.log
 - bench/suite/work/_logs/suite-small-multi-claude-r1.log
 - bench/suite/work/_logs/suite-small-multi-cline-acp-r1.log
 - bench/suite/work/_logs/suite-small-multi-cline-r1.log
 - bench/suite/work/_logs/suite-small-multi-opencode-r1.log
 - bench/suite/work/_logs/suite-small-multi-pi-r1.log
 - bench/suite/work/_logs/suite-small-parallel-pi-r1.log
+- bench/suite/work/_logs/suite-small-serial-claude-claude-haiku-5-5-r1.log
+- bench/suite/work/_logs/suite-small-serial-claude-haiku-r1.log
+- bench/suite/work/_logs/suite-small-serial-claude-haiku-r2.log
+- bench/suite/work/_logs/suite-small-serial-claude-haiku-r3.log
 - bench/suite/work/_logs/suite-small-serial-claude-r1.log
+- bench/suite/work/_logs/suite-small-serial-claude-sonnet-r1.log
 - bench/suite/work/_logs/suite-small-serial-cline-acp-r1.log
+- bench/suite/work/_logs/suite-small-serial-opencode-8a4c7b-r1.log
+- bench/suite/work/_logs/suite-small-serial-opencode-opencode-muse-spark-1-3-contributor-free-r1.log
 - bench/suite/work/_logs/suite-small-serial-opencode-r1.log
 - bench/suite/work/_logs/suite-small-serial-opencode-r2.log
+- bench/suite/work/_logs/suite-small-serial-opencode-r3.log
+- bench/suite/work/_logs/suite-small-serial-pi-67ed17-r1.log
+- bench/suite/work/_logs/suite-small-serial-pi-opencode-space-bunny-free-r1.log
 - bench/suite/work/_logs/suite-small-serial-pi-r1.log
+- bench/suite/work/_logs/suite-small-serial-pi-r2.log
 - bench/suite/work/_logs/suite-small-window-cline-r1.log
 - bench/suite/work/_logs/suite-small-window-pi-r1.log
+- bench/suite/work/_logs/suite-speed-up-serial-claude-haiku-r1.log
+- bench/suite/work/_logs/suite-speed-up-serial-claude-haiku-r2.log
+- bench/suite/work/_logs/suite-speed-up-serial-claude-haiku-r3.log
+- bench/suite/work/_logs/suite-speed-up-serial-claude-sonnet-r1.log
+- bench/suite/work/_logs/suite-speed-up-serial-opencode-015112-r1.log
+- bench/suite/work/_logs/suite-speed-up-serial-opencode-r3.log
+- bench/suite/work/_logs/suite-speed-up-serial-pi-74ea72-r1.log
+- bench/suite/work/_logs/suite-speed-up-serial-pi-r2.log
+- bench/suite/work/_logs/suite-speed-up-serial-pi-r3.log
 - docs/ARCHITECTURE.md
 - docs/FLOWS.md
 - docs/bench-cost.svg
@@ -238,9 +529,10 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - tests/test_acceptance.py: test_non_codepage_output_does_not_crash, test_timeout_with_held_grandchild_pipe_returns_fast
 - tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
 - tests/test_check_main.py: test_no_baseline_means_no_complaint, test_untouched_main_tree_is_clean, test_stray_main_tree_write_is_flagged, test_harness_paths_and_worktrees_are_ignored, test_head_move_with_no_file_change_is_flagged, test_check_exits_1_and_names_the_main_tree_change
+- tests/test_claude_executor.py: test_use_agent_follows_the_model_name, test_use_agent_env_override, test_haiku_runs_the_agent, test_sonnet_keeps_the_plain_command, test_env_zero_turns_haiku_off, test_env_one_turns_sonnet_on, test_non_agent_command_is_unchanged, test_agent_prompt_names_the_worktree, test_assistant_event_records_the_context_size, test_assistant_event_without_usage_counts_zero, ...
 - tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
 - tests/test_git_guard.py: test_blocks_git_state_commands, test_blocks_land, test_allows_read_only_and_other_commands, test_hook_exit_codes, test_deny_json_is_the_source, test_git_state_sees_a_commit_that_changes_no_file_hash, test_git_state_none_outside_a_repo, test_land_refuses_without_a_terminal, test_writes_must_stay_inside_a_worktree
-- tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
+- tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks, test_opencode_bootstrap_files_are_runner_owned, test_npm_lockfile_is_runner_owned_but_package_json_is_not
 - tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
 - tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
 - tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
@@ -250,8 +542,9 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - tests/test_scope.py: test_in_scope_exact_and_directory_entries, test_overlaps_is_prefix_aware, test_lint_accepts_a_narrow_directory_entry, test_lint_rejects_broad_directory_entries, test_lint_directory_without_trailing_slash_is_an_error, test_written_paths_reads_every_executor_log_format, test_attribute_splits_own_strays_from_unattributed, test_lint_rejects_a_directory_holding_many_tracked_files
 - tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
 - tests/test_status.py: make_plan, write_report, test_states_first_failure_tail_and_next_command, test_all_pass_nexts_the_land_command, test_lock_mismatch_nexts_the_relock_only_command
-- tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed
-- tests/test_worktree.py: test_exclude_worktrees_writes_common_info_exclude_in_linked_worktree, test_link_sources_shared_dir_from_main_worktree, test_link_keeps_existing_target_dir
+- tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed, SessionExecutor, test_warm_run_keeps_the_old_session_when_the_executor_has_none, test_warm_run_drops_the_session_when_the_executor_rotated_it
+- tests/test_worktree.py: test_exclude_worktrees_writes_common_info_exclude_in_linked_worktree, test_link_sources_shared_dir_from_main_worktree, test_link_keeps_existing_target_dir, test_lf_agents_rewrites_crlf_agent_files
+- tests/test_worktree_commits.py: test_git_state_detects_commit_moved_head, test_snapshot_baseline_absorbed_on_new_task, test_out_of_scope_edit_detected_after_prior_commit, test_only_listed_files_is_clean_after_commit
 - tsconfig.json
 
 ## Notes

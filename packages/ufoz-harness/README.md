@@ -41,8 +41,8 @@ ships **no** `.claude/settings.json`, so installing never overwrites your permis
 
 **Runner mode (pi / opencode).** `python .harness/run_plan.py <slug>` drives a free executor (pi by
 default, or `--executor opencode|cline|cline-acp|llama|claude`) in its own worktree
-`.worktrees/<slug>`. The runner checks the grader lock, file scope and suppression comments, and
-retries and repairs a failing task. `python .harness/run_plan.py <slug> --land` brings it into your tree.
+`.worktrees/<slug>` **on a clean tree** (no uncommitted changes or untracked files). The runner checks the grader lock, file scope and suppression comments, and
+retries and repairs a failing task. `python .harness/run_plan.py <slug> --land` merges it into your tree with `--ff-only`.
 
 **Claude mode.** Once you approve a plan, `run_plan.py <slug> --prepare` makes the same worktree the
 runner would use, and the main session spawns `@claude-executor`, a Claude Code subagent that edits

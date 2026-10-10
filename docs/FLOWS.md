@@ -92,4 +92,4 @@ Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `
 | Last task | writes `SUMMARY.md` and runs the build smoke |
 | Not a git repo | the run stays in place (`not a git repo: running in place`) |
 | `--land` while the run is still going | refused by `run.lock` |
-| `--land` hits a conflict | nothing changes; `land.patch`, the worktree and its branch stay |
+| `--land` hits a conflict | nothing changes; merge fails; the worktree and its branch stay for manual rebase or hand-merge |

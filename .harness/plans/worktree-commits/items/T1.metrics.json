@@ -1,0 +1,17 @@
+{
+  "slug": "worktree-commits",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 37.8,
+  "accept_s": 4.5,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 9308,
+    "output": 2216,
+    "reasoning": 439,
+    "cache_read": 58596,
+    "cost": 0.0
+  }
+}
