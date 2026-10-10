@@ -27,11 +27,29 @@ def test_missing_brief_is_an_error(tmp_path, capsys):
 
 def test_acceptance_that_passes_untouched_is_check_invalid(tmp_path, capsys):
     plan_dir = make_plan(tmp_path, "## T1\n")
-    tasks = [{"id": "T1", "files": ["src/a.ts"], "acceptance": 'python -c "pass"'}]
+    tasks = [{"id": "T1", "files": ["src/a.ts"], "acceptance": 'python -c "pass"', "red_first": True}]
     code = lint_mod.lint(plan_dir, tasks, passed=set())
     out = capsys.readouterr().out
     assert code == 1
     assert "T1: acceptance already passes on the untouched tree (check-invalid)" in out
+
+
+def test_red_first_default_off_skips_untouched_check(tmp_path, capsys):
+    plan_dir = make_plan(tmp_path, "## T1\n")
+    tasks = [{"id": "T1", "files": ["src/a.py"], "acceptance": 'python -c "pass"'}]
+    code = lint_mod.lint(plan_dir, tasks, passed=set())
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "check-invalid" not in out
+
+
+def test_red_first_false_needs_no_reason(tmp_path, capsys):
+    plan_dir = make_plan(tmp_path, "## T1\n")
+    tasks = [{"id": "T1", "files": ["src/a.py"], "acceptance": 'python -c "pass"', "red_first": False}]
+    code = lint_mod.lint(plan_dir, tasks, passed=set())
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "red_first_reason" not in out
 
 
 def test_shared_files_without_dep_warns_but_passes(tmp_path, capsys):
