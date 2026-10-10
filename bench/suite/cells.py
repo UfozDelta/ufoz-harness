@@ -862,7 +862,7 @@ def _run_project(cell, repo_root, cell_timeout):
     if timed_out:
         row["status"] = "timeout"
     else:
-        landed = subprocess.run([sys.executable, ".harness/run_plan.py", slug, "--land", "--yes"],
+        landed = subprocess.run([sys.executable, ".harness/run_plan.py", slug, "--land"],
                                 cwd=str(project), capture_output=True, text=True,
                                 encoding="utf-8", errors="replace")
         if landed.returncode != 0:
