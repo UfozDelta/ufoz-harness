@@ -5,7 +5,7 @@ Usage: python .harness/run_plan.py <slug> [--only T2] [--timeout 900] [--review 
                                              [--fresh] [--session ID] [--parallel N]
                                              [--no-worktree] [--no-window]
        python .harness/run_plan.py <slug> --executor agent:haiku   (prepare; again to grade)
-       python .harness/run_plan.py <slug> --status | --relock-only | --land [--yes]
+       python .harness/run_plan.py <slug> --status | --relock-only | --land
        python .harness/run_plan.py <slug> --plan SPEC.md [--planner BACKEND[:MODEL]]
        python .harness/run_plan.py --stats | --pending
 
