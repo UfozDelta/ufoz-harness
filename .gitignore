@@ -19,6 +19,8 @@ bench/suite/failed/
 bench/suite/plan_cache/
 .harness/suite-*.tsbuildinfo
 bench/suite/work/
+# local bench scratch: free_arms.t0 is a start timestamp, free_arms.log its output
+bench/suite/free_arms.*
 # raw bench output (summaries in RESULTS.md / LATENCY.md stay tracked)
 bench/suite/results*.csv
 bench/suite/archive/
