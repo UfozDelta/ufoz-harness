@@ -1,6 +1,7 @@
 """Tree guards: what the executor is and is not allowed to change."""
 import hashlib
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -42,6 +43,28 @@ def git_state():
         return None
     ref = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], capture_output=True, text=True, check=False)
     return head.stdout.strip(), ref.stdout.strip()
+
+
+def revert_paths(paths):
+    """Put each given stray path back the way it was: a tracked file is restored from HEAD,
+    an untracked one is deleted (file or whole tree). Only the named paths are touched, a path
+    that no longer exists is ignored, and the GIT_MOVED sentinel is skipped: it names no file.
+    Never raises -- a failed revert must not end the run."""
+    for p in paths:
+        if p == GIT_MOVED:
+            continue
+        ls = subprocess.run(["git", "ls-files", "--", p], capture_output=True, text=True, check=False)
+        if ls.returncode == 0 and ls.stdout.strip():
+            subprocess.run(["git", "checkout", "HEAD", "--", p], capture_output=True, check=False)
+            continue
+        target = Path(p)
+        if target.is_dir():
+            shutil.rmtree(target, ignore_errors=True)
+        elif target.exists():
+            try:
+                target.unlink()
+            except OSError:
+                pass
 
 
 def lock_hashes(plan):
