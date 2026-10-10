@@ -65,6 +65,16 @@ def land(slug):
         plan_dir.mkdir(parents=True, exist_ok=True)
         shutil.copytree(src, plan_dir, dirs_exist_ok=True,
                         ignore=shutil.ignore_patterns("run.lock"))
+        # Commit the copied records so the main tree stays clean. No -f: gitignored
+        # files (logs/, land.patch, baseline) stay out. The pathspec commit keeps
+        # unrelated staged work from being swept in.
+        _git("add", f".harness/plans/{slug}")
+        if _git("diff", "--cached", "--quiet", "--", f".harness/plans/{slug}").returncode != 0:
+            commit = _git("commit", "-m", f"harness({slug}): plan records",
+                          "--", f".harness/plans/{slug}")
+            if commit.returncode != 0:
+                print(f"warning: could not commit plan records for {slug}: "
+                      + commit.stderr.decode("utf-8", "replace").strip())
 
     # Success: clean up the worktree and branch
     for name in worktree.SHARED_DIRS:
