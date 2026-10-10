@@ -1,0 +1,17 @@
+{
+  "slug": "land-drop-yes",
+  "task": "T4",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 19.9,
+  "accept_s": 0.2,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 4935,
+    "output": 1109,
+    "reasoning": 95,
+    "cache_read": 96256,
+    "cost": 0.0
+  }
+}
