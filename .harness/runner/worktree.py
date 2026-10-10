@@ -146,23 +146,31 @@ def _lf_agents(target):
             f.write_bytes(raw.replace(b"\r\n", b"\n"))
 
 
-def _dirty_paths():
-    """Porcelain paths of uncommitted edits and untracked non-ignored files."""
-    out = _git("status", "--porcelain").stdout
+def _dirty_paths(slug=None):
+    """Porcelain paths of uncommitted edits and untracked non-ignored files.
+    `slug`: the plan dir `.harness/plans/<slug>/` of the plan being run is left out
+    (matched on a path-component boundary, so `x` does not hide `xy`). With a `slug`,
+    untracked files are listed one by one: git's default collapses them into a single
+    directory entry, which would hide sibling plan dirs as well."""
+    out = _git("status", "--porcelain", *(["--untracked-files=all"] if slug else [])).stdout
+    skip = f".harness/plans/{slug}/" if slug else None
     paths = []
     for line in out.splitlines():
         entry = line[3:].strip() if len(line) > 3 else ""
         if " -> " in entry:
             entry = entry.split(" -> ", 1)[1]
+        entry = entry.replace("\\", "/").rstrip("/")
+        if skip and (entry == skip[:-1] or entry.startswith(skip)):
+            continue
         if entry:
             paths.append(entry)
     return paths
 
 
-def _require_clean_tree():
+def _require_clean_tree(slug=None):
     """Hard refuse: a plan worktree starts at HEAD, so uncommitted edits cannot be part
-    of it. Commit or stash them, then rerun."""
-    dirty = _dirty_paths()
+    of it. Commit or stash them, then rerun. `slug`: see _dirty_paths."""
+    dirty = _dirty_paths(slug)
     if dirty:
         sys.exit("worktree: the tree has uncommitted changes and a plan worktree starts at "
                  f"HEAD:\n  {chr(10).join('  ' + p for p in dirty)}\n"
@@ -197,7 +205,7 @@ def ensure(slug, exclude=(), orphan=False):
     if exclude or orphan:
         base = _snapshot(slug, exclude, orphan)
     else:
-        _require_clean_tree()
+        _require_clean_tree(slug)
         base = "HEAD"
     r = None
     for attempt in range(3):
