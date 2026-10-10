@@ -1,5 +1,6 @@
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -161,3 +162,64 @@ def test_warm_run_keeps_the_old_session_when_the_executor_has_none(tmp_path):
 
 def test_warm_run_drops_the_session_when_the_executor_rotated_it(tmp_path):
     assert _warm_run(tmp_path, "") == ""
+
+
+class StrayExecutor(FakeExecutor):
+    """Does the work and, optionally on every call, drops a stray file in cwd -- a path no
+    task lists. Written into a real git repo, so the runner can revert it between attempts."""
+
+    def __init__(self, plan_dir, done, every_call=False):
+        super().__init__(plan_dir, done, succeed_on=1)
+        self.every_call = every_call
+
+    def run(self, brief, log, timeout, feedback=None, session=None, rules=None, raw_prompt=None):
+        res = super().run(brief, log, timeout, feedback, session, rules, raw_prompt)
+        if self.every_call or self.calls == 1:
+            Path("stray.txt").write_text("stray\n", encoding="utf-8")
+        return res
+
+
+def _git_repo(monkeypatch, tmp_path):
+    """A committed repo as cwd: git_state() is not None there, so the runner's HEAD guard and
+    commit_task both work."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    monkeypatch.chdir(repo)
+    for args in (["init", "-q", "."], ["config", "user.name", "harness"],
+                 ["config", "user.email", "harness@example.com"]):
+        subprocess.run(["git", *args], check=True)
+    (repo / "base.txt").write_text("base\n", encoding="utf-8")
+    subprocess.run(["git", "add", "base.txt"], check=True)
+    subprocess.run(["git", "commit", "-qm", "base"], check=True)
+    return repo
+
+
+def _stray_run(tmp_path, monkeypatch, every_call):
+    plan, args, executor = make_plan(tmp_path, succeed_on=1)
+    executor = StrayExecutor(executor.plan_dir, executor.done, every_call=every_call)
+    repo = _git_repo(monkeypatch, tmp_path)
+    ok, lines, _ = task_runner.TaskRunner(plan, args, executor).run(plan.tasks[0])
+    return ok, lines, executor, plan, repo
+
+
+def test_stray_revert_retry_passes(tmp_path, monkeypatch):
+    ok, _lines, executor, plan, repo = _stray_run(tmp_path, monkeypatch, every_call=False)
+
+    # the strays were reverted in the worktree and the retried attempt passed
+    assert not (repo / "stray.txt").exists()
+    assert executor.calls == 2
+    assert ok is True
+    feedback = (plan.items / "T1.feedback.md").read_text(encoding="utf-8")
+    assert "stray.txt" in feedback
+    assert executor.done.as_posix() in feedback
+    assert "reverted stray files" in plan.report_text("T1")
+
+
+def test_stray_revert_second_stray_fails(tmp_path, monkeypatch):
+    ok, _lines, executor, plan, repo = _stray_run(tmp_path, monkeypatch, every_call=True)
+
+    # a second stray is not retried a third time: the task fails and the report names it
+    assert (repo / "stray.txt").exists()
+    assert executor.calls == 2
+    assert ok is False
+    assert "stray.txt" in plan.report_text("T1")
