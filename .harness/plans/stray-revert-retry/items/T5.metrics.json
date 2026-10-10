@@ -1,0 +1,17 @@
+{
+  "slug": "stray-revert-retry",
+  "task": "T5",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 434.3,
+  "accept_s": 0.7,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 6984,
+    "output": 4146,
+    "reasoning": 361,
+    "cache_read": 1071242,
+    "cost": 0.0
+  }
+}
