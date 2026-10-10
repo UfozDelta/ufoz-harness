@@ -1,0 +1,17 @@
+{
+  "slug": "land-merge-fallback",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 57.7,
+  "accept_s": 0.4,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 5207,
+    "output": 1122,
+    "reasoning": 122,
+    "cache_read": 25372,
+    "cost": 0.0
+  }
+}
