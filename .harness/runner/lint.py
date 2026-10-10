@@ -1,6 +1,7 @@
 """Static plan validation + red-first proof on the untouched tree."""
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 from .acceptance import run_acceptance
@@ -83,6 +84,11 @@ def lint(plan, tasks, passed):
         errs += [f"{tid}: {w} not found" for w in t.get("acceptance", "").split()
                  if "checks/" in w and not Path(w).exists()]
         acceptance = t.get("acceptance", "")
+        if sys.platform == "win32":
+            m = re.match(r"^\s*(!|test\s|rm\s)", acceptance)
+            if m:
+                errs.append(f"{tid}: acceptance starts with POSIX '{m.group(1).strip()}' "
+                            f"which cmd.exe cannot run; use python -c")
         if re.search(r"(import\(|require\()\s*['\"][^'\"]+\.(ts|tsx|mts|cts)['\"]", acceptance):
             errs.append(f"{tid}: acceptance loads a .ts file through node; use tsc (planner rule 5)")
         files = t.get("files", [])
