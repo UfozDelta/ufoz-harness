@@ -1,5 +1,5 @@
 # Repo map
-fingerprint: 937b12517344
+fingerprint: 3c0e9e111149
 Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before exploring.
 
 ## Routes
@@ -62,8 +62,8 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/archive/results-oc-tools-rep2.csv
 - bench/suite/archive/results-rep1-buggy.csv
 - bench/suite/archive/results-rep1-clean-partial.csv
-- bench/suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell
-- bench/suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, run_all, runs_agree, check_size, main
+- bench/suite/cells.py: is_cell_slug, node_tool, prepare_cell, run_cell, cleanup_cell, ProjectError, ensure_kit, node_modules_cache, make_project, cleanup_project, ...
+- bench/suite/check_fixtures.py: InfraError, node_tool, copy_into, make_work, run, checks_for, seed_checks_for, check_package, run_all, runs_agree, ...
 - bench/suite/fixtures/large/hidden_tests/backend/test_items_api.py: test_create_item_returns_201_and_the_stored_item, test_ids_increment_from_one, test_names_and_skus_are_trimmed, test_quantity_defaults_to_zero, test_duplicate_sku_is_409, test_invalid_payloads_are_422, test_list_is_empty_on_a_fresh_store, test_list_keeps_insertion_order, test_get_item_round_trips_a_created_item, test_get_missing_item_is_404, ...
 - bench/suite/fixtures/large/hidden_tests/vitest.config.ts
 - bench/suite/fixtures/large/hidden_tests/web/api-client.test.ts
@@ -72,13 +72,17 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/large/hidden_tests/web/page.test.tsx
 - bench/suite/fixtures/large/plan/plan.md
 - bench/suite/fixtures/large/plan/tasks.json
+- bench/suite/fixtures/large/plan_project/plan.md
+- bench/suite/fixtures/large/plan_project/tasks.json
 - bench/suite/fixtures/large/seed/backend/app/__init__.py
 - bench/suite/fixtures/large/seed/backend/app/main.py: health
 - bench/suite/fixtures/large/seed/backend/app/models.py: ItemCreate, ItemUpdate, Item, SearchResult, ItemStats
 - bench/suite/fixtures/large/seed/backend/app/store.py: DuplicateSku, ItemStore, get_store, reset_store
+- bench/suite/fixtures/large/seed/backend/tests/test_seed_contract.py: test_name_max_is_60, test_sku_max_is_32, test_duplicate_sku_is_value_error
 - bench/suite/fixtures/large/seed/web/app/layout.tsx: metadata, RootLayout
 - bench/suite/fixtures/large/seed/web/app/page.tsx: HomePage
 - bench/suite/fixtures/large/seed/web/lib/api-client.ts: Item, NewItem, ItemStats, SearchResult, ApiError, ApiClient, createApiClient
+- bench/suite/fixtures/large/seed/web/lib/format.test.ts
 - bench/suite/fixtures/large/seed/web/lib/format.ts: pluralItems
 - bench/suite/fixtures/large/seed/web/next-env.d.ts
 - bench/suite/fixtures/large/seed/web/next.config.mjs
@@ -103,8 +107,11 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/medium/hidden_tests/validate.test.ts
 - bench/suite/fixtures/medium/plan/plan.md
 - bench/suite/fixtures/medium/plan/tasks.json
+- bench/suite/fixtures/medium/plan_project/plan.md
+- bench/suite/fixtures/medium/plan_project/tasks.json
 - bench/suite/fixtures/medium/seed/app/layout.tsx: metadata, RootLayout
 - bench/suite/fixtures/medium/seed/app/page.tsx: Page
+- bench/suite/fixtures/medium/seed/lib/format.test.ts
 - bench/suite/fixtures/medium/seed/lib/format.ts: formatCount
 - bench/suite/fixtures/medium/seed/lib/todos-store.ts: Todo, resetTodos, listTodos, getTodo, addTodo, toggleTodo, removeTodo
 - bench/suite/fixtures/medium/seed/lib/validate.ts: MAX_TITLE_LENGTH, validateTitle, isValidTitle, validateDone
@@ -122,6 +129,8 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/small/hidden_tests/test_hidden.py: test_list_items_without_params_returns_everything, test_filter_by_min_price, test_filter_by_max_price, test_price_filters_combine_with_and, test_name_contains_is_case_insensitive_substring, test_name_contains_empty_string_matches_everything, test_min_price_above_max_price_is_empty_not_an_error, test_limit_and_offset_page_through_results, test_offset_beyond_the_end_returns_empty, test_pagination_applies_after_filters, ...
 - bench/suite/fixtures/small/plan/plan.md
 - bench/suite/fixtures/small/plan/tasks.json
+- bench/suite/fixtures/small/plan_project/plan.md
+- bench/suite/fixtures/small/plan_project/tasks.json
 - bench/suite/fixtures/small/seed/app/__init__.py
 - bench/suite/fixtures/small/seed/app/main.py: reset_store, health, list_items, get_item, create_item
 - bench/suite/fixtures/small/seed/app/models.py: ItemCreate, Item
@@ -132,6 +141,9 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/fixtures/small/solution/app/routers/tags.py: TagCreate, list_tags, get_tag, create_tag, attach_item
 - bench/suite/fixtures/small/solution/app/tag_store.py: Tag, reset_tag_store, next_id, tags, get_tag, find_by_name, add_tag, attach_item
 - bench/suite/fixtures/small/spec.md
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-b4e5256c/meta.json
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-b4e5256c/plan.md
+- bench/suite/plan_cache/small-claude-sonnet-cd8f8c34-b4e5256c/tasks.json
 - bench/suite/report.py: load_rows, wilson_ci, latest_per_cell, newest_sha_rows, build_report, main
 - bench/suite/results.csv
 - bench/suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
@@ -172,6 +184,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - docs/ARCHITECTURE.md
 - docs/FLOWS.md
 - docs/bench-cost.svg
+- docs/bench-flow.svg
 - docs/findings.md
 - docs/flows.html
 - docs/harness-flow.svg
@@ -186,7 +199,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - package.json
 - packages/ufoz-harness/README.md
 - packages/ufoz-harness/THIRD_PARTY_NOTICES.md
-- packages/ufoz-harness/export_kit.py: fail_missing, rel_of, copy_file, copy_skills, copy_runner, export, main
+- packages/ufoz-harness/export_kit.py: fail_missing, rel_of, copy_file, copy_skills, copy_runner, export, parse_args, main
 - packages/ufoz-harness/index.js
 - packages/ufoz-harness/kit/.agents/skills/animate-expo/RECIPES.md
 - packages/ufoz-harness/kit/.agents/skills/animate-expo/SKILL.md
@@ -224,14 +237,16 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - skills-lock.json
 - tests/test_acceptance.py: test_non_codepage_output_does_not_crash, test_timeout_with_held_grandchild_pipe_returns_fast
 - tests/test_build_map.py: run_map, test_python_symbols_and_syntax_error, test_typescript_and_javascript_export_symbols, test_public_symbol_truncation, test_routes_and_skipped_paths, test_check_status_and_writes_nothing, test_notes_preserved_and_fingerprint_stable, test_repeated_rebuilds_are_byte_identical_with_custom_notes
+- tests/test_check_main.py: test_no_baseline_means_no_complaint, test_untouched_main_tree_is_clean, test_stray_main_tree_write_is_flagged, test_harness_paths_and_worktrees_are_ignored, test_head_move_with_no_file_change_is_flagged, test_check_exits_1_and_names_the_main_tree_change
 - tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
-- tests/test_git_guard.py: test_blocks_git_state_commands, test_blocks_land, test_allows_read_only_and_other_commands, test_hook_exit_codes, test_deny_json_is_the_source, test_git_state_sees_a_commit_that_changes_no_file_hash, test_git_state_none_outside_a_repo, test_land_refuses_without_a_terminal
+- tests/test_git_guard.py: test_blocks_git_state_commands, test_blocks_land, test_allows_read_only_and_other_commands, test_hook_exit_codes, test_deny_json_is_the_source, test_git_state_sees_a_commit_that_changes_no_file_hash, test_git_state_none_outside_a_repo, test_land_refuses_without_a_terminal, test_writes_must_stay_inside_a_worktree
 - tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks
 - tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
 - tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
 - tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
 - tests/test_log_fixes.py: test_shared_files_ordered_through_a_dep_chain_do_not_warn, test_shared_files_without_any_dep_path_still_warn, test_module_shadowing_a_harness_package_warns, test_lint_outside_a_plans_dir_does_not_write_metrics, test_markers_inside_string_literals_are_not_suppressions, test_a_stray_quote_cannot_hide_a_real_suppression, test_relock_only_writes_the_lock_and_runs_nothing, test_worktree_can_exclude_paths_and_drop_main_history
 - tests/test_opencode_executor.py: quiet_executor, test_idle_watchdog_aborts_a_silent_session, test_saw_event_is_set_for_matching_events
+- tests/test_prepare.py: test_prepare_creates_worktree_and_is_idempotent, test_check_and_prepare_flags_parse
 - tests/test_scope.py: test_in_scope_exact_and_directory_entries, test_overlaps_is_prefix_aware, test_lint_accepts_a_narrow_directory_entry, test_lint_rejects_broad_directory_entries, test_lint_directory_without_trailing_slash_is_an_error, test_written_paths_reads_every_executor_log_format, test_attribute_splits_own_strays_from_unattributed, test_lint_rejects_a_directory_holding_many_tracked_files
 - tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
 - tests/test_status.py: make_plan, write_report, test_states_first_failure_tail_and_next_command, test_all_pass_nexts_the_land_command, test_lock_mismatch_nexts_the_relock_only_command
