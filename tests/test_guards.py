@@ -68,3 +68,10 @@ def test_opencode_bootstrap_files_are_runner_owned():
     assert guards.runner_owned(".opencode/package-lock.json", run_lock, plan, metrics)
     assert not guards.runner_owned(".opencode/agent/x.md", run_lock, plan, metrics)
     assert not guards.runner_owned("package.json", run_lock, plan, metrics)
+
+
+def test_npm_lockfile_is_runner_owned_but_package_json_is_not():
+    run_lock, plan, metrics = Path("run.lock"), Path(".harness/plans/p"), Path("m.jsonl")
+    assert guards.runner_owned("web/package-lock.json", run_lock, plan, metrics)
+    assert guards.runner_owned("package-lock.json", run_lock, plan, metrics)
+    assert not guards.runner_owned("web/package.json", run_lock, plan, metrics)

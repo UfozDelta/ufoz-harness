@@ -74,6 +74,7 @@ def runner_owned(f, run_lock, plan, metrics):
             or _other_plan(f, plan)
             or f.endswith(".tsbuildinfo")
             or f in OPENCODE_OWNED
+            or f.rsplit("/", 1)[-1] == "package-lock.json"  # npm install rewrites it; package.json stays in scope
             or (f.startswith(f"{plan.as_posix()}/items/")
                 and (f.endswith((".report.md", ".feedback.md", ".metrics.json", ".quirks.md"))
                      or re.search(r"\.repair\d+\.md$", f))))
