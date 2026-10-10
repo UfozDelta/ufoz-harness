@@ -134,6 +134,16 @@ def _link(name, target):
         shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
+def _lf_agents(target):
+    """git on Windows (core.autocrlf) checks the worktree out with CRLF, and Claude Code then
+    cannot find agent files that have a hooks block (`--agent claude-executor` fails). Agent
+    files are LF in the repo, so rewrite them LF here; git sees LF as clean under autocrlf."""
+    for f in (target / ".claude" / "agents").glob("*.md"):
+        raw = f.read_bytes()
+        if b"\r\n" in raw:
+            f.write_bytes(raw.replace(b"\r\n", b"\n"))
+
+
 def ensure(slug, exclude=(), orphan=False):
     """Create (or reuse) the worktree for `slug` and return its absolute path.
     `exclude`/`orphan`: see _snapshot (used by harness-suite; plans that land use neither)."""
@@ -158,6 +168,7 @@ def ensure(slug, exclude=(), orphan=False):
             time_sleep(1)
     if r.returncode != 0:
         sys.exit(f"worktree: git worktree add failed: {r.stderr.strip() or r.stdout.strip()}")
+    _lf_agents(target)
     for name in SHARED_DIRS:
         _link(name, target)
     if Path(ENV_FILE).is_file():

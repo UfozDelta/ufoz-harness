@@ -96,3 +96,13 @@ def test_link_keeps_existing_target_dir(tmp_path):
     with _chdir(wt):
         worktree._link("node_modules", wt)  # must not delete or replace the target
     assert (keep / "keep.txt").read_text(encoding="utf-8") == "mine\n"
+
+
+def test_lf_agents_rewrites_crlf_agent_files(tmp_path):
+    from runner import worktree
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "a.md").write_bytes(b"---\r\nname: a\r\n---\r\nbody\r\n")
+    worktree._lf_agents(tmp_path)
+    assert (agents / "a.md").read_bytes() == b"---\nname: a\n---\nbody\n"
+    worktree._lf_agents(tmp_path / "missing")  # no agents dir: nothing to do
