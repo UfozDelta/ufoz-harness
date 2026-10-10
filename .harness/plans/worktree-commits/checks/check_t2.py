@@ -47,9 +47,11 @@ assert git("status", "--porcelain").strip().endswith("stray.py"), "stray.py was 
 
 # HARNESS_COMMIT_STYLE: short drops the slug, an unknown value falls back to full
 os.environ["HARNESS_COMMIT_STYLE"] = "short"
+Path("src/other.py").write_text("y = 2 modified\n", encoding="utf-8")
 commit_task("demo", "T4", "third", ["src/other.py"])
 assert git("log", "-1", "--pretty=%s").strip() == "T4: third", git("log", "-1", "--pretty=%s")
 os.environ["HARNESS_COMMIT_STYLE"] = "nonsense"
+Path("src/other.py").write_text("y = 2 modified again\n", encoding="utf-8")
 commit_task("demo", "T5", "fourth", ["src/other.py"])
 assert git("log", "-1", "--pretty=%s").strip() == "harness(demo): T5 fourth", \
     f"unknown style did not fall back to full: {git('log', '-1', '--pretty=%s')!r}"

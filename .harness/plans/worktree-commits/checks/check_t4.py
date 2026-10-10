@@ -30,6 +30,8 @@ Path("node_modules/pkg").mkdir(parents=True)
 Path("node_modules/pkg/i.js").write_text("keep", encoding="utf-8")
 Path(".harness/plans/demo").mkdir(parents=True)
 Path(".harness/plans/demo/plan.md").write_text("p\n", encoding="utf-8")
+git("add", "-A")
+git("commit", "-qm", "add plan")
 
 
 def work(wt, name, text):
@@ -59,6 +61,10 @@ assert not Path(".harness/plans/demo/land.patch").exists(), "land.patch is gone 
 assert Path("node_modules/pkg/i.js").read_text(encoding="utf-8") == "keep", "junction target deleted!"
 assert not wt.exists(), "worktree dir still there"
 assert "harness/demo" not in git("branch", "--list")
+
+# commit the plan records copied by land.land()
+git("add", "-A")
+git("commit", "-qm", "landed demo")
 
 # main moved on: --ff-only refuses, and everything is left for a human
 wt2 = worktree.ensure("c")
