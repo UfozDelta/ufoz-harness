@@ -86,8 +86,14 @@ def build_matrix(sizes, modes, executors, reps, seed=0):
     return cells
 
 
-def preflight_executor(name):
-    """Cheap sanity check before spending a cell on an executor. Best effort."""
+_preflight_cache = {}
+
+
+def preflight_executor(name, model=None):
+    """Cheap sanity check before spending a cell on an executor. Best effort.
+
+    The result is cached per (executor, model): the claude probe is a real model call, so
+    without the cache a rate-limited arm pays the probe on every cell of the batch."""
     if name == "llama":
         url = os.environ.get("HARNESS_LLAMA_URL") or "http://127.0.0.1:8080"
         try:
@@ -95,7 +101,17 @@ def preflight_executor(name):
                 return True
         except Exception:
             return False
-    return True
+    key = (name, model)
+    if key in _preflight_cache:
+        return _preflight_cache[key]
+    ok = True
+    if name == "claude":  # the only executor that runs out of quota
+        try:
+            ok = REGISTRY[name](model=model or "sonnet").probe()
+        except Exception:
+            ok = True  # best effort: a broken probe must not skip the arm
+    _preflight_cache[key] = ok
+    return ok
 
 
 def load_existing_slugs(csv_path=RESULTS_CSV):
@@ -350,7 +366,7 @@ def main(argv=None):
         if args.max_cost is not None and spent >= args.max_cost:
             print(f"stopping: cumulative cost {spent:.2f} >= --max-cost {args.max_cost}")
             break
-        if not preflight_executor(cell["executor"]):
+        if not preflight_executor(cell["executor"], cell.get("model")):
             print(f"skip (preflight failed): {cell['slug']}")
             writer.write(dict(cell, status="skipped"))
             continue

@@ -1127,7 +1127,8 @@ def _planner_plan(cell, project, repo_root, kit_hash, runner):
     model = cell.get("planner_model")
     spec = repo_root / SUITE_DIR / "fixtures" / size / "spec.md"
     sha = hashlib.sha256(spec.read_bytes()).hexdigest()[:8]
-    key = f"{size}-{cell['planner']}-{model or 'default'}-{sha}-{kit_hash}"
+    # no kit hash in the key: a harness edit must not re-roll the plan, or arms stop sharing one
+    key = f"{size}-{cell['planner']}-{model or 'default'}-{sha}"
     cache = PLAN_CACHE / key
     dst = project / ".harness" / "plans" / slug
     if (cache / "meta.json").is_file():
