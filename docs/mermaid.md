@@ -4,7 +4,7 @@
 flowchart TD
     A[You + main session<br/>agree scope and success criteria] --> B["@planner subagent<br/>writes plan.md + tasks.json<br/>--lint rejects node TS loads and missing tsc"]
     B --> C[Main session shows plan summary<br/>+ Unverified list]
-    C -->|you say go| D["run_plan.py in .worktrees/slug<br/>one warm executor session<br/>pi (default) / opencode / claude / cline / cline-acp / llama"]
+    C -->|you say go| D["run_plan.py in .worktrees/slug<br/>one warm executor session<br/>pi (default) / opencode / claude / cline-acp / llama"]
 
     subgraph Task["Per task, in order"]
         D --> E[Executor does the task]
@@ -26,10 +26,10 @@ flowchart TD
 ```
 
 - Claude cost: planner call(s) + a thin main session. The executor is free with pi or
-  opencode on Bunny, with cline on its free model, or with llama on a local GGUF;
+  opencode on Bunny, with cline-acp on its free model, or with llama on a local GGUF;
   `--executor claude` bills Claude.
 - Checks: `tsc --noEmit` / one-line smoke per task. Full build only in the last task, never a gate.
 - Stray files, lock edits and timeouts skip the repair pass.
-- `--parallel N` is refused for `cline`, `cline-acp` and `llama` (single shared session or one
+- `--parallel N` is refused for `cline-acp` and `llama` (one shared process or one
   local model slot, not thread-safe).
 - Every path in table form: `FLOWS.md`.

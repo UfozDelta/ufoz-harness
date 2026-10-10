@@ -42,12 +42,12 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 | `pi` (default) | `pi-launcher.js -p` per task, `--session-id` | `opencode/space-bunny-free` → `HARNESS_MODEL` / `--executor pi:<model>` | yes | allowed | free | pi |
 | `opencode` | one `opencode serve`, HTTP+SSE | same as pi | yes | allowed | free | opencode on PATH |
 | `claude` | `claude -p` per task, `--resume` | sonnet → `--executor claude:<model>` | yes | allowed | billed | claude CLI |
-| `cline` | `cline --json` per task | probes `cline-free/deepseek-v4.1-flash` then `FALLBACK_MODELS` → `HARNESS_MODEL` | no (fresh per task) | refused | free, daily cap | `npm i -g cline` |
+
 | `cline-acp` | one `cline --acp` process, ACP | `stealth/space-bunny-alpha` → `CLINE_MODEL` (verified before task 1) | yes | refused | free | `npm i -g cline` |
 | `llama` | pi with a throwaway `PI_CODING_AGENT_DIR` | the only model on the router → `HARNESS_LLAMA_MODEL` / `--executor llama:<model>` | yes | refused | free, local | running `llama-server` router |
 
 Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `claude`,
-`cline`, `cline-acp`. No `llama` planner.
+`cline-acp`. No `llama` planner.
 
 ## 4. One task through the guards
 
@@ -82,9 +82,9 @@ Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `
 | Situation | What happens |
 |---|---|
 | `--session` with `--fresh` or `--parallel > 1` | exits 1 before anything runs |
-| `--parallel > 1` with `cline` / `cline-acp` / `llama` | exits 1 before the run lock |
+| `--parallel > 1` with `cline-acp` / `llama` | exits 1 before the run lock |
 | Second run of the same plan while one runs | refused by `run.lock` |
-| `--session <id>` with `cline` | task fails with code 1 (no sessions) |
+
 | `llama`: server down | exits with the `llama-server` start command |
 | `llama`: several models, none chosen | exits listing the model ids |
 | `llama`: model unloaded | `POST /models/load`, waits up to 300 s |

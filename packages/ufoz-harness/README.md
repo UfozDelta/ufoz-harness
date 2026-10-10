@@ -40,7 +40,7 @@ ships **no** `.claude/settings.json`, so installing never overwrites your permis
 ## Two ways to run a plan
 
 **Runner mode (pi / opencode).** `python .harness/run_plan.py <slug>` drives a free executor (pi by
-default, or `--executor opencode|cline|cline-acp|llama|claude`) in its own worktree
+default, or `--executor opencode|cline-acp|llama|claude`) in its own worktree
 `.worktrees/<slug>` **on a clean tree** (no uncommitted changes or untracked files). The runner checks the grader lock, file scope and suppression comments, and
 retries and repairs a failing task. `python .harness/run_plan.py <slug> --land` merges it into your tree with `--ff-only`.
 
@@ -68,7 +68,7 @@ scope and acceptance checks afterwards.
   preflight requires it today, even if you only plan to use Claude mode.
 
 Other executors are optional: opencode on PATH for `--executor opencode`, the claude CLI for
-`--executor claude`, the Cline CLI (`npm i -g cline`) for `--executor cline` / `cline-acp`, and a local
+`--executor claude`, the Cline CLI (`npm i -g cline`) for `--executor cline-acp`, and a local
 `llama-server` for `--executor llama`. The default pi executor needs none of them.
 
 ## Configuration

@@ -1,14 +1,14 @@
 # harness
 
-A plan/execute harness for Claude Code. Claude plans and reviews; one of six
+A plan/execute harness for Claude Code. Claude plans and reviews; one of five
 executors writes the code; a Python runner checks every task with shell commands,
 so no model decides whether work passed. The main session never writes code for
 delegable work, which keeps its context small and the bill low.
 
 Executors: `pi` (default, Bunny `opencode/space-bunny-free`, one warm session per
 plan, $0), `opencode` (warm `opencode serve`, also free on Bunny), `claude` (bills
-you; for comparisons), `cline` and `cline-acp` (Cline CLI, headless, `cline-acp`
-keeps one warm process per plan), and `llama` (pi against a local `llama-server`
+you; for comparisons), `cline-acp` (the Cline CLI over ACP, keeps one warm process
+per plan), and `llama` (pi against a local `llama-server`
 you start). Pick one with `--executor <name>`; the others are optional.
 
 ## How it works
@@ -84,7 +84,7 @@ python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff
 | `--only T2` | run one task |
 | `--review` | cheap Sonnet review pass after a fresh full run → `REVIEW.md` |
 | `--relock-only` | re-record the check hashes after you edited a check; runs nothing |
-| `--executor pi\|opencode\|claude\|cline\|cline-acp\|llama` | which executor writes the code (default pi) |
+| `--executor pi\|opencode\|claude\|cline-acp\|llama` | which executor writes the code (default pi) |
 | `--stats` | cost and time totals (see below) |
 | `--timeout S` | per-task executor timeout, default 900 |
 

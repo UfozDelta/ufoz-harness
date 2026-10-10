@@ -12,7 +12,7 @@ diagram see [mermaid.md](mermaid.md).
 | `@planner` | Claude Code subagent | Sonnet (`.claude/agents/planner.md`) | only `.harness/plans/<slug>/` | no |
 | Planner (`--plan`) | one executor backend (`HARNESS_PLANNER`, default pi) | Bunny, or sonnet for claude | only `.harness/plans/<slug>/` | no |
 | Executor | `node ~/.pi/agent/bin/pi-launcher.js -p` | Bunny (`opencode/space-bunny-free`, OpenCode Zen; `.pi/executor.md`) | only the task's `files` | no |
-| Executor (cline) | `cline --json` (headless CLI) | first answering of `cline-free/deepseek-v4.1-flash` then the `FALLBACK_MODELS` probes, or `HARNESS_MODEL` | only the task's `files` | no |
+
 | Executor (cline-acp) | `cline --acp` (Agent Client Protocol over stdio) | `CLINE_MODEL` (ACP ignores `-m`); default `stealth/space-bunny-alpha`, verified before the first task | only the task's `files` | no |
 | Executor (llama) | `pi-launcher.js -p` with `PI_CODING_AGENT_DIR` = a throwaway dir | local GGUF on a user-started `llama-server` router (`HARNESS_LLAMA_MODEL`) | only the task's `files` | no |
 | Runner | `python .harness/run_plan.py` | none | reports, feedback, logs, metrics | **yes**, the only grader |
@@ -155,22 +155,6 @@ continues an existing one.
 **`--executor claude`**: the same contract via `claude -p`, with a warm session and the
 executor rules appended as its system prompt (3.5). Used only for A/B cost comparisons.
 
-**`--executor cline`**: one headless `cline --json` run per task, so **no warm session**:
-Cline's `--id <session-id>` resume is rejected in `--json` mode by the CLI itself
-(`cline/cline#13239`, open) -- every input channel returns `JSON output mode requires a prompt
-argument or piped stdin` -- so `ExecResult.session` is always `None` and every task is fresh,
-like `--fresh`. Tokens come from `agent_event.usage` (per-iteration deltas, summed) and
-`run_result.aggregateUsage`; there is no separate reasoning count, so `reasoning` is always 0.
-Two more differences: `-s/--system` *replaces* Cline's system prompt, so a `rules=` path (the
-planner role) is inlined into the prompt text and the executor rules reach it through
-`AGENTS.md`, which Cline reads as workspace rules; and Cline's plan/act mode is **global
-persisted state** (`planActMode` in `~/.cline/data/settings/global-settings.json`) that the
-agent itself can flip -- a run that starts in plan mode cannot write a file at all, so the
-executor forces `act` before every task and restores the previous value in `stop()`. Since
-there's no warm session, `--session <id>` is rejected: it logs the reason and returns a failed
-`ExecResult(code=1)` rather than killing the whole `run_plan.py` process.
-Never run without `--no-worktree` here (the worktree creates git worktrees and would change the tree the runner hashes).
-
 **`--executor cline-acp`**: the same Cline CLI driven over the Agent Client Protocol
 (`cline --acp`): one warm ACP process for the whole plan, `session/prompt` per task, and a
 resumable session id. ACP ignores `-m`, so the model is pinned with `CLINE_MODEL` and read back
@@ -223,7 +207,7 @@ without counting as stray; each owner's own acceptance covers those files. Pi ta
 independently.
 
 Not every executor can run this way: `Executor.thread_safe` (base.py, default `True`) is
-`False` on `cline` (writes a global settings file per task), `cline-acp` (one stdio process,
+`False` on `cline-acp` (one stdio process,
 one session, shared by every task) and `llama` (one local model slot). `cli.py` checks `REGISTRY[args.executor].thread_safe`
 before the run lock is even acquired and exits with an error if `--parallel > 1` is combined
 with one of these — refused up front rather than racing two tasks on the same session.
@@ -243,10 +227,9 @@ Who writes the code is pluggable: `executors/base.py` defines `ExecResult` and t
 template — `probe`, `wait_for_quota`, `start`/`stop` via the context manager, class attrs
 `name`/`has_sessions`/`thread_safe`). `procs.zero_usage()` is the shared zero-token/zero-cost
 usage dict every executor returns on a hard failure.
-`executors/__init__.py` holds `REGISTRY = {pi, claude, opencode, cline, cline-acp, llama}` and `get(name, **opts)`;
-`pi.py`, `claude.py`, `opencode.py`, `cline.py`, `cline_acp.py` and `llama.py` implement it
-(cline = one headless `cline --json` per task, no sessions, rules inlined when a `rules=` path
-is given; opencode = one server driven over HTTP+SSE, `.pi/executor.md` travels as the
+`executors/__init__.py` holds `REGISTRY = {pi, claude, opencode, cline-acp, llama}` and `get(name, **opts)`;
+`pi.py`, `claude.py`, `opencode.py`, `cline_acp.py` and `llama.py` implement it
+(opencode = one server driven over HTTP+SSE, `.pi/executor.md` travels as the
 prompt's `system` field, and the throwaway `XDG_CONFIG_HOME` config is derived from the
 patterns in `.pi/deny.json`). Core modules only import `executors.get`, never a backend module.
 
@@ -277,7 +260,7 @@ into the same warm session (2 retries max) and the result is written to `planner
 `Executor.run(..., rules=None)` is the one parameter that makes this backend-neutral: with a
 path, the executor uses its text instead of its default prompt (pi: `--append-system-prompt`;
 opencode: the `system` field; claude: `--append-system-prompt` without the `AGENTS.md`
-concatenation; cline: inlined into the prompt text, because `-s` would replace Cline's own system
+concatenation; cline-acp: inlined into the prompt text, because `-s` would replace Cline's own system
 prompt). Default `None` is every other call site's existing behavior.
 
 ### 3.7 Worktree, live window and `--land`
@@ -324,7 +307,7 @@ It runs nothing but checks:
   tokens are not included.
 
 Token mapping is per backend: pi sums `message_end` deltas, claude sums stream-json deltas, and
-`--executor cline` sums `agent_event.usage` deltas with `run_result.aggregateUsage` as the
+`--executor cline-acp` sums `agent_event.usage` deltas with `run_result.aggregateUsage` as the
 total. The `mode` column reads `fresh` for a backend without sessions even without `--fresh`,
 because `Executor.has_sessions` is false there. `--plan` and each run also add `kind: plan_event`
 rows (`created`, `run_start`, `run_end`) that carry no tokens.
@@ -336,7 +319,7 @@ Where the money goes: the executor is free, so Claude cost = planner + main sess
 
 | Var | Effect |
 |---|---|
-| `HARNESS_MODEL` | override the executor model without editing `.pi/executor.md` (applies to the pi, opencode and cline executors) |
+| `HARNESS_MODEL` | override the executor model without editing `.pi/executor.md` (applies to the pi and opencode executors) |
 | `HARNESS_PI` | override the pi launcher path |
 | `HARNESS_CLINE` | path to the cline executable (default: the compiled binary next to the npm shim) |
 | `HARNESS_CLINE_DATA` | isolated Cline data dir; the account must have authenticated in it, so off by default |
@@ -344,8 +327,8 @@ Where the money goes: the executor is free, so Claude cost = planner + main sess
 | `HARNESS_VARIANT` | thinking / effort level for every executor, default `medium` |
 | `HARNESS_RUNNER_FLAGS` | extra `run_plan` flags in the bench, e.g. `--executor opencode` |
 | `HARNESS_ARM_LABEL` | bench arm name written into the rows and the run folder |
-| `HARNESS_PLANNER` | planner backend for `run_plan.py --plan` (pi, opencode, claude, cline or cline-acp), default `pi` |
-| `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (Bunny for pi/opencode); cline resolves its own (probes `FALLBACK_MODELS`, since the free models are quota-capped) |
+| `HARNESS_PLANNER` | planner backend for `run_plan.py --plan` (pi, opencode, claude or cline-acp), default `pi` |
+| `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (Bunny for pi/opencode); cline-acp resolves its own (pinned with `CLINE_MODEL`, since the account default is a paid model) |
 | `HARNESS_LLAMA_URL` | llama executor: `llama-server` router URL, default `http://127.0.0.1:8080` |
 | `HARNESS_LLAMA_MODEL` | llama executor: router model id; unset = the only model the router lists |
 | `CLINE_MODEL` | cline-acp model, default `stealth/space-bunny-alpha` |
@@ -372,18 +355,8 @@ All of them can also be set in `.harness/.env` (template: `.harness/.env.example
 - The opencode and claude logs write a step only when it finishes, so a slow model looks
   idle in the log.
 - The claude executor's new warm-session / `stream-json` path has not been run live yet.
-- The cline executor has no warm session: `--id` resume is rejected headless
-  (cline/cline#13239), so every task is fresh and the metrics row says `fresh`.
-- Cline's plan/act mode is global persisted state; the cline executor writes `act` into
-  `~/.cline/data/settings/global-settings.json` before every task and puts the old value back
-  in `stop()`. A run interrupted by a hard kill leaves it on `act`.
 - Cline reports no separate reasoning tokens, so `reasoning` is always 0 for that arm, and its
   exit codes for rate limits are undocumented: `75` is inferred from "rate limit" in the output.
-- `CLINE_COMMAND_PERMISSIONS` carries `.pi/deny.json`'s git globs for the cline arm;
-  `allowRedirects` stays at Cline's default (false), so the agent cannot shell-redirect.
-- Cline emits warning-shaped `error` records on every startup here ("hook dispatch failed"), so
-  the cline executor decides the verdict from `done.reason`, `run_result.finishReason` and the
-  exit code only -- an `error` record is logged, never fatal on its own.
 - Cline's free models are capped per day (a `429 ... Daily free limit reached` arrives as a
   normal `error`, so it becomes a plain task failure, not a quota wait: the text has no "rate
   limit" in it).
