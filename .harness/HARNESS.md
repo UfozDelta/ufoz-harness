@@ -16,7 +16,9 @@ it may commit and run `--land --yes` itself. Confirm first only for outward-faci
 
 **Clean tree required.** A run needs a clean working tree: no uncommitted changes or untracked files
 (outside `.gitignore`). If the tree is dirty, `run_plan.py` exits with a message naming the dirty
-paths and refuses to run. The check lives in worktree setup, so `--no-worktree` skips it.
+paths and refuses to run. The check lives in worktree setup, so `--no-worktree` skips it. The
+`.harness/plans/<slug>/` dir of the slug being run is ignored by the check (no plan-add commit
+needed); every other dirty path still refuses.
 
 **Delegate** (plan it, then run it):
 - Well-specified changes: boilerplate, CRUD, mechanical edits, renames
