@@ -1,7 +1,7 @@
 # MAIN.md
 
-Main-session rules, backend-neutral: works the same under pi, opencode or cline. `AGENTS.md` (auto-loaded by
-pi/opencode/cline) holds the EXECUTOR's rules; they do not apply to this main session, so ignore them here.
+Main-session rules, backend-neutral: works the same under pi, opencode or cline-acp. `AGENTS.md` (auto-loaded by
+pi/opencode/cline-acp) holds the EXECUTOR's rules; they do not apply to this main session, so ignore them here.
 These rules bias toward caution over speed; for trivial tasks, use judgment.
 
 ## 1. Think before coding
@@ -28,8 +28,7 @@ really done.
 
 **Roles.** You (the main session) decide, review, and accept. The planner backend writes the plan; the
 executor backend (`opencode/space-bunny-free`, free, effort `medium`) writes the code, driven by
-`.harness/run_plan.py`; `--executor cline` swaps in the free Cline CLI (cold: a fresh session per
-task), `--executor cline-acp` the same CLI over ACP (warm: one process for the whole plan, model
+`.harness/run_plan.py`; `--executor cline-acp` the free Cline CLI over ACP (warm: one process for the whole plan, model
 pinned with `CLINE_MODEL`), `--executor opencode` a warm `opencode serve`, `--executor llama` a local
 llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model), `--executor claude`
 `claude -p`. The main session never writes code for delegable work. Nobody commits: no agent
@@ -67,8 +66,7 @@ paths and refuses to run.
 4. **Execute.** Run in the background: `python .harness/run_plan.py <slug>` (add `--only T2` for one
    task). A real run defaults to its own git worktree (`.worktrees/<slug>`, so plans can run in
    parallel) and to a live window; `--no-worktree` / `--no-window` (or `HARNESS_WORKTREE=0` /
-   `HARNESS_WINDOW=0`) opt out. It keeps ONE warm executor session for the whole plan (`--fresh` = new session per task; the
-   cline arm is always fresh), runs
+   `HARNESS_WINDOW=0`) opt out. It keeps ONE warm executor session for the whole plan (`--fresh` = new session per task), runs
    the acceptance command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards:
    touching a file outside `files` fails; tasks.json (+ `checks/` if any) are hash-locked (after YOU edit them, relock with
    `python .harness/run_plan.py <slug> --relock-only`, which runs nothing); a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then
