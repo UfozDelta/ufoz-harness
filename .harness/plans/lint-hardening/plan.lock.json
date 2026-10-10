@@ -1,0 +1,5 @@
+{
+  ".harness/plans/lint-hardening/tasks.json": "fd3d4c478602368b870915ceac7d561198786b34c00cb34c2e4cf419b8805c3d",
+  ".harness/plans/lint-hardening/checks/check_t2.py": "5566121ad2aaf298c8d368a8fbedd4eccdf6f850ed1f1347fadd651d1a3dd23a",
+  ".harness/plans/lint-hardening/checks/check_t3.py": "90e0b56fc00af64a4cbfa3114e5a5387f2ab366c8be46513e7ac4ae34456a046"
+}

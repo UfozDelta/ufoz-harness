@@ -1,0 +1,17 @@
+{
+  "slug": "lint-hardening",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 21.8,
+  "accept_s": 3.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 5596,
+    "output": 360,
+    "reasoning": 57,
+    "cache_read": 17014,
+    "cost": 0.0
+  }
+}
