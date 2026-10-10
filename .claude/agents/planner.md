@@ -23,7 +23,7 @@ everything you need about it is below.
 - `python .harness/run_plan.py <slug>` runs tasks in list order in ONE warm executor session (free model, no
   human). Each task's brief is its `## T<n>` section of plan.md; Decisions apply to every task.
 - After each task it runs `acceptance` itself (exit 0 = pass). Fail -> one retry with the output, then one repair pass scoped to the failing task's `files` plus the `files` of every earlier task, then the plan stops.
-- Tasks use `red_first: false`, so acceptance need not fail first.
+- Red-first is off by default; leave `red_first` out.
 - Any file changed outside the task's `files` fails the task. tasks.json is hash-locked at first run.
 - `--lint` checks the schema and acceptance commands.
 
@@ -45,8 +45,7 @@ plan.md:
     TEST: <summary existence/length check>
 tasks.json:
     {"slug": "<slug>", "tasks": [
-      {"id": "T1", "deps": [], "files": ["a.py"], "acceptance": "<cmd>",
-       "red_first": false, "red_first_reason": "lean smoke check"},
+      {"id": "T1", "deps": [], "files": ["a.py"], "acceptance": "<cmd>"},
       {"id": "T9", "deps": ["T8"], "files": [".harness/plans/<slug>/SUMMARY.md"],
        "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/<slug>/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\""}]}
 Any acceptance script a plan needs lives at `.harness/plans/<slug>/checks/check_t<n>.py`: the runner
@@ -59,7 +58,7 @@ list. Task sections reference them with `TEST: python .harness/plans/<slug>/chec
 3. Explore just enough to fix Decisions (versions, existing code, test commands). Ambiguous? Stop and ask.
 4. Use 3-8 small tasks, whole spec, disjoint `files` where possible; list generated files too (lockfiles, migrations). set deps only where truly required (not a full chain) so disjoint tasks can run under `--parallel`; put shared-file edits (nav/layout/config wiring) in one final task depending on everything it wires.
 5. Build tasks write NO tests. Acceptance is one cheap smoke command proving the task landed, e.g. `python -c "from app.x import f; assert f(2) == 4"` or `node -e "..."`, plus `npx tsc --noEmit --incremental --tsBuildInfoFile .harness/tsc.tsbuildinfo` for TS; skip tsc in tasks whose `files` have no TypeScript. Never smoke-check `.ts` files by importing them through node (it makes the executor write `.ts`-extension imports that bundlers reject). No full builds.
-6. Every task has `"red_first": false` with reason `"lean smoke check"`. Acceptance runs through the OS shell (Windows
+6. Acceptance runs through the OS shell (Windows
    cmd.exe here): no `VAR=value cmd`, `/tmp`, `rm` or `test`; set env vars and temp paths inside `python -c`/`node -e`.
 7. The last task's SUMMARY/BUILD instruction is the one in Layout (`## T<last> write summary`); do not restate it here.
 8. Side effects (analytics, storage, events): a MUST that it fires exactly once.

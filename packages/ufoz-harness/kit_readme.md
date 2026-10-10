@@ -48,10 +48,10 @@ python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff
    Plans are lean: one `plan.md` with a `## T<n>` section per task (FILES, 2-5 MUST
    bullets, TEST command) plus a short `tasks.json`. Rules every plan follows:
    - Build tasks write no tests. Acceptance is a one-line smoke command that proves the
-     task landed (`python -c "..."`, `node -e "..."`, `npx tsc --noEmit`), with
-     `"red_first": false, "red_first_reason": "lean smoke check"`.
+     task landed (`python -c "..."`, `node -e "..."`, `npx tsc --noEmit`). Red-first is
+     opt-in, not on by default; a task that needs it sets `"red_first": true`.
    - The last task writes one spec test file covering every MUST and runs it with the
-     build. Its file doesn't exist yet, so red-first stays on for it.
+     build. Its file doesn't exist yet, so set `"red_first": true` for it.
    - `files` lists every file the task may touch, including generated ones.
    - Side-effect wiring (analytics, storage writes, events) gets an "exactly once" MUST.
    - A `checks/check_t<n>.py` script only where no test runner fits (packaging, CLI

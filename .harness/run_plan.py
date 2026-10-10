@@ -19,7 +19,7 @@ A task's brief is items/<id>.md ("brief" key) or, when "brief" is absent, the
 
 Guards (no model calls): tasks.json + checks/*.py are hashed into plan.lock.json on
 first run and must not change; each acceptance must FAIL before the executor runs
-(red-first; opt out per task with "red_first": false); any touched file not in the
+(red-first; off by default, opt in per task with "red_first": true); any touched file not in the
 task's "files" fails the task (content hashes, so already-dirty files count too).
 A plain acceptance failure reruns the executor with items/<id>.feedback.md, then
 optionally repairs it with the failing task's and earlier tasks' files in scope.

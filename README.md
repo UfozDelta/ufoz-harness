@@ -147,8 +147,8 @@ you read the reports and the diff, then run --land. Nobody in this chain commits
      for TS tasks with TypeScript files). No full builds.
    - Never smoke-check `.ts` files by importing them through node: it leads the executor to
      `.ts`-extension imports that bundlers reject.
-   - Tasks use `"red_first": false, "red_first_reason": "lean smoke check"`: lean smoke checks
-     skip the prove-it-fails-first step (see docs/ARCHITECTURE.md).
+   - Red-first is off by default, so lean smoke checks skip the prove-it-fails-first step
+     (see docs/ARCHITECTURE.md); opt a task in with `"red_first": true`.
    - `files` lists every file the task may touch, including generated ones.
    - The last task writes `SUMMARY.md`, runs the build if any and records `BUILD: pass` or
      `BUILD: fail <error>`; the build never fails the task.

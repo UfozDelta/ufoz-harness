@@ -34,7 +34,7 @@ one worktree per plan (3.7); the user's index, HEAD and branches stay untouched.
 ```
 .harness/plans/<slug>/
   plan.md            Goal, Decisions (Verified/Unverified/Later), interfaces, one `## T<n>` per task
-  tasks.json         {"slug", "tasks": [{id, deps, files, acceptance, red_first, red_first_reason, expect?, brief?}]}
+  tasks.json         {"slug", "tasks": [{id, deps, files, acceptance, red_first?, expect?, brief?}]}
   checks/check_t<n>.py   optional; only when no one-line smoke command fits
   plan.lock.json     sha256 of tasks.json + checks/*.py, written on first run
   items/T<n>.report.md       verdict (runner)
@@ -51,7 +51,7 @@ A task's brief is `items/<id>.md` if `"brief"` is set, otherwise its `## <id>` s
 **Contract plan rules** (enforced by the planner prompt, not the runner): <= ~1.5k tokens;
 3-8 tasks; acceptance is one cheap smoke command (`python -c`, `node -e`, `npx tsc --noEmit`
 for TS); no full builds per task; never import `.ts` through node in a check;
-`"red_first": false, "red_first_reason": "lean smoke check"`; last task writes `SUMMARY.md`
+last task writes `SUMMARY.md`
 and runs the build only to record `BUILD:`, never to fail on it. Acceptance runs through the
 OS shell (cmd.exe on Windows), so no `VAR=x cmd`, `/tmp`, `rm`, `test`.
 
@@ -85,7 +85,7 @@ For one task, in this order:
 1. **Lock check.** Rehash `tasks.json` + `checks/*.py`; any mismatch with the in-memory
    lock → `RESULT: lock-mismatch`, no executor call. (Deleting `plan.lock.json` mid-run
    changes nothing; the lock is held in memory.)
-2. **Red-first.** If `red_first` is true (the default) and no earlier attempt ran, run the
+2. **Red-first.** If `red_first` is true (off by default; opt in with `"red_first": true`) and no earlier attempt ran, run the
    acceptance on the untouched tree. Passing → `RESULT: check-invalid`, since the check proves nothing.
 3. **Baseline.** Write `RESULT: running`, take `snapshot()` (sha256 of every
    `git ls-files -co --exclude-standard` file), and count suppression markers in every
@@ -308,7 +308,7 @@ It runs nothing but checks:
 - `checks/...` paths in the acceptance exist;
 - acceptance does not load a `.ts`/`.tsx` file through node via `import(` or `require(`;
 - tasks with `.ts`/`.tsx` files (excluding `.d.ts`) have `tsc` in acceptance;
-- `red_first: false` has a `red_first_reason`;
+
 - a warning when two tasks share a file with no dep between them;
 - red-first: every not-yet-attempted `red_first` task's acceptance must **fail** now.
 

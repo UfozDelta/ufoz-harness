@@ -39,7 +39,7 @@ needed); every other dirty path still refuses.
    (it runs `--lint` itself; check its plan.md `Unverified:` list at approval).
    Layout: `plan.md` (Decisions + one `## T<n>` section per task: FILES / MUST / TEST), `tasks.json`
    (id, deps, files, acceptance). Contract plan, <= ~1.5k tokens: Decisions, interfaces, tasks; do not solve the task
-   in the plan. Every task is checked by a one-line smoke command (no tests; red-first is on by default, so set `red_first_reason` in tasks.json to turn it off); the LAST task writes
+   in the plan. Every task is checked by a one-line smoke command (no tests, red-first off by default; opt in per task with `"red_first": true`); the LAST task writes
    `.harness/plans/<slug>/SUMMARY.md` (<= 600 chars: what, which files, how wired) plus the build smoke. No brief files;
    `checks/check_t<n>.py` only when no test runner fits (packaging, CLI e2e).
    Acceptance must be a shell command that exits 0 only when the task is really done.
