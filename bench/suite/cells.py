@@ -58,8 +58,7 @@ SKIP_DIRS = ("node_modules", ".git", "__pycache__", ".pytest_cache", ".next", ".
 KIT_DIRS = (".claude", ".harness", ".worktrees", ".opencode", ".pi", ".agents")
 FIXTURE_SKIP_DIRS = {"__pycache__", ".pytest_cache", "node_modules"}
 # executors that read HARNESS_MODEL from .harness/.env and pick the wrong model
-EXECUTOR_MODELS = {"cline": "cline-free/deepseek-v4.1-flash",
-                   "cline-acp": "stealth/space-bunny-alpha"}
+EXECUTOR_MODELS = {"cline-acp": "stealth/space-bunny-alpha"}
 
 
 # --------------------------------------------------------------------------- utils

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run coding tasks through opencode, pi and cline and compare their results."""
+"""Run coding tasks through opencode, pi and cline-acp and compare their results."""
 
 import argparse
 import csv
@@ -24,17 +24,17 @@ TASKS_ROOT = ROOT / ".harness" / "bench" / "tasks"
 sys.path.insert(0, str(ROOT / ".harness"))
 DEFAULT_MODEL = "opencode/space-bunny-free"
 DEFAULT_CLINE_MODEL = "cline-free/deepseek-v4.1-flash"
-# Same free-quota caveat as .harness/runner/executors/cline.py: the runner probes fallbacks, this
-# bench script does not, so the cline arm takes an explicit --model when the default is capped.
-DEFAULT_MODELS = {"opencode": DEFAULT_MODEL, "pi": DEFAULT_MODEL, "cline": DEFAULT_CLINE_MODEL,
+# Same free-quota caveat as .harness/runner/executors/cline_acp.py: the runner probes fallbacks,
+# this bench script does not, so the cline-acp arm takes an explicit --model when the default
+# is capped.
+DEFAULT_MODELS = {"opencode": DEFAULT_MODEL, "pi": DEFAULT_MODEL,
                   "cline-acp": DEFAULT_CLINE_MODEL}
 DEFAULT_THINKING = "medium"
 DEFAULT_PI = Path.home() / ".pi" / "agent" / "bin" / "pi-launcher.js"
 # The same free Bunny model is spelled differently per provider, so one --model id cannot
-# serve every arm. `--model cline=x,pi=y` maps per arm; a bare id still applies to all of them.
+# serve every arm. `--model cline-acp=x,pi=y` maps per arm; a bare id still applies to all of them.
 MODEL_SETS = {
     "space-bunny-alpha": {
-        "cline": "stealth/space-bunny-alpha",
         "cline-acp": "stealth/space-bunny-alpha",
         "pi": "openrouter/stealth/space-bunny-alpha",
         # opencode rejects both stealth spellings ("Unexpected server error"); its only
@@ -64,7 +64,7 @@ def model_for(harness, args):
     """The model this arm runs: --model (one id, or one per arm) else the arm's own default.
 
     With a per-arm map an unmapped arm falls back to its own default: never to the raw
-    "cline=a,pi=b" argument, which is not a model id.
+    "cline-acp=a,pi=b" argument, which is not a model id.
     """
     mapping = getattr(args, "model_map", None)
     if mapping:
@@ -94,9 +94,9 @@ CSV_FIELDS = [
 
 
 def parse(harness, path):
-    """Parse an opencode, pi or cline JSONL event log."""
-    if harness not in ("opencode", "pi", "cline", "cline-acp"):
-        raise ValueError("harness must be 'opencode', 'pi', 'cline' or 'cline-acp'")
+    """Parse an opencode, pi or cline-acp JSONL event log."""
+    if harness not in ("opencode", "pi", "cline-acp"):
+        raise ValueError("harness must be 'opencode', 'pi' or 'cline-acp'")
 
     result = dict.fromkeys(
         ("turns", "tool_calls", "input", "output", "cache_read", "reasoning"), 0
@@ -131,7 +131,7 @@ def parse(harness, path):
                     for item in message.get("content", [])
                     if isinstance(item, dict)
                 )
-            elif harness in ("cline", "cline-acp"):
+            elif harness == "cline-acp":
                 if event.get("type") == "agent_event":
                     inner = event.get("event", {})
                     if inner.get("type") == "usage":  # per-iteration deltas, not the running total
@@ -154,9 +154,9 @@ def task_prompt(task_dir):
 
 
 def acp_run(work_dir, prompt, model, log_path, allow_all=True, auto_approve=True):
-    """One task through `cline --acp`, using the client from cline-test/.
+    """One task through `cline --acp`, using the ACP client from the runner.
 
-    Emits the same NDJSON event shapes as the `--json` transport so parse() and the CSV
+    Emits the same NDJSON event shapes as the subprocess transports so parse() and the CSV
     schema are identical for every arm. Two measured facts drive this function:
     `-m` is ignored in ACP mode, so the model is pinned with CLINE_MODEL, and the agent asks
     the client for permission, so something has to answer it or it hangs.
@@ -171,7 +171,7 @@ def acp_run(work_dir, prompt, model, log_path, allow_all=True, auto_approve=True
     try:
         client.initialize()
         created = client.new_session()
-        # Bench parity: the --json arm runs with `--auto-approve true`, so the ACP arm sets
+        # Bench parity: the other arms run with `--auto-approve true`, so the ACP arm sets
         # the same thing via its `auto_approve` config option. Measured: without it the agent
         # asks 10 times and makes 36-48 tool calls, versus 7 with it. Any harness that wants
         # the deny-list guardrail must leave this OFF and answer permissions itself.
@@ -211,12 +211,6 @@ def acp_run(work_dir, prompt, model, log_path, allow_all=True, auto_approve=True
 
 
 def command_for(harness, prompt, args, run_dir, create_config=True):
-    if harness == "cline":
-        command = [
-            cline_binary(), "--json", "--auto-approve", "true", "-c", str(run_dir / "work"),
-            "-m", model_for(harness, args), "--thinking", args.thinking, prompt,
-        ]
-        return command, None
     if harness == "opencode":
         executable = shutil.which("opencode")
         if not executable:
@@ -298,7 +292,7 @@ def main(argv=None):
     parser.add_argument("--harness", default="opencode,pi")
     parser.add_argument("--reps", type=int, default=1)
     parser.add_argument("--model", default=None,
-                        help=f"model id for every arm (defaults: {DEFAULT_MODEL}, cline: {DEFAULT_CLINE_MODEL}); "
+                        help=f"model id for every arm (defaults: {DEFAULT_MODEL}, cline-acp: {DEFAULT_CLINE_MODEL}); "
                              f"a set name ({', '.join(MODEL_SETS)}) or per-arm pairs harness=id[,harness=id]")
     parser.add_argument("--thinking", default=DEFAULT_THINKING)
     parser.add_argument("--timeout", type=float, default=1200)
@@ -324,7 +318,7 @@ def main(argv=None):
 
     tasks = [name.strip() for name in args.tasks.split(",") if name.strip()]
     harnesses = [name.strip() for name in args.harness.split(",") if name.strip()]
-    unknown = set(harnesses) - {"opencode", "pi", "cline", "cline-acp"}
+    unknown = set(harnesses) - {"opencode", "pi", "cline-acp"}
     if unknown:
         parser.error("unknown harness: " + ", ".join(sorted(unknown)))
     if args.reps < 1:

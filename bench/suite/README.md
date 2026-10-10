@@ -22,7 +22,7 @@ are the legacy tasks. An arm is `executor[:model]`; its cell slug is
 ```bash
 python bench/suite/suite.py --dry                      # build+print the matrix, run nothing
 python bench/suite/suite.py --sizes small --modes serial --executors pi --reps 1
-python bench/suite/suite.py --executors pi,cline --modes serial,parallel --reps 3
+python bench/suite/suite.py --executors pi,cline-acp --modes serial,parallel --reps 3
 python bench/suite/suite.py --arms pi:opencode/x-free,claude --tasks small --capability multi-file-feature
 python bench/suite/suite.py --max-cost 20               # stop once cumulative cost exceeds it
 python bench/suite/suite.py --rerun-infra              # only rows whose status is infra_error
