@@ -114,8 +114,8 @@
         <tr><th>Result</th><th>Meaning</th><th>What to do</th></tr>
         <tr><td><span class="pill ok">pass</span></td><td>graded ok, maybe REPAIRED</td><td>review the diff</td></tr>
         <tr><td><span class="pill fail">fail</span></td><td>check, exit code, stray file or suppression after retries + repair</td><td>fix the brief and rerun (passed tasks are skipped); a second fail of the same task means stop and investigate read-only</td></tr>
-        <tr><td><span class="pill warn">check-invalid</span></td><td>the check passed before any work</td><td>tighten the check, rerun with <code>--relock</code></td></tr>
-        <tr><td><span class="pill warn">lock-mismatch</span></td><td><code>tasks.json</code> or a check changed</td><td>your edit: <code>--relock</code>; the executor's edit: discard it</td></tr>
+        <tr><td><span class="pill warn">check-invalid</span></td><td>the check passed before any work</td><td>tighten the check, rerun with <code>--relock-only</code></td></tr>
+        <tr><td><span class="pill warn">lock-mismatch</span></td><td><code>tasks.json</code> or a check changed</td><td>your edit: <code>--relock-only</code>; the executor's edit: discard it</td></tr>
         <tr><td><span class="pill info">running</span></td><td>the runner crashed mid-task</td><td>rerun; counts as a failed attempt, no red-first</td></tr>
       </table>
     </div>
@@ -154,7 +154,7 @@
         <tr><td class="key">run_plan.py &lt;slug&gt;</td><td>yes, every task not already pass</td><td>reports, logs, metrics, lock</td><td>0 all pass, 1 any fail</td></tr>
         <tr><td class="key">run_plan.py &lt;slug&gt; --only T2</td><td>yes, T2 only</td><td>same, for T2</td><td>same</td></tr>
         <tr><td class="key">run_plan.py &lt;slug&gt; --lint</td><td>no</td><td>nothing</td><td>lint result</td></tr>
-        <tr><td class="key">run_plan.py &lt;slug&gt; --relock</td><td>yes, it runs the plan too</td><td>re-records plan.lock.json first</td><td>same as a run</td></tr>
+        <tr><td class="key">run_plan.py &lt;slug&gt; --relock-only</td><td>no</td><td>re-records plan.lock.json</td><td>0</td></tr>
         <tr><td class="key">run_plan.py &lt;slug&gt; --review</td><td>yes, then a sonnet review</td><td>+ REVIEW.md</td><td>same as a run</td></tr>
         <tr><td class="key">run_plan.py &lt;slug&gt; --plan spec.md</td><td>no, planner only</td><td>plan files</td><td>0 lint ok, 1 not</td></tr>
         <tr><td class="key">run_plan.py &lt;slug&gt; --land</td><td>no, you run it</td><td>applies the worktree to your tree</td><td>0 landed, 1 not (conflict keeps land.patch)</td></tr>

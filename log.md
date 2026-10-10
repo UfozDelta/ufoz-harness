@@ -135,3 +135,7 @@ Each entry: what happened → fix applied (or open).
 ## 2026-10-09 claude-executor containment
 - Agent-frontmatter PreToolUse hook (`.harness/hooks/git_guard.py`) did NOT fire in two live probes: the agent wrote to the main tree (Write and Bash) and ran `git stash list` unblocked. Either frontmatter hooks are not loaded in this Claude Code version or the session cached the old agent file. → Mitigated: `--prepare` writes `main.baseline.json`; `--check` fails with `MAIN <path>` on any main-tree change or HEAD/branch move (verified live). Open: retest the hook in a fresh session.
 - The Write tool refuses SUMMARY.md inside a subagent ("write report files" rule). → Agent prompt/CLAUDE.md say to use a bash heredoc. Open.
+
+## 2026-10-10 prune-flags
+- `--land` aborted ("untracked working tree files would be overwritten") when the branch already committed a plan file (SUMMARY.md): land copied plan records into the main tree before the merge. → Fixed: merge first, then copy records (`tests/test_land.py`). The landed-files count also used the worktree's own HEAD (always 0); now `HEAD...harness/<slug>`.
+- Old `--relock`, `--prepare`, `--check`, `--watch` and `--land --from` are gone (CLI is 18 flags; `--executor agent:haiku` is the claude-executor path, run twice). Earlier entries above name them as history. bench arms J/J0 now say `--relock-only`.
