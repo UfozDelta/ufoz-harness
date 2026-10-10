@@ -9,17 +9,34 @@ import subprocess
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from . import report
 from .acceptance import run_acceptance
-from .guards import (GIT_MOVED, attribute, git_state, marker_counts, runner_owned, snapshot,
-                     suppression_markers, written_paths)
+from .guards import (GIT_MOVED, attribute, git_state, marker_counts, revert_paths, runner_owned,
+                     snapshot, suppression_markers, written_paths)
 from .plan import in_scope
 from .procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS
 from .worktree import IDENTITY
 
 RETRIES = 1  # reruns with the failure attached, per task
 REPAIRS = 1  # repair passes after the retries
+
+
+def revertable(paths):
+    """The stray paths that a revert would actually change: one that is still in the tree, or
+    one git still tracks (deleted by the executor, so `git checkout HEAD --` brings it back).
+    A path that is neither is already in the state we would revert it to, so retrying on it
+    could only repeat the same failure."""
+    keep = []
+    for f in paths:
+        if Path(f).exists():
+            keep.append(f)
+            continue
+        ls = subprocess.run(["git", "ls-files", "--", f], capture_output=True, text=True, check=False)
+        if ls.returncode == 0 and ls.stdout.strip():
+            keep.append(f)
+    return keep
 
 
 def commit_task(slug, tid, title, files):
@@ -252,14 +269,27 @@ class TaskRunner:
             counts = marker_counts(f)
             st.baseline[f] = {"total": sum(counts.values()), "counts": counts}
 
+        reverted: list = []
         for attempt in range(1 + RETRIES):
             if attempt:
                 log = plan.log_path(tid, f"retry{attempt}", args.executor)
             got = self._attempt(t, st, before, log, feedback.as_posix() if attempt else None, session,
                                 t.acceptance, listed, "retry" if attempt else "exec", dynamic_scope=True)
             session, ok = got.session, got.ok
-            if ok or got.broken or got.stray or attempt >= RETRIES:
+            if ok or got.broken or attempt >= RETRIES:
                 break
+            if got.stray:
+                # A stray with nothing left to undo -- or a moved HEAD -- still ends the task
+                # here, as before: there is no clean tree to retry on.
+                if GIT_MOVED in got.stray or not revertable(got.stray):
+                    break
+                # otherwise: undo it in the worktree, say what was reverted, retry clean
+                revert_paths(got.stray)
+                reverted += [f for f in got.stray if f not in reverted]
+                feedback.write_text(report.stray_feedback(scope, got.stray)
+                                    + report.retry_feedback(attempt, args.executor, t, got.code,
+                                                           got.suppressed, got.out), encoding="utf-8")
+                continue
             if got.code == EXIT_TIMEOUT:
                 session = None  # a hung session is not worth continuing; retry fresh
             feedback.write_text(report.retry_feedback(attempt, args.executor, t, got.code,
@@ -282,10 +312,14 @@ class TaskRunner:
         result = "pass" if ok else "fail"
         seconds = round(time.time() - st.t0, 1)
         self._record_metrics(st, result, attempt + 1 + st.repairs, seconds)
+        # reverted strays were undone, not ignored: they stay in the report next to the last
+        # attempt's own strays, so the run summary still names what was out of scope
+        strays = reverted + [f for f in got.stray if f not in reverted]
         rep.write_text(report.final_report(t, result, args.executor, got.code, attempt + 1 + st.repairs,
                                            st.repairs, seconds, st.usage, st.exec_s, st.accept_s,
-                                           st.retry_s, got.touched, got.stray, got.broken,
-                                           got.build_line, log, got.out), encoding="utf-8")
+                                           st.retry_s, got.touched, strays, got.broken,
+                                           got.build_line, log, got.out, reverted=reverted),
+                        encoding="utf-8")
         lines = report.summary_lines(tid, args.executor, ok, got.code, attempt + 1 + st.repairs,
                                      st.repairs, seconds, st.usage, got.stray, got.broken, log)
 
