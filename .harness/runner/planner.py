@@ -17,6 +17,7 @@ from pathlib import Path
 from . import guards
 from .executors import get
 from .lint import lint
+from .plan import PLANS_ROOT
 
 PLANNER_MD = Path(".claude/agents/planner.md")
 DEFAULT_BACKEND = "pi"
@@ -102,7 +103,7 @@ def _build_map():
         pass
 
 
-def run_planner(slug, spec_path, plans_root=".harness/plans", backend=None, model=None) -> dict:
+def run_planner(slug, spec_path, plans_root=PLANS_ROOT, backend=None, model=None) -> dict:
     """Plan `slug` from the spec at `spec_path`. Never raises for a normal lint failure:
     it returns the result dict (also written to <plan>/planner.json) with lint_ok False."""
     backend = backend or os.environ.get("HARNESS_PLANNER", DEFAULT_BACKEND)

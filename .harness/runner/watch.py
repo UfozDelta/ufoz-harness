@@ -210,8 +210,9 @@ def watch(plan_dir, poll=0.5, wait_start=30.0, out=None):
 def watch_dir(slug):
     """The plan dir to follow: inside the worktree when there is one, else here."""
     from . import worktree  # lazy: `python watch.py` runs this file as a bare script
-    in_worktree = worktree.path_for(slug) / ".harness" / "plans" / slug
-    return in_worktree if in_worktree.is_dir() else Path(".harness/plans") / slug
+    from .plan import PLANS_ROOT
+    in_worktree = worktree.path_for(slug) / PLANS_ROOT / slug
+    return in_worktree if in_worktree.is_dir() else Path(PLANS_ROOT) / slug
 
 
 def window_command(slug):

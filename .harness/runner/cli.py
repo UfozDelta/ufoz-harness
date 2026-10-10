@@ -8,7 +8,7 @@ from pathlib import Path
 from . import check, land, pending, planner, scheduler, skills, status, watch, worktree
 from .executors import get, REGISTRY
 from .lint import lint
-from .plan import Plan
+from .plan import PLANS_ROOT, Plan
 from .report import record_plan_event
 from .reviewer import run_reviewer
 from .stats import print_stats
@@ -119,15 +119,15 @@ def parse_backend(spec, valid):
 def relock_only(slug):
     """Lock the grader without running anything. The worktree copy gets the edited plan
     first, and is locked from inside the worktree: lock keys are cwd-relative paths."""
-    Plan(slug, ".harness/plans").lock_grader(True)
-    print(f"relocked: {Path('.harness/plans') / slug}")
+    Plan(slug, PLANS_ROOT).lock_grader(True)
+    print(f"relocked: {Path(PLANS_ROOT) / slug}")
     wt = worktree.path_for(slug)
     if (wt / ".harness" / "plans" / slug).is_dir():
         home = Path.cwd()
         worktree.sync_plan(slug, wt.resolve(), home)
         os.chdir(wt)
         try:
-            Plan(slug, ".harness/plans").lock_grader(True)
+            Plan(slug, PLANS_ROOT).lock_grader(True)
         finally:
             os.chdir(home)
         print(f"relocked: {wt / '.harness' / 'plans' / slug}")
@@ -145,16 +145,16 @@ def main(argv=None):
     args.review_model = None
     if args.review is not None:
         args.review_model = parse_backend(args.review or "claude", ("claude",))[1] or "sonnet"
-    args.warm = not args.fresh
     if args.session and (args.fresh or args.parallel > 1):
         print("--session is ignored with --fresh or --parallel > 1; drop one of them")
-        sys.exit(1)
+        return 1
     try:
-        return _run(ap, args)
+        code = _run(ap, args)
     finally:
         if _ACTIVE_RUN_LOCK is not None:
             _ACTIVE_RUN_LOCK.unlink(missing_ok=True)
             _ACTIVE_RUN_LOCK = None
+    return code or 0
 
 
 def _agent(args):
@@ -164,7 +164,7 @@ def _agent(args):
         print("--executor agent needs the worktree: drop --no-worktree / HARNESS_WORKTREE=0")
         return 1
     wt = worktree.path_for(args.slug)
-    if not (Path(".harness/plans") / args.slug / check.BASELINE).is_file() or not wt.is_dir():
+    if not (Path(PLANS_ROOT) / args.slug / check.BASELINE).is_file() or not wt.is_dir():
         if check.prepare(args.slug):
             return 1
         print(f"handoff: spawn claude-executor (Agent tool, no isolation, run_in_background true) "
@@ -174,79 +174,70 @@ def _agent(args):
     return check.check(args.slug, str(wt))
 
 
-def _run(ap, args):
-    global _ACTIVE_RUN_LOCK
-    metrics = Path(".harness/plans").parent / "metrics.jsonl"
+def _info(ap, args, metrics):
+    """Commands that print, lock or grade and never run a task. Returns an exit code, or None
+    when the run goes on."""
     if args.stats:
         print_stats(metrics)
-        return
+        return 0
     if args.pending:
         return pending.pending()
     if not args.slug:
         ap.error("slug is required")
     if args.land and not args.yes and not interactive():
         print("--land is your command: run it in a terminal, or pass --yes")
-        sys.exit(1)
+        return 1
     if args.land:
-        sys.exit(land.land(args.slug))
+        return land.land(args.slug)
     if args.relock_only:
-        sys.exit(relock_only(args.slug))
+        return relock_only(args.slug)
     if args.status:
         print(status.render(args.slug, watch.watch_dir(args.slug)))
-        return
+        return 0
     if args.plan:
-        plan_dir = Path(".harness/plans") / args.slug
-        result = planner.run_planner(args.slug, args.plan, ".harness/plans", args.planner,
+        plan_dir = Path(PLANS_ROOT) / args.slug
+        result = planner.run_planner(args.slug, args.plan, PLANS_ROOT, args.planner,
                                      args.planner_model)
         if result["lint_ok"]:
             record_plan_event(metrics, args.slug, "created", backend=args.planner or "pi")
         print(f"plan: {plan_dir}")
-        sys.exit(0 if result["lint_ok"] else 1)
-    if args.executor == "agent" and not args.lint:
-        sys.exit(_agent(args))
-    # Before anything is spawned (no plan dir, no run lock, no session): an executor that
-    # cannot take concurrent turns must never start half a parallel run.
-    if args.parallel > 1 and args.executor != "agent" and not REGISTRY[args.executor].thread_safe:
-        print(f"--executor {args.executor} does not support --parallel > 1 (single shared session)")
-        sys.exit(1)
-    if use_worktree(args) and not args.lint:
-        # before the plan dir and the run lock are touched: inside, everything is relative
-        # to the worktree copy of the tree.
-        if worktree.in_git_repo():
-            main = Path.cwd()
-            target = worktree.ensure(args.slug)
-            os.chdir(target)
-            # the run lock comes first: a second run of the same slug exits before anything
-            # is copied over.
-            (Path(".harness/plans") / args.slug).mkdir(parents=True, exist_ok=True)
-            run_lock = Path(".harness/plans") / args.slug / "run.lock"
-            _acquire_run_lock(run_lock)
-            _ACTIVE_RUN_LOCK = run_lock
-            worktree.sync_plan(args.slug, target, main)
-        else:
-            print("not a git repo: running in place")
-    plan = Plan(args.slug, ".harness/plans")
-    if not args.lint:
-        if _ACTIVE_RUN_LOCK is None:
-            _acquire_run_lock(plan.run_lock)
-            _ACTIVE_RUN_LOCK = plan.run_lock
-        if use_window(args) and os.name == "nt":
-            watch.open_window(args.slug)
+        return 0 if result["lint_ok"] else 1
+    return None
+
+
+def _enter_worktree(args):
+    """The default run moves into the plan's worktree. Before the plan dir and the run lock are
+    touched: inside, everything is relative to the worktree copy of the tree."""
+    global _ACTIVE_RUN_LOCK
+    if not (use_worktree(args) and not args.lint):
+        return
+    if not worktree.in_git_repo():
+        print("not a git repo: running in place")
+        return
+    main = Path.cwd()
+    target = worktree.ensure(args.slug)
+    os.chdir(target)
+    # the run lock comes first: a second run of the same slug exits before anything
+    # is copied over.
+    (Path(PLANS_ROOT) / args.slug).mkdir(parents=True, exist_ok=True)
+    run_lock = Path(PLANS_ROOT) / args.slug / "run.lock"
+    _acquire_run_lock(run_lock)
+    _ACTIVE_RUN_LOCK = run_lock
+    worktree.sync_plan(args.slug, target, main)
+
+
+def _execute(plan, args, metrics):
+    """Run the plan's tasks through the executor, then the optional review. Returns the exit code."""
     tasks = plan.tasks
-    if args.lint:
-        # red-first only means something before the first attempt (same rule as the run loop)
-        attempted = {t.id for t in tasks
-                     if any(f"RESULT: {r}" in plan.report_text(t.id) for r in ("pass", "fail", "running"))}
-        sys.exit(lint(plan.dir, [t.raw for t in tasks], attempted))
     plan.prepare()
     plan.lock_grader(False)
 
-    # only when the flag is given: claude keeps its own sonnet default, cline falls back to
-    # HARNESS_MODEL, pi/opencode to their model lists
     # the curated skills are decided from the plan's files, before the executor reads the env
     skills.apply_default([t.raw for t in tasks], os.environ)
     chosen = skills.chosen_dirs()
     print(f"skills: on ({len(chosen)})" if skills.enabled() else "skills: off")
+    # only when the flag is given: claude keeps its own sonnet default, cline falls back to
+    # HARNESS_MODEL, pi/opencode to their model lists
     opts = {"model": args.executor_model} if args.executor_model else {}
     run_started = time.time()
     record_plan_event(metrics, args.slug, "run_start", executor=args.executor)
@@ -264,6 +255,15 @@ def _run(ap, args):
                           result=("fail" if failed else "pass"),
                           duration_s=round(time.time() - run_started, 1),
                           tasks_done=len(result.done))
+    _review(plan, args, metrics, result, failed, summary)
+
+    print("\n".join(summary[:20]) if summary else "nothing to run (all tasks already passed)")
+    return 1 if failed else 0
+
+
+def _review(plan, args, metrics, result, failed, summary):
+    """--review: one cheap pass after a fresh full run; its line goes into the summary."""
+    tasks = plan.tasks
     fresh_full_pass = (not failed and not args.only and result.ran_any
                         and result.done == {t.id for t in tasks}
                         and result.already_done != {t.id for t in tasks})
@@ -274,5 +274,31 @@ def _run(ap, args):
     elif args.review is not None:
         summary.append("review: skipped (not a fresh full pass)")
 
-    print("\n".join(summary[:20]) if summary else "nothing to run (all tasks already passed)")
-    sys.exit(1 if failed else 0)
+
+def _run(ap, args):
+    global _ACTIVE_RUN_LOCK
+    metrics = Path(PLANS_ROOT).parent / "metrics.jsonl"
+    code = _info(ap, args, metrics)
+    if code is not None:
+        return code
+    if args.executor == "agent" and not args.lint:
+        return _agent(args)
+    # Before anything is spawned (no plan dir, no run lock, no session): an executor that
+    # cannot take concurrent turns must never start half a parallel run.
+    if args.parallel > 1 and args.executor != "agent" and not REGISTRY[args.executor].thread_safe:
+        print(f"--executor {args.executor} does not support --parallel > 1 (single shared session)")
+        return 1
+    _enter_worktree(args)
+    plan = Plan(args.slug, PLANS_ROOT)
+    if not args.lint:
+        if _ACTIVE_RUN_LOCK is None:
+            _acquire_run_lock(plan.run_lock)
+            _ACTIVE_RUN_LOCK = plan.run_lock
+        if use_window(args) and os.name == "nt":
+            watch.open_window(args.slug)
+    if args.lint:
+        # red-first only means something before the first attempt (same rule as the run loop)
+        attempted = {t.id for t in plan.tasks
+                     if any(f"RESULT: {r}" in plan.report_text(t.id) for r in ("pass", "fail", "running"))}
+        return lint(plan.dir, [t.raw for t in plan.tasks], attempted)
+    return _execute(plan, args, metrics)

@@ -6,6 +6,8 @@ from pathlib import Path
 
 from .guards import lock_hashes
 
+PLANS_ROOT = ".harness/plans"  # relative: lock keys are cwd-relative
+
 
 def in_scope(path, entries):
     """True when `path` is an entry, or lies under a directory entry (one ending in "/")."""
@@ -46,7 +48,7 @@ class Task:
 
 
 class Plan:
-    def __init__(self, slug, plans_root=".harness/plans"):
+    def __init__(self, slug, plans_root=PLANS_ROOT):
         self.slug = slug
         self.root = Path(plans_root)
         self.dir = self.root / slug

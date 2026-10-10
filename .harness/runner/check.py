@@ -10,7 +10,7 @@ from pathlib import Path
 from .acceptance import run_acceptance
 from .guards import GIT_MOVED, git_state, snapshot
 from . import worktree
-from .plan import Plan, in_scope
+from .plan import PLANS_ROOT, Plan, in_scope
 from .task_runner import commit_task
 
 # Paths the harness itself writes or Claude Code keeps: never part of a task's scope.
@@ -23,7 +23,7 @@ BASELINE = "main.baseline.json"
 def write_baseline(slug):
     """Photograph the main tree (file hashes + git HEAD/branch) for `check` to compare against.
     Written by `prepare`, because the agent is meant to touch only its worktree."""
-    plan_dir = Path(".harness/plans") / slug
+    plan_dir = Path(PLANS_ROOT) / slug
     plan_dir.mkdir(parents=True, exist_ok=True)
     state = git_state()
     (plan_dir / BASELINE).write_text(
@@ -46,7 +46,7 @@ def prepare(slug):
 def main_changes(slug):
     """Main-tree paths that differ from the `prepare` photograph (plus GIT_MOVED if HEAD or the
     branch moved). None when there is no photograph, i.e. the worktree was not made by `prepare`."""
-    path = Path(".harness/plans") / slug / BASELINE
+    path = Path(PLANS_ROOT) / slug / BASELINE
     if not path.is_file():
         return None
     base = json.loads(path.read_text(encoding="utf-8"))
@@ -100,7 +100,7 @@ def check(slug, root):
     clean. Writes items/T<n>.report.md in the worktree, skips tasks whose report already says
     `RESULT: pass`, and commits each task that passes while the tree is clean."""
     root = Path(root).resolve()
-    plan = Plan(slug, ".harness/plans")  # plan files come from the main tree, the cwd here
+    plan = Plan(slug, PLANS_ROOT)  # plan files come from the main tree, the cwd here
     broken = plan.lock_broken()
     for path in broken:
         print(f"LOCK {path}")
