@@ -1,0 +1,17 @@
+{
+  "slug": "skip-plan-dir-dirty",
+  "task": "T2",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 11.1,
+  "accept_s": 0.3,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 1123,
+    "output": 486,
+    "reasoning": 65,
+    "cache_read": 48062,
+    "cost": 0.0
+  }
+}
