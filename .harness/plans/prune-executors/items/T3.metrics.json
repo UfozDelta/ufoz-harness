@@ -1,0 +1,17 @@
+{
+  "slug": "prune-executors",
+  "task": "T3",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 36.9,
+  "accept_s": 0.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 19605,
+    "output": 6390,
+    "reasoning": 804,
+    "cache_read": 518675,
+    "cost": 0.0
+  }
+}
