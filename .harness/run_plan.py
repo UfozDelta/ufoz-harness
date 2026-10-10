@@ -52,4 +52,4 @@ from runner.stats import PRICES, claude_agent_runs  # noqa: E402,F401
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

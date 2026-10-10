@@ -71,9 +71,7 @@ def test_relock_only_writes_the_lock_and_runs_nothing(tmp_path, monkeypatch):
     plan_dir.mkdir(parents=True)
     (plan_dir / "tasks.json").write_text(json.dumps({"tasks": [
         {"id": "T1", "files": ["a.py"], "acceptance": RED}]}), encoding="utf-8")
-    with pytest.raises(SystemExit) as exit_info:
-        cli.main(["slug", "--relock-only"])
-    assert exit_info.value.code == 0
+    assert cli.main(["slug", "--relock-only"]) == 0
     lock = json.loads((plan_dir / "plan.lock.json").read_text(encoding="utf-8"))
     assert ".harness/plans/slug/tasks.json" in lock
     assert not (plan_dir / "items" / "T1.report.md").exists()
