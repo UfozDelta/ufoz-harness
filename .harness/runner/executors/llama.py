@@ -80,7 +80,7 @@ class LlamaExecutor(PiExecutor):
                 wanted = ids[0]
             else:
                 sys.exit(f"llama: cannot pick a model on {self.url}: {len(ids)} served "
-                         f"({', '.join(ids) or 'none'}). Pass --executor-model or set HARNESS_LLAMA_MODEL.")
+                         f"({', '.join(ids) or 'none'}). Pass --executor llama:<model> or set HARNESS_LLAMA_MODEL.")
         self._load(wanted, entries)
         self.model = f"llamacpp/{wanted}"
         self._config = tempfile.TemporaryDirectory(prefix="harness-llama-")

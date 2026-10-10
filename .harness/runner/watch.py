@@ -207,9 +207,16 @@ def watch(plan_dir, poll=0.5, wait_start=30.0, out=None):
     return 0
 
 
+def watch_dir(slug):
+    """The plan dir to follow: inside the worktree when there is one, else here."""
+    from . import worktree  # lazy: `python watch.py` runs this file as a bare script
+    in_worktree = worktree.path_for(slug) / ".harness" / "plans" / slug
+    return in_worktree if in_worktree.is_dir() else Path(".harness/plans") / slug
+
+
 def window_command(slug):
     """The command that opens a new terminal window watching this plan."""
-    tail = ["cmd", "/k", sys.executable, ".harness/run_plan.py", slug, "--watch"]
+    tail = ["cmd", "/k", sys.executable, ".harness/runner/watch.py", slug]
     if shutil.which("wt"):
         # one shared window, one tab per plan
         return ["wt", "-w", "harness", "new-tab", "--title", f"harness {slug}",
@@ -222,6 +229,12 @@ def open_window(slug):
         subprocess.Popen(window_command(slug))
     except OSError as exc:
         print(f"could not open a window ({exc}); watch with: "
-              f"python .harness/run_plan.py {slug} --watch")
+              f"python .harness/runner/watch.py {slug}")
         return False
     return True
+
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from runner import watch as _w  # the package copy, so the lazy import above resolves
+    sys.exit(_w.watch(_w.watch_dir(sys.argv[1])))

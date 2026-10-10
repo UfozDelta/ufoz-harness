@@ -86,7 +86,7 @@ def _permission_policy(denied):
 
 
 def _resolve_model(model=None):
-    """The model to pin, honoured as given: an explicit --executor-model or HARNESS_MODEL is
+    """The model to pin, honoured as given: an explicit --executor cline-acp:<model> or HARNESS_MODEL is
     never silently swapped for a different one."""
     return model or os.environ.get("HARNESS_MODEL", DEFAULT_MODEL)
 

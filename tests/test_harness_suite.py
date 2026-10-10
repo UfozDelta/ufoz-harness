@@ -754,9 +754,9 @@ def test_plan_args_model_wins_over_env(monkeypatch):
     monkeypatch.setenv("HARNESS_EXECUTOR_MODEL", "env/model")
     cell = {"slug": "s", "executor": "pi", "mode": "serial"}
     args = cells._plan_args(dict(cell, model="cell/model"), Path("."))
-    assert args[args.index("--executor-model") + 1] == "cell/model"
+    assert args[args.index("--executor") + 1] == "pi:cell/model"
     args = cells._plan_args(cell, Path("."))
-    assert args[args.index("--executor-model") + 1] == "env/model"
+    assert args[args.index("--executor") + 1] == "pi:env/model"
     assert cells.is_cell_slug("suite-small-serial-pi-cell-model-r1")
     assert not cells.is_cell_slug("suite-fixes")
 

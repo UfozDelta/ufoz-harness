@@ -1,4 +1,4 @@
-"""Command line: the same flags as always, one of several executors behind them."""
+"""Command line: 18 flags, one of several executors behind them (`--executor backend:model`)."""
 import argparse
 import os
 import sys
@@ -32,80 +32,57 @@ def _acquire_run_lock(path):
 
 
 def build_parser():
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(allow_abbrev=False)  # old `--relock` must not mean `--relock-only`
     ap.add_argument("slug", nargs="?")
     ap.add_argument("--only")
     ap.add_argument("--timeout", type=int, default=900)
-    ap.add_argument("--review", action="store_true",
-                     help="After a fresh full pass, run one cheap (sonnet) review pass "
-                          "against reviewer.md's checklist and write <plan>/REVIEW.md.")
-    ap.add_argument("--worktree", action=argparse.BooleanOptionalAction, default=None,
-                    help="Run the plan in its own git worktree .worktrees/<slug> (branch "
-                         "harness/<slug>, based on the current tree), so several plans can run "
-                         "at once. Default; --no-worktree to run in place, or HARNESS_WORKTREE=0.")
-    ap.add_argument("--watch", action="store_true",
-                    help="Watch this plan's executor output live in this terminal; run nothing.")
+    ap.add_argument("--review", nargs="?", const="", default=None, metavar="claude[:MODEL]",
+                    help="After a fresh full pass, run one cheap review pass against reviewer.md's "
+                         "checklist and write <plan>/REVIEW.md. Only claude; bare = sonnet. Put the "
+                         "slug before --review.")
+    ap.add_argument("--no-worktree", action="store_true",
+                    help="Run in place. Default: the plan runs in its own git worktree "
+                         ".worktrees/<slug> (branch harness/<slug>), so several plans can run at "
+                         "once; HARNESS_WORKTREE=0 also opts out.")
     ap.add_argument("--status", action="store_true",
                     help="Show task states, the first failure's tail and the next command; runs nothing.")
-    ap.add_argument("--window", action=argparse.BooleanOptionalAction, default=None,
-                    help="Run as usual, but also open a shared terminal window with a tab "
-                         "watching the output. Default; --no-window, or HARNESS_WINDOW=0.")
-    ap.add_argument("--relock", action="store_true",
-                     help="Re-record plan.lock.json after you (not the executor) edited "
-                          "tasks.json or a check script.")
+    ap.add_argument("--no-window", action="store_true",
+                    help="Do not open the shared terminal window that watches the output "
+                         "(default on; HARNESS_WINDOW=0 also opts out).")
     ap.add_argument("--relock-only", action="store_true",
                     help="Re-record plan.lock.json (here, and in the plan's worktree if there is "
                          "one) after you edited tasks.json or a check script; run nothing.")
-    ap.add_argument("--check", metavar="DIR", nargs="?", const="",
-                    help="Grade work done outside the runner in the git worktree DIR (default: the plan's "
-                         "worktree; plan files from this tree): grader lock, file scope, each task's "
-                         "acceptance run in DIR. Runs nothing else.")
-    ap.add_argument("--prepare", action="store_true",
-                    help="Create the plan's worktree and print its path; run nothing; for executors "
-                         "that edit outside the runner.")
     ap.add_argument("--land", action="store_true",
                     help="The user's command, not ours: merge the worktree's branch into this "
                          "tree with --ff-only, copy its plan records, remove the worktree and branch.")
     ap.add_argument("--yes", action="store_true",
                     help="With --land: skip the interactive-terminal requirement (CI). Without it "
                          "--land refuses when stdin is not a terminal, e.g. under an agent's Bash tool.")
-    ap.add_argument("--from", dest="from_dir", metavar="DIR",
-                    help="With --land: land a git worktree DIR made outside the runner (e.g. a "
-                         "Claude subagent worktree) after --check passes; only plan-listed files.")
     ap.add_argument("--lint", action="store_true",
                      help="Validate the plan and run every check on the untouched tree; run nothing else.")
-    ap.add_argument("--retries", type=int, default=1,
-                     help="Reruns of the (free) executor with the failure output attached, per task.")
-    ap.add_argument("--repair", type=int, default=1,
-                     help="Repair passes after retries, with the failing task's and earlier tasks' files in scope.")
     ap.add_argument("--stats", action="store_true", help="Print executor time/token totals per plan.")
     ap.add_argument("--pending", action="store_true",
                     help="List plan worktrees not landed yet; run nothing.")
     ap.add_argument("--fresh", action="store_true",
                      help="A fresh pi session per task (the old default). Warm is faster on the bench.")
-    ap.add_argument("--executor-model", default=None,
-                     help="Model override for --executor claude/pi/opencode/cline/llama "
-                          "(each has its own default; for bench comparisons only).")
     ap.add_argument("--session",
                      help="ignored with --fresh or --parallel > 1: continue this existing "
                           "session (e.g. the one that wrote the plan).")
     ap.add_argument("--parallel", type=int, default=1,
                      help="Run up to N tasks at once (deps passed, no shared files).")
-    ap.add_argument("--executor", choices=("pi", "claude", "opencode", "cline", "cline-acp", "llama"),
-                    default="pi",
-                    help="Who writes the code. claude = `claude -p` (sonnet), opencode = its HTTP server, "
-                         "cline = the Cline CLI (free model, no warm session), cline-acp = the Cline CLI "
-                         "over ACP (one warm process per plan, free model), llama = pi driving a local "
-                         "llama.cpp router (`HARNESS_LLAMA_URL`/`HARNESS_LLAMA_MODEL`); for A/B cost "
-                         "comparisons.")
+    ap.add_argument("--executor", default="pi", metavar="BACKEND[:MODEL]",
+                    help="Who writes the code, optionally with a model (claude:sonnet). Backends: pi, "
+                         "claude (`claude -p`), opencode (its HTTP server), cline (Cline CLI, no warm "
+                         "session), cline-acp (Cline over ACP, one warm process per plan), llama (pi "
+                         "driving a local llama.cpp router: HARNESS_LLAMA_URL/HARNESS_LLAMA_MODEL), "
+                         "agent (agent:haiku: the main session spawns @claude-executor; run this "
+                         "command once to prepare the worktree, again to grade it).")
     ap.add_argument("--plan", metavar="SPEC.md",
                     help="Plan <slug> from this spec file with the planner backend, lint the "
                          "plan, and run no tasks.")
-    ap.add_argument("--planner", choices=("pi", "opencode", "claude", "cline", "cline-acp"),
-                    default=os.environ.get("HARNESS_PLANNER", "pi"),
-                    help="Who writes the plan for --plan.")
-    ap.add_argument("--planner-model", default=os.environ.get("HARNESS_PLANNER_MODEL"),
-                    help="Model for --planner (default: sonnet for claude, else the pi/opencode default).")
+    ap.add_argument("--planner", default=os.environ.get("HARNESS_PLANNER", "pi"), metavar="BACKEND[:MODEL]",
+                    help="Who writes the plan for --plan: pi, opencode, claude, cline or cline-acp, "
+                         "optionally with a model (claude:sonnet; else HARNESS_PLANNER_MODEL).")
     return ap
 
 
@@ -122,23 +99,21 @@ def interactive():
 
 
 def use_worktree(args):
-    """Explicit flag wins, else HARNESS_WORKTREE != "0" (unset means on)."""
-    if args.worktree is not None:
-        return args.worktree
-    return os.environ.get("HARNESS_WORKTREE") != "0"
+    """On unless --no-worktree or HARNESS_WORKTREE=0."""
+    return not args.no_worktree and os.environ.get("HARNESS_WORKTREE") != "0"
 
 
 def use_window(args):
-    """Explicit flag wins, else HARNESS_WINDOW != "0" (unset or 1 means on)."""
-    if args.window is not None:
-        return args.window
-    return os.environ.get("HARNESS_WINDOW") != "0"
+    """On unless --no-window or HARNESS_WINDOW=0."""
+    return not args.no_window and os.environ.get("HARNESS_WINDOW") != "0"
 
 
-def watch_dir(slug):
-    """The plan dir --watch follows: inside the worktree when there is one, else here."""
-    in_worktree = worktree.path_for(slug) / ".harness" / "plans" / slug
-    return in_worktree if in_worktree.is_dir() else Path(".harness/plans") / slug
+def parse_backend(spec, valid):
+    """'backend' or 'backend:model' -> (backend, model or None); exits on an unknown backend."""
+    backend, _, model = spec.partition(":")
+    if backend not in valid:
+        raise SystemExit(f"unknown backend {backend!r}: use one of {', '.join(valid)}")
+    return backend, model or None
 
 
 def relock_only(slug):
@@ -159,22 +134,17 @@ def relock_only(slug):
     return 0
 
 
-def prepare(slug):
-    if not worktree.in_git_repo():
-        print("not a git repo")
-        return 1
-    main = Path.cwd()
-    target = worktree.ensure(slug)
-    worktree.sync_plan(slug, target, main)
-    check.write_baseline(slug)
-    print(f"worktree: {target}")
-    return 0
-
-
 def main(argv=None):
     global _ACTIVE_RUN_LOCK
     ap = build_parser()
     args = ap.parse_args(argv)
+    args.executor, args.executor_model = parse_backend(args.executor, (*REGISTRY, "agent"))
+    args.planner, args.planner_model = parse_backend(
+        args.planner, ("pi", "opencode", "claude", "cline", "cline-acp"))
+    args.planner_model = args.planner_model or os.environ.get("HARNESS_PLANNER_MODEL")
+    args.review_model = None
+    if args.review is not None:
+        args.review_model = parse_backend(args.review or "claude", ("claude",))[1] or "sonnet"
     args.warm = not args.fresh
     if args.session and (args.fresh or args.parallel > 1):
         print("--session is ignored with --fresh or --parallel > 1; drop one of them")
@@ -187,6 +157,23 @@ def main(argv=None):
             _ACTIVE_RUN_LOCK = None
 
 
+def _agent(args):
+    """`--executor agent[:model]`: the main session spawns @claude-executor, so the runner only
+    brackets it. First call: make the worktree and print the handoff. Second call: grade it."""
+    if not use_worktree(args):
+        print("--executor agent needs the worktree: drop --no-worktree / HARNESS_WORKTREE=0")
+        return 1
+    wt = worktree.path_for(args.slug)
+    if not (Path(".harness/plans") / args.slug / check.BASELINE).is_file() or not wt.is_dir():
+        if check.prepare(args.slug):
+            return 1
+        print(f"handoff: spawn claude-executor (Agent tool, no isolation, run_in_background true) "
+              f"with slug {args.slug}, path {wt.resolve()}, model {args.executor_model or 'haiku'}; "
+              f"then rerun this command to grade it")
+        return 0
+    return check.check(args.slug, str(wt))
+
+
 def _run(ap, args):
     global _ACTIVE_RUN_LOCK
     metrics = Path(".harness/plans").parent / "metrics.jsonl"
@@ -197,25 +184,15 @@ def _run(ap, args):
         return pending.pending()
     if not args.slug:
         ap.error("slug is required")
-    if args.from_dir and not args.land:
-        ap.error("--from requires --land")
     if args.land and not args.yes and not interactive():
         print("--land is your command: run it in a terminal, or pass --yes")
         sys.exit(1)
     if args.land:
-        if args.from_dir:
-            sys.exit(land.land_from(args.slug, args.from_dir))
         sys.exit(land.land(args.slug))
     if args.relock_only:
         sys.exit(relock_only(args.slug))
-    if args.prepare:
-        sys.exit(prepare(args.slug))
-    if args.check is not None:
-        sys.exit(check.check(args.slug, args.check or str(worktree.path_for(args.slug))))
-    if args.watch:
-        sys.exit(watch.watch(watch_dir(args.slug)))
     if args.status:
-        print(status.render(args.slug, watch_dir(args.slug)))
+        print(status.render(args.slug, watch.watch_dir(args.slug)))
         return
     if args.plan:
         plan_dir = Path(".harness/plans") / args.slug
@@ -225,9 +202,11 @@ def _run(ap, args):
             record_plan_event(metrics, args.slug, "created", backend=args.planner or "pi")
         print(f"plan: {plan_dir}")
         sys.exit(0 if result["lint_ok"] else 1)
+    if args.executor == "agent" and not args.lint:
+        sys.exit(_agent(args))
     # Before anything is spawned (no plan dir, no run lock, no session): an executor that
     # cannot take concurrent turns must never start half a parallel run.
-    if args.parallel > 1 and not REGISTRY[args.executor].thread_safe:
+    if args.parallel > 1 and args.executor != "agent" and not REGISTRY[args.executor].thread_safe:
         print(f"--executor {args.executor} does not support --parallel > 1 (single shared session)")
         sys.exit(1)
     if use_worktree(args) and not args.lint:
@@ -260,7 +239,7 @@ def _run(ap, args):
                      if any(f"RESULT: {r}" in plan.report_text(t.id) for r in ("pass", "fail", "running"))}
         sys.exit(lint(plan.dir, [t.raw for t in tasks], attempted))
     plan.prepare()
-    plan.lock_grader(args.relock)
+    plan.lock_grader(False)
 
     # only when the flag is given: claude keeps its own sonnet default, cline falls back to
     # HARNESS_MODEL, pi/opencode to their model lists
@@ -288,11 +267,11 @@ def _run(ap, args):
     fresh_full_pass = (not failed and not args.only and result.ran_any
                         and result.done == {t.id for t in tasks}
                         and result.already_done != {t.id for t in tasks})
-    if args.review and fresh_full_pass:
+    if args.review is not None and fresh_full_pass:
         all_files = {f for t in tasks for f in t.get("files", [])}
-        run_reviewer(plan.dir, all_files, metrics, args.slug)
+        run_reviewer(plan.dir, all_files, metrics, args.slug, model=args.review_model)
         summary.append(f"review: {plan.dir / 'REVIEW.md'}")
-    elif args.review:
+    elif args.review is not None:
         summary.append("review: skipped (not a fresh full pass)")
 
     print("\n".join(summary[:20]) if summary else "nothing to run (all tasks already passed)")

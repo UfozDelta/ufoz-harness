@@ -5,8 +5,8 @@ import time
 from pathlib import Path
 
 
-def run_reviewer(plan, all_files, metrics, slug, timeout=300):
-    """One cheap (sonnet) headless pass reviewing every file the plan touched
+def run_reviewer(plan, all_files, metrics, slug, timeout=300, model="sonnet"):
+    """One cheap (sonnet by default) headless pass reviewing every file the plan touched
     against a fixed checklist (reviewer.md) — catches bug classes hidden
     tests structurally can't (e.g. a side effect wired from two code paths,
     each of which looks correct read in isolation). Not a blind A/B judge;
@@ -26,7 +26,7 @@ def run_reviewer(plan, all_files, metrics, slug, timeout=300):
         f"Files this plan touched:\n" + "\n".join(sorted(all_files)) +
         "\n\nReview them now per the checklist above."
     )
-    cmd = ["claude", "-p", prompt, "--model", "sonnet", "--output-format", "json",
+    cmd = ["claude", "-p", prompt, "--model", model, "--output-format", "json",
            "--dangerously-skip-permissions"]
     t0 = time.time()
     try:

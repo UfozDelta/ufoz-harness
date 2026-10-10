@@ -12,7 +12,6 @@ import subprocess
 from pathlib import Path
 
 from . import worktree
-from .plan import Plan
 
 
 def _git(*args, **kwargs):
@@ -69,48 +68,5 @@ def land(slug):
         except OSError:
             pass
     _git("branch", "-D", f"harness/{slug}")
-    print(f"landed {slug}: {changed} files")
-    return 0
-
-
-def land_from(slug, directory):
-    """Apply the plan-listed changes of an outside git worktree `directory` (e.g. a
-    Claude subagent worktree) to the current tree after `check` passes, then remove
-    that worktree and its branch. Returns 0 on success, 1 otherwise."""
-    if check.check(slug, directory) != 0:
-        print(f"check failed; nothing landed, {directory} kept")
-        return 1
-    src = str(Path(directory).resolve())
-    plan = Plan(slug, ".harness/plans")
-    pathspecs = sorted({f for t in plan.tasks for f in t.norm_files})
-
-    # intent-to-add, so new files show up; pathspecs keep out-of-scope edits out
-    _git("-C", src, "add", "-N", "--", ".")
-    patch = _git("-C", src, "diff", "--binary", "HEAD", "--", *pathspecs).stdout
-
-    plan_dir = Path(".harness") / "plans" / slug
-    plan_dir.mkdir(parents=True, exist_ok=True)
-    patch_file = plan_dir / "land.patch"
-    patch_file.write_bytes(patch)
-
-    numstat = _git("apply", "--numstat", input=patch).stdout.decode("utf-8", "replace")
-    changed = len([line for line in numstat.splitlines() if line.strip()])
-
-    if patch:
-        checked = _git("apply", "--check", input=patch)
-        if checked.returncode != 0:
-            print(checked.stderr.decode("utf-8", "replace").strip())
-            print(f"nothing changed; {directory} kept, patch at {patch_file}")
-            return 1
-        applied = _git("apply", input=patch)
-        if applied.returncode != 0:
-            print(applied.stderr.decode("utf-8", "replace").strip())
-            print(f"apply failed; {directory} kept, patch at {patch_file}")
-            return 1
-
-    branch = _git("-C", src, "rev-parse", "--abbrev-ref", "HEAD").stdout.decode("utf-8", "replace").strip()
-    _git("worktree", "remove", "--force", src)
-    if branch and branch != "HEAD":
-        _git("branch", "-D", branch)
     print(f"landed {slug}: {changed} files")
     return 0

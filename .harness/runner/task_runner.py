@@ -18,6 +18,9 @@ from .plan import in_scope
 from .procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS
 from .worktree import IDENTITY
 
+RETRIES = 1  # reruns with the failure attached, per task
+REPAIRS = 1  # repair passes after the retries
+
 
 def commit_task(slug, tid, title, files):
     """Commit the given files after a task passes. Returns the new commit sha, or None
@@ -249,20 +252,20 @@ class TaskRunner:
             counts = marker_counts(f)
             st.baseline[f] = {"total": sum(counts.values()), "counts": counts}
 
-        for attempt in range(1 + max(0, args.retries)):
+        for attempt in range(1 + RETRIES):
             if attempt:
                 log = plan.log_path(tid, f"retry{attempt}", args.executor)
             got = self._attempt(t, st, before, log, feedback.as_posix() if attempt else None, session,
                                 t.acceptance, listed, "retry" if attempt else "exec", dynamic_scope=True)
             session, ok = got.session, got.ok
-            if ok or got.broken or got.stray or attempt >= args.retries:
+            if ok or got.broken or got.stray or attempt >= RETRIES:
                 break
             if got.code == EXIT_TIMEOUT:
                 session = None  # a hung session is not worth continuing; retry fresh
             feedback.write_text(report.retry_feedback(attempt, args.executor, t, got.code,
                                                       got.suppressed, got.out), encoding="utf-8")
 
-        for repair in range(1, max(0, args.repair) + 1):
+        for repair in range(1, REPAIRS + 1):
             if ok or not got.plain_failure:
                 break
             st.repairs = repair

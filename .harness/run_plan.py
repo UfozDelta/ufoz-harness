@@ -1,9 +1,13 @@
 """Run a plan's tasks through the pi executor agent (the default).
 
-Usage: python .harness/run_plan.py <slug> [--only T2] [--timeout 900] [--review] [--relock]
-                                             [--lint] [--retries 1] [--repair 1]
-                                             [--executor pi|claude|opencode|cline|cline-acp]
-       python .harness/run_plan.py --stats
+Usage: python .harness/run_plan.py <slug> [--only T2] [--timeout 900] [--review [claude[:MODEL]]]
+                                             [--lint] [--executor BACKEND[:MODEL]]
+                                             [--fresh] [--session ID] [--parallel N]
+                                             [--no-worktree] [--no-window]
+       python .harness/run_plan.py <slug> --executor agent:haiku   (prepare; again to grade)
+       python .harness/run_plan.py <slug> --status | --relock-only | --land [--yes]
+       python .harness/run_plan.py <slug> --plan SPEC.md [--planner BACKEND[:MODEL]]
+       python .harness/run_plan.py --stats | --pending
 
 Reads .harness/plans/<slug>/tasks.json, runs tasks in list order, writes
 .harness/plans/<slug>/logs/<id>.<executor>.log and .harness/plans/<slug>/items/<id>.report.md,

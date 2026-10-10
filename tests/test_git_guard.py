@@ -21,12 +21,12 @@ def test_blocks_git_state_commands():
 
 def test_blocks_land():
     assert git_guard.blocked("python .harness/run_plan.py slug --land", DENY)
-    assert git_guard.blocked("cd x; python .harness/run_plan.py slug --land --from d", DENY)
+    assert git_guard.blocked("cd x; python .harness/run_plan.py slug --land --yes", DENY)
 
 
 def test_allows_read_only_and_other_commands():
     for cmd in ["git status", "git diff HEAD", "git log --oneline", "git -C . status",
-                "python .harness/run_plan.py slug --check d", "pytest -q", "echo git commit"]:
+                "python .harness/run_plan.py slug --lint", "pytest -q", "echo git commit"]:
         assert git_guard.blocked(cmd, DENY) is None, cmd
 
 

@@ -49,7 +49,7 @@ def _model(model=None):
 def _resolve_model(model=None):
     """The first candidate that answers right now, so a capped default does not end the run.
 
-    An explicit model (--executor-model or HARNESS_MODEL) is honoured as given: the operator
+    An explicit model (--executor cline:<model> or HARNESS_MODEL) is honoured as given: the operator
     chose it, so it is never silently swapped for a different one.
     """
     explicit = model or os.environ.get("HARNESS_MODEL")
