@@ -14,9 +14,9 @@ from .plan import PLANS_ROOT, Plan, in_scope
 from .task_runner import commit_task
 
 # Paths the harness itself writes or Claude Code keeps: never part of a task's scope.
-IGNORED_PREFIXES = (".harness/plans/", ".claude/", ".worktrees/")
+IGNORED_PREFIXES = (f"{PLANS_ROOT}/", ".claude/", ".worktrees/")
 # Main-tree paths a run may legitimately touch while an agent works in its worktree.
-IGNORED_MAIN = (".harness/plans/", ".harness/metrics.jsonl", ".worktrees/", ".claude/worktrees/")
+IGNORED_MAIN = (f"{PLANS_ROOT}/", ".harness/metrics.jsonl", ".worktrees/", ".claude/worktrees/")
 BASELINE = "main.baseline.json"
 
 

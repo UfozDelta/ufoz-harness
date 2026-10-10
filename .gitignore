@@ -2,6 +2,7 @@ __pycache__/
 .pytest_cache/
 .harness/plans/*/logs/
 .harness/plans/*/land.patch
+.harness/plans/*/main.baseline.json
 .harness/bench/runs/
 .harness/metrics.jsonl
 .harness/bench.csv
