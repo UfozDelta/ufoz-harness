@@ -28,7 +28,7 @@
   <g class="chip"><rect x="195" y="124" width="125" height="56" rx="10"/><text x="257" y="149">Project</text><text class="s mono" x="257" y="167">git init + kit</text></g>
   <g class="chip"><rect x="350" y="124" width="125" height="56" rx="10"/><text x="412" y="149">Plan</text><text class="s mono" x="412" y="167">fixture | planner</text></g>
   <g class="chip hot"><rect x="505" y="124" width="125" height="56" rx="10"/><text x="567" y="149">Run</text><text class="s mono" x="567" y="167">executor, worktree</text></g>
-  <g class="chip"><rect x="660" y="124" width="125" height="56" rx="10"/><text x="722" y="149">Land</text><text class="s mono" x="722" y="167">--land --yes</text></g>
+  <g class="chip"><rect x="660" y="124" width="125" height="56" rx="10"/><text x="722" y="149">Land</text><text class="s mono" x="722" y="167">--land</text></g>
   <g class="chip you"><rect x="815" y="124" width="125" height="56" rx="10"/><text x="877" y="149">Score</text><text class="s mono" x="877" y="167">hidden + regress</text></g>
 
   <text class="note mono" x="40" y="238">• a temp project in %TEMP%, built like a user's: committed seed, kit installed by the real installer, no lab repo</text>

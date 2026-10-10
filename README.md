@@ -379,7 +379,7 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
 - The runner fails any task that moves git HEAD or the branch, even if no file changed.
 - `@claude-executor` is guarded by `.harness/hooks/git_guard.py`, a PreToolUse hook set in its
   agent file; it reads the same `.pi/deny.json` and also blocks `--land`.
-- `--land` refuses unless stdin is a terminal (or you pass `--yes`), so an agent's Bash tool cannot run it.
+- `--land` has no terminal gate: agents are stopped from running it by the `git_guard` hook and the `.pi/deny.json` deny list instead, and the main session lands the worktree itself.
 - The kit ships no `.claude/settings.json`, so installing never overwrites your permissions.
   `.claude/settings.strict.json` holds the old hard denies if you want them: copy it over.
 - The main session commits or lands only when you ask (rule in `CLAUDE.md`).

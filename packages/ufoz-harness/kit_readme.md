@@ -121,7 +121,7 @@ overrides the executor model, `HARNESS_PI` the path to pi, `HARNESS_LLAMA_URL` t
   with the rules in `AGENTS.md`: only the brief's files, never `.harness/`, finish
   with `DONE:` or `BLOCKED:`.
 - The runner fails any task that moves git HEAD or the branch. `@claude-executor` is guarded by
-  `.harness/hooks/git_guard.py`. `--land` needs a terminal (or `--yes`). No `.claude/settings.json`
+  `.harness/hooks/git_guard.py`. `--land` is blocked for agents by that hook and the `.pi/deny.json` deny list; the main session lands itself. No `.claude/settings.json`
   is installed; copy `.claude/settings.strict.json` over it if you want hard git denies.
 - Claude's own reports are never taken as proof; reports come from the runner.
 
