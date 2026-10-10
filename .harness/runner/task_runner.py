@@ -124,7 +124,8 @@ class TaskRunner:
             self.executor.wait_for_quota(log.as_posix())  # rate-limited: wait it out, rerun uncounted
             self._add_usage(st, res.usage)
         if args.warm:
-            session = res.session or session
+            # "" means the executor rotated the session; None means it had none to give
+            session = res.session if res.session is not None else session
         self._add_usage(st, res.usage)
         code, after = res.code, snapshot()
         broken = plan.lock_broken()

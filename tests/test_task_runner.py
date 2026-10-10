@@ -129,3 +129,35 @@ def test_parallel_stray_not_in_trace_is_reported_not_failed(tmp_path, monkeypatc
     assert ok is True
     assert state.unattributed == {"side.txt"}
     assert any("not in its trace" in line for line in lines)
+
+
+class SessionExecutor(FakeExecutor):
+    """FakeExecutor that hands back a fixed session id (None = none, "" = rotate)."""
+
+    has_sessions = True
+
+    def __init__(self, plan_dir, done, returned):
+        super().__init__(plan_dir, done, succeed_on=1)
+        self.returned = returned
+
+    def run(self, brief, log, timeout, feedback=None, session=None, rules=None, raw_prompt=None):
+        res = super().run(brief, log, timeout, feedback, session, rules, raw_prompt)
+        res.session = self.returned
+        return res
+
+
+def _warm_run(tmp_path, returned):
+    plan, args, executor = make_plan(tmp_path, succeed_on=1)
+    args.warm = True
+    executor = SessionExecutor(executor.plan_dir, executor.done, returned)
+    _ok, _lines, session = task_runner.TaskRunner(plan, args, executor).run(
+        plan.tasks[0], session="old-session")
+    return session
+
+
+def test_warm_run_keeps_the_old_session_when_the_executor_has_none(tmp_path):
+    assert _warm_run(tmp_path, None) == "old-session"
+
+
+def test_warm_run_drops_the_session_when_the_executor_rotated_it(tmp_path):
+    assert _warm_run(tmp_path, "") == ""
