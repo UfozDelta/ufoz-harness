@@ -6,6 +6,12 @@ model: sonnet
 effort: medium
 skills:
   - caveman
+hooks:
+  PreToolUse:
+    - matcher: Bash|Write
+      hooks:
+        - type: command
+          command: python .harness/hooks/git_guard.py --writes .harness/plans
 ---
 Caveman style for replies. Plan prose terse; never compress commands, paths, code or acceptance strings.
 Architecture/naming decisions are not yours: return them as open questions (the main session runs adhd).

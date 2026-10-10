@@ -1,7 +1,7 @@
 """PreToolUse hook for the claude-executor subagent: block git state changes and --land, and
 keep its file writes inside a worktree directory (.worktrees/<slug>, the runner's own layout).
 
-Registered in .claude/agents/claude-executor.md, so it only guards that agent; the main
+Registered in .claude/agents/claude-executor.md and planner.md (the latter with `--writes .harness/plans`), so it only guards those agents; the main
 session keeps normal permission prompts. The deny list is .pi/deny.json (the same one the
 runner executors use), so there is one source. Exit 2 blocks the call and shows the message.
 """
@@ -49,7 +49,18 @@ def outside_worktree(path):
     return not any(f"/{d}/" in norm for d in WORKTREE_DIRS) or not Path(str(path)).is_absolute()
 
 
+def outside_dir(path, allowed):
+    """True when a path is not under the allowed dir (`--writes DIR`, relative to the repo root)."""
+    root = Path(__file__).resolve().parents[2]
+    try:
+        Path(path if Path(path).is_absolute() else root / path).resolve().relative_to((root / allowed).resolve())
+        return False
+    except ValueError:
+        return True
+
+
 def main():
+    allowed = sys.argv[sys.argv.index("--writes") + 1] if "--writes" in sys.argv else None
     try:
         event = json.load(sys.stdin)
     except ValueError:
@@ -57,7 +68,10 @@ def main():
     tool_input = event.get("tool_input") or {}
     if event.get("tool_name") in WRITE_TOOLS:
         path = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
-        if path and outside_worktree(path):
+        if allowed and path and outside_dir(path, allowed):
+            print(f"blocked: write outside {allowed} ({path}).", file=sys.stderr)
+            return 2
+        if not allowed and path and outside_worktree(path):
             print(f"blocked: write outside a worktree ({path}). Edit only under .worktrees/<slug>, "
                   "with absolute paths.", file=sys.stderr)
             return 2
@@ -65,7 +79,7 @@ def main():
     command = tool_input.get("command") or ""
     hit = blocked(command, deny_list())
     if hit:
-        print(f"blocked: {hit}. Executors never change git state or land; the user does.",
+        print(f"blocked: {hit}. Subagents never change git state or land; the main session does.",
               file=sys.stderr)
         return 2
     return 0
