@@ -1,0 +1,5 @@
+capability = "improvement"
+lang = "python"
+source = "authored"
+licence = "MIT"
+description = "Speed up a correct but quadratic function without changing behaviour; hidden test enforces a time budget."
