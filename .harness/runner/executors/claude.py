@@ -19,10 +19,12 @@ from ..procs import ANSI, EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS, stop_proces
 from .base import ExecResult, Executor
 
 HEALTH_PROMPT = "Health check, not a task. Reply OK."
+AGENT = "claude-executor"
 ALLOWED_TOOLS = "Read,Edit,Write,Glob,Grep,Bash"
 USAGE_LIMIT = ("usage limit", "rate limit")
 # $ per million tokens (input, output, cache_read): the claude CLI's total_cost_usd misprices these
-RATES = {"claude-haiku-5-5": (0.10, 0.50, 0.01)}
+# keyed by a substring of the model name: arms pass the alias ("haiku") as often as the full id
+RATES = {"haiku": (0.10, 0.50, 0.01)}
 
 
 def _deny_bash():
@@ -41,10 +43,22 @@ def _executor_prompt(rules=None):
     return f"{text}\n\n{agents.read_text(encoding='utf-8')}" if agents.exists() else text
 
 
+def use_agent(model):
+    """Agent mode: claude runs the `.claude/agents/claude-executor.md` definition (tools,
+    hooks, system prompt) instead of ad-hoc `claude -p` flags. Haiku always; any other model
+    keeps the plain command. HARNESS_CLAUDE_AGENT=0 opts out, =1 forces it on."""
+    flag = os.environ.get("HARNESS_CLAUDE_AGENT", "").strip()
+    if flag == "0":
+        return False
+    if flag == "1":
+        return True
+    return "haiku" in model
+
+
 def rated_cost(model, usage):
     """Dollar cost from the token counts at RATES (output already includes thinking), or
     None when the model has no entry and the CLI's own cost stands."""
-    rate = RATES.get(model)
+    rate = next((r for name, r in RATES.items() if name in model), None)
     if rate is None:
         return None
     price_in, price_out, price_cache = rate
@@ -60,16 +74,40 @@ def _claude_cmd(prompt, model, session, resume, rules=None):
             "--output-format", "stream-json", "--verbose",
             "--setting-sources", "project,local", "--strict-mcp-config",
             "--permission-mode", "acceptEdits",
-            "--allowedTools", ALLOWED_TOOLS,
+            # the agent file defines tools and rules: no --allowedTools/--append-system-prompt
+            # agent mode: Bash is allowed like plain mode (acceptEdits alone prompts for every
+            # python/pytest/&& command and the agent burns turns on the denials). --disallowedTools
+            # below still wins over this allow, and the git guard hook still runs.
+            *(["--agent", AGENT, "--allowedTools", "Bash"] if use_agent(model) else ["--allowedTools", ALLOWED_TOOLS]),
             "--disallowedTools", _deny_bash(),
-            "--append-system-prompt", _executor_prompt(rules),
+            *([] if use_agent(model) else ["--append-system-prompt", _executor_prompt(rules)]),
             *(["--resume", session] if resume else ["--session-id", session])]
+
+
+def rotate_limit():
+    """Context size above which a session is rotated: HARNESS_CLAUDE_ROTATE tokens
+    (default 100000, 0 disables rotation)."""
+    try:
+        return int(os.environ.get("HARNESS_CLAUDE_ROTATE", 100000))
+    except ValueError:
+        return 100000
+
+
+def rotated(ctx, limit):
+    """True when the session's context (tokens) is past the rotation limit. 0 disables."""
+    return 0 < limit < ctx
 
 
 def _handle_event(event, f, usage, state):
     """Turn one stream-json event into log lines and usage; record error/limit in `state`."""
     kind = event.get("type")
     if kind == "assistant":
+        u = event.get("message", {}).get("usage", {}) or {}
+        # context the session now carries: input + what it just wrote to + read from cache
+        state["ctx"] = ((u.get("input_tokens", 0) or 0) + (u.get("cache_creation_input_tokens", 0) or 0)
+                        + (u.get("cache_read_input_tokens", 0) or 0))
+        # one line per turn so a kept log shows how context grows (turns = [usage] lines)
+        f.write(f"[usage] ctx={state['ctx']} out={u.get('output_tokens', 0) or 0}\n".encode("utf-8"))
         for block in event.get("message", {}).get("content", []):
             if block.get("type") == "text" and block.get("text"):
                 f.write((block["text"] + "\n").encode("utf-8"))
@@ -111,12 +149,15 @@ def run_claude_exec(brief, log, timeout, feedback=None, session=None, model="son
         prompt += f". Your previous attempt failed its acceptance check; read {feedback} first, then fix the work"
     resume = bool(session)
     session = session or str(uuid.uuid4())
+    if use_agent(model):  # the agent file asks for the worktree's absolute path
+        prompt += (f" Worktree (absolute): {os.getcwd()}. Do ONLY this one task, then stop: do not start later "
+                   f"tasks or write SUMMARY.md unless this task says so.")
     usage = {**dict.fromkeys(TOKEN_KEYS, 0), "cost": 0.0}
     cmd = _claude_cmd(prompt, model, session, resume, rules)
     with open(log, "wb") as f:
         p = subprocess.Popen(cmd, cwd=os.getcwd(), stdin=subprocess.DEVNULL,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        state = {"limited": False, "error": False}
+        state = {"limited": False, "error": False, "ctx": 0}
 
         def pump():
             for line in p.stdout:
@@ -152,6 +193,8 @@ def run_claude_exec(brief, log, timeout, feedback=None, session=None, model="son
     if state["limited"]:
         stop_process_tree(p)
         return EXIT_RATE_LIMIT, usage, session
+    # past the context limit: return "" (not None) so the runner starts fresh next task
+    session = "" if rotated(state["ctx"], rotate_limit()) else session
     return (1 if state["error"] else code), usage, session
 
 

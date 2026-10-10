@@ -1,0 +1,43 @@
+{
+  "slug": "claude-agent-exec",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [
+        ".harness/runner/executors/claude.py",
+        "tests/test_claude_executor.py"
+      ],
+      "acceptance": "python -m pytest tests/test_claude_executor.py -q",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T2",
+      "deps": [
+        "T1"
+      ],
+      "files": [
+        ".harness/runner/executors/claude.py",
+        ".harness/runner/task_runner.py",
+        "tests/test_claude_executor.py",
+        "tests/test_task_runner.py"
+      ],
+      "acceptance": "python -m pytest tests/test_claude_executor.py tests/test_task_runner.py -q",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    },
+    {
+      "id": "T3",
+      "deps": [
+        "T2"
+      ],
+      "files": [
+        ".harness/plans/claude-agent-exec/SUMMARY.md"
+      ],
+      "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/claude-agent-exec/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8'))<=600\" && python -m pytest tests -q -x",
+      "red_first": false,
+      "red_first_reason": "lean smoke check"
+    }
+  ]
+}
