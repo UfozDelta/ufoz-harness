@@ -1,8 +1,8 @@
 """`run_plan.py <slug> --land`: the user's one command to bring a finished worktree
 plan into the main tree.
 
-Order: copy the worktree's plan records into .harness/plans/<slug>, then perform
-a git merge --ff-only to bring in the code changes. On success, drop the junctions,
+Order: a git merge --ff-only brings in the code changes, then the worktree's plan
+records are copied into .harness/plans/<slug>. On success, drop the junctions,
 the worktree and the branch. On failure, print git's message and leave everything
 in place for manual recovery.
 """
@@ -36,17 +36,8 @@ def land(slug):
         print("run in progress")
         return 1
 
-    # Copy plan records first (they are git-ignored)
-    src = wt / ".harness" / "plans" / slug
-    if src.is_dir():
-        plan_dir = Path(".harness") / "plans" / slug
-        plan_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(src, plan_dir, dirs_exist_ok=True,
-                        ignore=shutil.ignore_patterns("run.lock"))
-
     # Count the files that will change (for the report message)
-    _git("-C", str(wt), "add", "-N", "--", ".")
-    numstat = _git("-C", str(wt), "diff", "--numstat", "HEAD", "--", ".",
+    numstat = _git("diff", "--numstat", f"HEAD...harness/{slug}", "--", ".",
                     f":(exclude).harness/plans/{slug}").stdout.decode("utf-8", "replace")
     changed = len([line for line in numstat.splitlines() if line.strip()])
 
@@ -55,6 +46,15 @@ def land(slug):
     if merge.returncode != 0:
         print(merge.stderr.decode("utf-8", "replace").strip())
         return 1
+
+    # Copy plan records after the merge: the branch may already carry tracked ones (SUMMARY.md),
+    # and an untracked copy in this tree would make the merge abort.
+    src = wt / ".harness" / "plans" / slug
+    if src.is_dir():
+        plan_dir = Path(".harness") / "plans" / slug
+        plan_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, plan_dir, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("run.lock"))
 
     # Success: clean up the worktree and branch
     for name in worktree.SHARED_DIRS:
