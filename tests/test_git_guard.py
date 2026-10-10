@@ -77,10 +77,15 @@ def test_git_state_none_outside_a_repo(tmp_path):
         os.chdir(cwd)
 
 
-def test_land_refuses_without_a_terminal():
-    out = subprocess.run([sys.executable, str(ROOT / ".harness/run_plan.py"), "nope", "--land"],
-                         cwd=ROOT, stdin=subprocess.DEVNULL, capture_output=True, text=True)
-    assert out.returncode == 1 and "run it in a terminal" in out.stdout
+def test_land_has_no_terminal_gate():
+    # --land has no terminal gate, and --yes stays a hidden no-op alias: same output either way.
+    outs = [subprocess.run([sys.executable, str(ROOT / ".harness/run_plan.py"), "nope", *flags],
+                           cwd=ROOT, stdin=subprocess.DEVNULL, capture_output=True, text=True)
+            for flags in (["--land"], ["--land", "--yes"])]
+    for out in outs:
+        assert "terminal" not in out.stdout
+        assert "unrecognized" not in out.stderr
+    assert outs[0].stdout == outs[1].stdout
 
 
 def _hook(event):
