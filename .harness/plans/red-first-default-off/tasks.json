@@ -1,0 +1,58 @@
+{
+ "slug": "red-first-default-off",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/plan.py",
+    ".harness/runner/lint.py",
+    ".harness/runner/report.py"
+   ],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'.harness'); from runner.plan import Task; import inspect; assert 'red_first: bool = False' in inspect.getsource(Task); from pathlib import Path; assert 'needs a red_first_reason' not in Path('.harness/runner/lint.py').read_text(); assert all('get(\\\"red_first\\\", True)' not in Path('.harness/runner/'+f).read_text() for f in ('plan.py','lint.py'))\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T2",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    "tests/test_lint.py"
+   ],
+   "acceptance": "python -m pytest tests/test_lint.py tests/test_task_runner.py -q -k \"default_off or needs_no_reason or check_invalid\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T3",
+   "deps": [],
+   "files": [
+    ".harness/HARNESS.md",
+    ".claude/agents/planner.md",
+    "docs/ARCHITECTURE.md",
+    "README.md",
+    "docs/FLOWS.md",
+    ".harness/run_plan.py",
+    "packages/ufoz-harness/kit_readme.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; fs=['.harness/HARNESS.md','.claude/agents/planner.md','docs/ARCHITECTURE.md','README.md','packages/ufoz-harness/kit_readme.md']; assert not [f for f in fs if 'red_first_reason' in Path(f).read_text(encoding='utf-8')]; assert '(the default)' not in Path('docs/ARCHITECTURE.md').read_text(encoding='utf-8'); assert 'with reason' not in Path('.claude/agents/planner.md').read_text(encoding='utf-8')\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T4",
+   "deps": [
+    "T2",
+    "T3"
+   ],
+   "files": [
+    ".harness/plans/red-first-default-off/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/red-first-default-off/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "slug": "land-drop-yes",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/cli.py",
+    ".harness/run_plan.py"
+   ],
+   "acceptance": "python -c \"import subprocess,sys; h=subprocess.run([sys.executable,'.harness/run_plan.py','--help'],capture_output=True,text=True).stdout; assert '--yes' not in h and 'not ours' not in h; o=subprocess.run([sys.executable,'.harness/run_plan.py','nope','--land','--yes'],stdin=subprocess.DEVNULL,capture_output=True,text=True); assert 'terminal' not in o.stdout and 'unrecognized' not in o.stderr\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T2",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    "tests/test_git_guard.py"
+   ],
+   "acceptance": "python -m pytest tests/test_git_guard.py -k \"land\" -q",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T3",
+   "deps": [],
+   "files": [
+    ".harness/HARNESS.md"
+   ],
+   "acceptance": "python -c \"t=open('.harness/HARNESS.md',encoding='utf-8').read(); assert '--yes' not in t and '--land' in t\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T4",
+   "deps": [],
+   "files": [
+    "README.md",
+    "packages/ufoz-harness/README.md",
+    "packages/ufoz-harness/kit_readme.md",
+    "docs/bench-flow.svg"
+   ],
+   "acceptance": "python -c \"r=lambda f:open(f,encoding='utf-8').read(); assert '--land --yes' not in r('docs/bench-flow.svg'); assert 'or you pass' not in r('README.md'); assert 'or you pass' not in r('packages/ufoz-harness/README.md'); assert 'or `--yes`' not in r('packages/ufoz-harness/kit_readme.md')\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T5",
+   "deps": [],
+   "files": [
+    "bench/suite/cells.py"
+   ],
+   "acceptance": "python -c \"t=open('bench/suite/cells.py',encoding='utf-8').read(); assert '\\\"--land\\\", \\\"--yes\\\"' not in t and '\\\"--yes\\\", \\\"--dir\\\"' in t\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  },
+  {
+   "id": "T6",
+   "deps": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5"
+   ],
+   "files": [
+    ".harness/plans/land-drop-yes/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/land-drop-yes/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false,
+   "red_first_reason": "lean smoke check"
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+{"slug": "prune-executors", "tasks": [
+ {"id": "T1", "deps": [], "files": [".harness/runner/executors/cline.py", ".harness/runner/executors/__init__.py", ".harness/runner/executors/base.py", ".harness/runner/cli.py", ".harness/runner/watch.py", ".harness/runner/planner.py", ".harness/selftest.py", ".claude/skills/harness-band/hooks/register.tsx"],
+  "acceptance": "python .harness/plans/prune-executors/checks/check_t1.py && npx tsc --noEmit --incremental --tsBuildInfoFile .harness/tsc.tsbuildinfo", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T2", "deps": [], "files": ["bench/suite/suite.py", "bench/suite/cells.py", "bench/suite/README.md", "bench/speed/duel.py", "tests/test_harness_suite.py"],
+  "acceptance": "python .harness/plans/prune-executors/checks/check_t2.py", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T3", "deps": [], "files": ["README.md", "docs/ARCHITECTURE.md", "docs/FLOWS.md", "docs/mermaid.md", "packages/ufoz-harness/README.md", "packages/ufoz-harness/kit_readme.md", ".harness/.env.example"],
+  "acceptance": "python .harness/plans/prune-executors/checks/check_t3.py", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T4", "deps": [], "files": [".harness/HARNESS.md", ".harness/MAIN.md"],
+  "acceptance": "python .harness/plans/prune-executors/checks/check_t4.py", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T5", "deps": [], "files": ["log.md"],
+  "acceptance": "python .harness/plans/prune-executors/checks/check_t5.py", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T6", "deps": ["T1", "T2", "T3", "T4", "T5"], "files": [".harness/plans/prune-executors/SUMMARY.md"],
+  "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/prune-executors/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"", "red_first": false, "red_first_reason": "lean smoke check"}
+]}

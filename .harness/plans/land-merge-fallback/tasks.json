@@ -1,0 +1,6 @@
+{"slug": "land-merge-fallback", "tasks": [
+ {"id": "T1", "deps": [], "files": [".harness/runner/land.py"], "acceptance": "python -c \"import sys; sys.path.insert(0,'.harness'); from runner import land; src=open('.harness/runner/land.py',encoding='utf-8').read(); assert '--no-ff' in src and 'merge\\\", \\\"--abort' in src.replace(\\\"'\\\",'\\\"') or '--abort' in src\"", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T2", "deps": ["T1"], "files": [".harness/runner/land.py"], "acceptance": "python -c \"src=open('.harness/runner/land.py',encoding='utf-8').read(); assert 'plan records' in src and 'diff\\\", \\\"--cached' in src.replace(\\\"'\\\",'\\\"')\"", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T3", "deps": ["T2"], "files": ["tests/test_land.py"], "acceptance": "python -m pytest tests/test_land.py -q -k \"two_plans_in_sequence or conflict_aborts\"", "red_first": false, "red_first_reason": "lean smoke check"},
+ {"id": "T4", "deps": ["T3"], "files": [".harness/plans/land-merge-fallback/SUMMARY.md"], "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/land-merge-fallback/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"", "red_first": false, "red_first_reason": "lean smoke check"}
+]}

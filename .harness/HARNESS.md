@@ -16,7 +16,7 @@ it may commit and run `--land --yes` itself. Confirm first only for outward-faci
 
 **Clean tree required.** A run needs a clean working tree: no uncommitted changes or untracked files
 (outside `.gitignore`). If the tree is dirty, `run_plan.py` exits with a message naming the dirty
-paths and refuses to run.
+paths and refuses to run. The check lives in worktree setup, so `--no-worktree` skips it.
 
 **Delegate** (plan it, then run it):
 - Well-specified changes: boilerplate, CRUD, mechanical edits, renames
@@ -37,7 +37,7 @@ paths and refuses to run.
    (it runs `--lint` itself; check its plan.md `Unverified:` list at approval).
    Layout: `plan.md` (Decisions + one `## T<n>` section per task: FILES / MUST / TEST), `tasks.json`
    (id, deps, files, acceptance). Contract plan, <= ~1.5k tokens: Decisions, interfaces, tasks; do not solve the task
-   in the plan. Every task is checked by a one-line smoke command (no tests, red-first off); the LAST task writes
+   in the plan. Every task is checked by a one-line smoke command (no tests; red-first is on by default, so set `red_first_reason` in tasks.json to turn it off); the LAST task writes
    `.harness/plans/<slug>/SUMMARY.md` (<= 600 chars: what, which files, how wired) plus the build smoke. No brief files;
    `checks/check_t<n>.py` only when no test runner fits (packaging, CLI e2e).
    Acceptance must be a shell command that exits 0 only when the task is really done.
