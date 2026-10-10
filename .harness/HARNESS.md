@@ -12,7 +12,7 @@ whole plan, `CLINE_MODEL` picks the model), `--executor opencode` a warm `openco
 `--executor llama` a local llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model),
 `--executor claude` `claude -p`, `--executor agent:haiku` the `@claude-executor` agent (below). Executors and `@planner` never touch git or land: enforced by `.pi/deny.json`, the runner's HEAD check, and
 `.harness/hooks/git_guard.py` (registered on `@claude-executor` and `@planner`). The main session is not restricted:
-it may commit and run `--land --yes` itself. Confirm first only for outward-facing or destructive actions (push, force, delete).
+it may commit and run `--land` itself. Confirm first only for outward-facing or destructive actions (push, force, delete).
 
 **Clean tree required.** A run needs a clean working tree: no uncommitted changes or untracked files
 (outside `.gitignore`). If the tree is dirty, `run_plan.py` exits with a message naming the dirty
@@ -67,7 +67,7 @@ needed); every other dirty path still refuses.
    If the plan touches side effects (analytics, storage, events) or client state, run `@reviewer` with the plan goal and
    the touched files.
 6. **Decide.** Accept, fix the plan section and re-run (`run_plan.py` skips passed tasks), or discard.
-   Land accepted work yourself: `python .harness/run_plan.py <slug> --land --yes` brings the worktree's changes into the main tree.
+   Land accepted work yourself: `python .harness/run_plan.py <slug> --land` brings the worktree's changes into the main tree.
    After the user's go, keep going without asking: run the whole plan, rebrief and rerun failures yourself.
    Stop and ask only on a second failure of the same task, anything destructive, or a design question.
 7. **Report.** End with exactly three lines: `Blocked on me:` / `Changed:` / `Found:` (write `none` if empty).
