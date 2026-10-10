@@ -12,7 +12,7 @@ const POLL_MS = 2000
 const KEEP_DONE_MS = 60_000
 const TAIL = 3
 const DETAIL_KEYS = ['path', 'command', 'file_path', 'filePath', 'pattern', 'url']
-const EXECUTORS = ['pi', 'claude', 'opencode', 'cline', 'cline-acp', 'llama']
+const EXECUTORS = ['pi', 'claude', 'opencode', 'cline-acp', 'llama']
 
 // Same shape as watch.render_line, one display line or null.
 function renderLine(line: string): string | null {

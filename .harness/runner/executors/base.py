@@ -19,7 +19,7 @@ class ExecResult:
 
 class Executor(ABC):
     name: str
-    has_sessions = True  # False for backends that cannot continue a session (cline today)
+    has_sessions = True  # False for backends that cannot continue a session
     # False for backends that cannot be driven from several threads at once (one shared
     # session/process per plan), so the run loop can refuse --parallel > 1.
     thread_safe = True

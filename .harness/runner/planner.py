@@ -23,9 +23,9 @@ PLANNER_MD = Path(".claude/agents/planner.md")
 DEFAULT_BACKEND = "pi"
 DEFAULT_MODEL = "opencode/space-bunny-free"
 CLAUDE_MODEL = "sonnet"
-# No cline entry on purpose: ClineExecutor picks its own model (the free ones are quota-capped,
-# so it probes FALLBACK_MODELS). Pinning a default here handed the planner a capped model and
-# bypassed that fallback.
+# No cline-acp entry on purpose: ClineAcpExecutor picks its own model (the free ones are
+# quota-capped, so it probes FALLBACK_MODELS). Pinning a default here handed the planner a
+# capped model and bypassed that fallback.
 BACKEND_MODELS = {"claude": CLAUDE_MODEL}
 TIMEOUT = 1800
 MAX_ATTEMPTS = 3

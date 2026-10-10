@@ -209,13 +209,13 @@ def main():
         print(f"unit tests: FAIL\n{out}")
         sys.exit(1)
     print("unit tests: OK")
-    for tool, needs in (("opencode", "opencode"), ("cline", "cline"), ("cline-acp", "cline"),
+    for tool, needs in (("opencode", "opencode"), ("cline-acp", "cline"),
                         ("llama", "llama-server")):
         # optional: only the matching --executor needs it; cline-acp runs the same `cline` binary
         if shutil.which(needs) is None:
             print(f"  note: {needs} not on PATH (--executor {tool} unavailable)")
     if not os.environ.get("CLINE_MODEL"):
-        print("  note: CLINE_MODEL unset (--executor cline / cline-acp use the default model)")
+        print("  note: CLINE_MODEL unset (--executor cline-acp uses the default model)")
     if args.bench and shutil.which("claude") is None:
         sys.exit("--bench needs the `claude` CLI on PATH")
 

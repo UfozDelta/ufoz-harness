@@ -3,13 +3,12 @@ a backend module directly."""
 from .cline_acp import ClineAcpExecutor
 from .base import ExecResult, Executor
 from .claude import ClaudeExecutor
-from .cline import ClineExecutor
 from .llama import LlamaExecutor
 from .opencode import OpenCodeExecutor
 from .pi import PiExecutor
 
-REGISTRY = {"pi": PiExecutor, "claude": ClaudeExecutor, "cline": ClineExecutor,
-            "cline-acp": ClineAcpExecutor, "opencode": OpenCodeExecutor, "llama": LlamaExecutor}
+REGISTRY = {"pi": PiExecutor, "claude": ClaudeExecutor, "cline-acp": ClineAcpExecutor,
+            "opencode": OpenCodeExecutor, "llama": LlamaExecutor}
 
 
 def get(name, **opts) -> Executor:
