@@ -1,6 +1,6 @@
 ---
 name: claude-executor
-description: Claude (haiku by default; pass model: sonnet|opus to override) as the plan executor, fully inside Claude. Works in the plan's own runner worktree (.worktrees/<slug>, made by `run_plan.py <slug> --prepare`), implements the tasks itself with Edit/Write and runs each task's acceptance command. Spawn WITHOUT isolation, in the background, with the slug and the worktree path. Use only after the user said go. Never commits, lands or touches the plan files.
+description: Claude (haiku by default; pass model: sonnet|opus to override) as the plan executor, fully inside Claude. Works in the plan's own runner worktree (.worktrees/<slug>, made by `run_plan.py <slug> --executor agent:haiku`), implements the tasks itself with Edit/Write and runs each task's acceptance command. Spawn WITHOUT isolation, in the background, with the slug and the worktree path. Use only after the user said go. Never commits, lands or touches the plan files.
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: haiku
 hooks:

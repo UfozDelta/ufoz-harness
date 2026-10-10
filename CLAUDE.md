@@ -68,11 +68,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **Roles.** You (the main session) decide, review, and accept. `@planner` (sonnet subagent) writes
 plans. The pi executor (`opencode/space-bunny-free`, free, effort `medium`) writes the code, driven by
-`.harness/run_plan.py`; `--executor cline` swaps in the free Cline CLI (cold: a fresh session per
+`.harness/run_plan.py`; `--executor BACKEND[:MODEL]` picks who codes (e.g. `claude:sonnet`); `--executor cline` swaps in the free Cline CLI (cold: a fresh session per
 task, no warm session), `--executor cline-acp` the same CLI over ACP (warm: one process for the
 whole plan, `CLINE_MODEL` picks the model), `--executor opencode` a warm `opencode serve`,
 `--executor llama` a local llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model),
-`--executor claude` `claude -p`. Claude never writes code for delegable work. Executors never commit: they run no
+`--executor claude` `claude -p`, `--executor agent:haiku` the `@claude-executor` agent (below). Claude never writes code for delegable work. Executors never commit: they run no
 `git add/commit/push/reset/checkout/stash/clean/rebase` (`.pi/deny.json`, the runner's HEAD check,
 and `.harness/hooks/git_guard.py` for `@claude-executor`). The main session commits, pushes or lands
 only when the user asks for it in that turn; `--land` needs a terminal or `--yes`.
@@ -106,20 +106,20 @@ paths and refuses to run.
    Acceptance must be a shell command that exits 0 only when the task is really done.
 3. **Approve.** Run `python .harness/run_plan.py <slug> --lint`; fix errors. Show the user the plan summary.
    Do not execute before they say go.
-   **"haiku" / "all-Claude" / "native" executor** (same worktree, check and land as the runner): run
-   `python .harness/run_plan.py <slug> --prepare` (prints `worktree: <abs path>`), then spawn `claude-executor`
-   with the Agent tool, NO `isolation`, `run_in_background: true` (so it shows in the agents panel), passing the slug and that path.
-   Haiku edits inside `.worktrees/<slug>` and runs acceptance itself (the agent hook may not load; `--check` fails with `MAIN <path>` on any main-tree
-   write or HEAD move since `--prepare`). The agent's Write tool refuses SUMMARY.md: it uses a bash heredoc.
-   At Verify: `run_plan.py <slug> --check`; the user lands with `--land`.
+   **"haiku" / "all-Claude" / "native" executor** (same worktree, reports and land as the runner): run
+   `python .harness/run_plan.py <slug> --executor agent:haiku` (call 1 prints `worktree: <abs path>` and a handoff), then spawn
+   `claude-executor` with the Agent tool, NO `isolation`, `run_in_background: true` (so it shows in the agents panel), passing the slug and that path.
+   Haiku edits inside `.worktrees/<slug>` and runs acceptance itself. When it is done, rerun the SAME command (call 2): it grades the
+   worktree (lock, file scope, acceptance; `MAIN <path>` on any main-tree write or HEAD move since call 1), writes `items/T<n>.report.md`,
+   commits passing tasks and skips ones already passed. The agent's Write tool refuses SUMMARY.md: it uses a bash heredoc.
+   The user lands with `--land`.
 4. **Execute.** Run in the background: `python .harness/run_plan.py <slug>` (add `--only T2` for one task).
    A real run defaults to its own git worktree (`.worktrees/<slug>`, so plans can run in parallel) and to a
    live window; `--no-worktree` / `--no-window` (or `HARNESS_WORKTREE=0` / `HARNESS_WINDOW=0`) opt out.
    It keeps ONE warm pi session for the whole plan (`--fresh` = new session per task), runs the acceptance
    command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards:
    touching a file outside `files` fails; tasks.json (+ checks/ if any) are hash-locked (after YOU edit them, relock with
-   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing; `--relock` relocks AND runs the plan, so use it
-   only after the user said go);
+   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing);
    a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then receives one repair pass. The full trace is in `.worktrees/<slug>/.harness/plans/<slug>/logs/T<n>.pi.log`
    (the user can `tail -f` it). Do not read logs unless a task failed, and then only the tail.
 5. **Verify.** Read `SUMMARY.md` and the reports (short) in `.worktrees/<slug>/.harness/plans/<slug>/`, and review with

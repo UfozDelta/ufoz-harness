@@ -62,14 +62,13 @@ main()
   parse args
   --stats → print_stats(), exit
   --land  → land.land(slug), exit          (the user's command)
-  --watch → follow the plan's logs, exit
   --plan  → planner.run_planner(), exit    (3.6)
   --parallel > 1 with a non-thread-safe executor → exit 1
   real run in a git repo → worktree.ensure(slug), chdir into .worktrees/<slug>   (3.7)
   take run.lock (a second run of the same plan exits); open the live window (Windows)
   load tasks.json
   --lint  → lint(), exit
-  lock: write plan.lock.json if missing or --relock; keep it in memory
+  lock: write plan.lock.json if missing; keep it in memory
   done = tasks whose report already says "RESULT: pass"   (reruns skip them)
   todo = remaining tasks (or just --only <id>)
   sequential (default) or DAG scheduler (--parallel N)
@@ -91,7 +90,7 @@ For one task, in this order:
 3. **Baseline.** Write `RESULT: running`, take `snapshot()` (sha256 of every
    `git ls-files -co --exclude-standard` file), and count suppression markers in every
    file the task could touch.
-4. **Attempt loop** (`1 + --retries` attempts):
+4. **Attempt loop** (`1 + RETRIES` attempts, RETRIES = 1):
    - call the executor (see 3.3); exit 75 = rate-limited → `wait_for_quota()` and rerun
      that attempt without counting it;
    - rerun the lock check, run the acceptance, snapshot again;
@@ -103,7 +102,7 @@ For one task, in this order:
    - stop on ok, lock change, or stray (the executor can't undo those); otherwise write
      `feedback.md` (acceptance command, suppression list, output tail of 1500 chars) and retry.
      Exit 124 (timeout) drops the warm session so the retry starts fresh.
-5. **Repair loop** (`--repair`, default 1). Runs only for a *plain failure*: acceptance
+5. **Repair loop** (`REPAIRS`, 1). Runs only for a *plain failure*: acceptance
    failed or a suppression marker was added, with no lock change, no stray files and no
    timeout. Scope widens to `files` of this task **plus every task listed before it and the
    transitive deps closure of those earlier tasks**.
@@ -170,7 +169,7 @@ agent itself can flip -- a run that starts in plan mode cannot write a file at a
 executor forces `act` before every task and restores the previous value in `stop()`. Since
 there's no warm session, `--session <id>` is rejected: it logs the reason and returns a failed
 `ExecResult(code=1)` rather than killing the whole `run_plan.py` process.
-Never pass `--worktree` (it creates git worktrees and would change the tree the runner hashes).
+Never run without `--no-worktree` here (the worktree creates git worktrees and would change the tree the runner hashes).
 
 **`--executor cline-acp`**: the same Cline CLI driven over the Agent Client Protocol
 (`cline --acp`): one warm ACP process for the whole plan, `session/prompt` per task, and a
@@ -202,7 +201,7 @@ is ambiguous), while opencode's default prompt got 37/37.
 **`--executor llama`**: pi, unchanged, pointed at a local llama.cpp `llama-server` in router
 mode (`llama.py`, a `PiExecutor` subclass). The server is user-started; `start()` only
 attaches: `GET /models` (unreachable -> exit with the start command), picks the model
-(`--executor-model`, else `HARNESS_LLAMA_MODEL`, else the only one listed; several -> exit
+(`--executor llama:<model>`, else `HARNESS_LLAMA_MODEL`, else the only one listed; several -> exit
 listing ids), `POST /models/load` unless its `status.value` is `loaded`/`sleeping` (the router
 does not autoload `--models-dir` models for pi) and polls until loaded (300 s cap). It then writes
 a `models.json` with one custom provider `llamacpp` (`openai-completions` on `<url>/v1`, cost 0,
@@ -237,7 +236,7 @@ with one of these — refused up front rather than racing two tasks on the same 
   `task_runner.py` (the guard sequence of 3.1, one shared `_attempt()`), `report.py` (report
   text + metrics rows), `lint.py`, `stats.py`, `reviewer.py`, `acceptance.py`, `guards.py`
   (snapshot/lock), `procs.py` (process tree, token keys, exit codes), `planner.py` (`--plan`),
-  `worktree.py` (per-plan worktree), `land.py` (`--land`), `watch.py` (`--watch` and the live
+  `worktree.py` (per-plan worktree), `land.py` (`--land`), `watch.py` (`python .harness/runner/watch.py <slug>` and the live
   window).
 Who writes the code is pluggable: `executors/base.py` defines `ExecResult` and the
 `Executor` ABC (`run` — takes an optional `raw_prompt`, pi-only, bypasses the standard brief
@@ -254,7 +253,7 @@ patterns in `.pi/deny.json`). Core modules only import `executors.get`, never a 
 **The claude executor** (`--executor claude`) runs `claude -p` per task with the same brief
 and the same guards as pi, so A/B comparisons only differ in who wrote the code. It carries
 one warm session across the plan: the first task passes a fresh `--session-id`, every later
-task `--resume`s it, and `--executor-model` picks the model (default sonnet). `.pi/executor.md`
+task `--resume`s it, and `--executor claude:<model>` picks the model (default sonnet). `.pi/executor.md`
 plus `AGENTS.md` are appended as its system prompt, the git commands from `.pi/deny.json` are
 disallowed, and `--setting-sources project,local --strict-mcp-config` keeps the run off the
 user's global settings and MCP servers. The `stream-json` events are pumped into the log as
@@ -283,7 +282,7 @@ prompt). Default `None` is every other call site's existing behavior.
 
 ### 3.7 Worktree, live window and `--land`
 
-A real run (not `--lint` / `--plan` / `--stats` / `--watch` / `--land`) goes through
+A real run (not `--lint` / `--plan` / `--stats` / `--land`) goes through
 `worktree.py` unless `--no-worktree` or `HARNESS_WORKTREE=0`. `ensure(slug)` creates
 `.worktrees/<slug>` on branch `harness/<slug>`, based on a snapshot of the current tree
 (uncommitted and untracked, non-ignored files included) built with a temporary index, so the

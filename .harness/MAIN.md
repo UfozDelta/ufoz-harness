@@ -71,8 +71,7 @@ paths and refuses to run.
    cline arm is always fresh), runs
    the acceptance command itself, writes `items/T<n>.report.md`, and stops at the first failure. Guards:
    touching a file outside `files` fails; tasks.json (+ `checks/` if any) are hash-locked (after YOU edit them, relock with
-   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing; `--relock` relocks AND runs the plan, so use it
-   only after the user said go); a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then
+   `python .harness/run_plan.py <slug> --relock-only`, which runs nothing); a plain acceptance failure is retried once with `items/T<n>.feedback.md`, then
    gets one repair pass. The full trace is in `.worktrees/<slug>/.harness/plans/<slug>/logs/T<n>.pi.log`;
    do not read logs unless a task failed, and then only the tail.
 5. **Verify.** Read `SUMMARY.md` and the reports (short) in `.worktrees/<slug>/.harness/plans/<slug>/`, and review with

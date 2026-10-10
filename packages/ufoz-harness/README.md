@@ -44,12 +44,12 @@ default, or `--executor opencode|cline|cline-acp|llama|claude`) in its own workt
 `.worktrees/<slug>` **on a clean tree** (no uncommitted changes or untracked files). The runner checks the grader lock, file scope and suppression comments, and
 retries and repairs a failing task. `python .harness/run_plan.py <slug> --land` merges it into your tree with `--ff-only`.
 
-**Claude mode.** Once you approve a plan, `run_plan.py <slug> --prepare` makes the same worktree the
+**Claude mode.** Once you approve a plan, `run_plan.py <slug> --executor agent:haiku` makes the same worktree the
 runner would use, and the main session spawns `@claude-executor`, a Claude Code subagent that edits
-files in it. `--prepare` records a baseline of your tree, and `--check` fails if the agent wrote outside
+files in it. That call records a baseline of your tree, and the rerun fails if the agent wrote outside
 its worktree or moved git HEAD (an agent hook tries to block this too, but it may not load). Grade it with
-`run_plan.py <slug> --check`, land it with `run_plan.py <slug> --land`: the same check and land as
-runner mode. The runner is not driving, so there is no automatic retry; `--check` applies the lock,
+rerun the same command, land it with `run_plan.py <slug> --land`: the same check and land as
+runner mode. The runner is not driving, so there is no automatic retry; the rerun applies the lock,
 scope and acceptance checks afterwards.
 
 ## Guardrails
@@ -57,7 +57,7 @@ scope and acceptance checks afterwards.
 - The runner fails a task that touches a file outside its list, adds a suppression comment, or moves
   git HEAD or the branch.
 - Executors never commit, push, reset or switch branches (`.pi/deny.json`; for
-  `@claude-executor`, the hook plus the `--check` baseline).
+  `@claude-executor`, the hook plus the rerun's baseline).
 - `--land` refuses unless stdin is a terminal (or you pass `--yes`), so an agent cannot run it.
 - The main session commits or lands only when you ask.
 

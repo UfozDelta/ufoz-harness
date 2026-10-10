@@ -74,7 +74,7 @@ python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff
 | `fail` | check failed, executor error, or out-of-scope file | fix the brief, rerun (passed tasks are skipped) |
 | `check-invalid` | the acceptance passed before any work | tighten the test or acceptance |
 | `running` | a runner was interrupted mid-task | rerun; red-first is skipped for it |
-| `lock-mismatch` | tasks.json or a check changed after the first run | your edit: rerun with `--relock`; the executor's: discard it |
+| `lock-mismatch` | tasks.json or a check changed after the first run | your edit: rerun with `--relock-only`; the executor's: discard it |
 
 ### Runner flags
 
@@ -82,9 +82,8 @@ python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff
 |---|---|
 | `--lint` | validate the plan, prove every acceptance fails, check the runner can write reports; runs nothing else |
 | `--only T2` | run one task |
-| `--retries N` | executor reruns on a plain failure (default 1) |
 | `--review` | cheap Sonnet review pass after a fresh full run → `REVIEW.md` |
-| `--relock` | re-record the check hashes after you edited a check |
+| `--relock-only` | re-record the check hashes after you edited a check; runs nothing |
 | `--executor pi\|opencode\|claude\|cline\|cline-acp\|llama` | which executor writes the code (default pi) |
 | `--stats` | cost and time totals (see below) |
 | `--timeout S` | per-task executor timeout, default 900 |

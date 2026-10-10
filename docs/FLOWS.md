@@ -25,11 +25,11 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 | `run_plan.py <slug>` | yes, every task not already `pass` | reports, logs, metrics, lock | 0 all pass, 1 any fail |
 | `run_plan.py <slug> --only T2` | yes, T2 only | same, for T2 | same |
 | `run_plan.py <slug> --lint` | no | nothing | lint result |
-| `run_plan.py <slug> --relock` | yes (it runs the plan too) | re-records `plan.lock.json` first | same as a run |
+| `run_plan.py <slug> --relock-only` | no | re-records `plan.lock.json` | 0 |
 | `run_plan.py <slug> --review` | yes, then a sonnet review after a fresh full pass | + `REVIEW.md` | same as a run |
 | `run_plan.py <slug> --plan spec.md` | no (planner only) | plan files | 0 lint ok, 1 not |
 | `run_plan.py <slug> --land` | no (you run it) | applies the worktree to your tree, removes it | 0 landed, 1 conflict or run in progress |
-| `run_plan.py <slug> --watch` | no | nothing (follows the logs) | 0 |
+| `python .harness/runner/watch.py <slug>` | no | nothing (follows the logs) | 0 |
 | `run_plan.py --stats` | no | nothing | 0 |
 | `python .harness/selftest.py` | yes, one pi smoke plan | temp copy | 0 ok |
 | `python .harness/selftest.py --bench` | yes, pi and claude arms | `.harness/bench.csv` | 0 ok |
@@ -39,12 +39,12 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 
 | Executor | Transport | Model (default → override) | Warm session | `--parallel > 1` | Cost | Needs |
 |---|---|---|---|---|---|---|
-| `pi` (default) | `pi-launcher.js -p` per task, `--session-id` | `opencode/space-bunny-free` → `HARNESS_MODEL` / `--executor-model` | yes | allowed | free | pi |
+| `pi` (default) | `pi-launcher.js -p` per task, `--session-id` | `opencode/space-bunny-free` → `HARNESS_MODEL` / `--executor pi:<model>` | yes | allowed | free | pi |
 | `opencode` | one `opencode serve`, HTTP+SSE | same as pi | yes | allowed | free | opencode on PATH |
-| `claude` | `claude -p` per task, `--resume` | sonnet → `--executor-model` | yes | allowed | billed | claude CLI |
+| `claude` | `claude -p` per task, `--resume` | sonnet → `--executor claude:<model>` | yes | allowed | billed | claude CLI |
 | `cline` | `cline --json` per task | probes `cline-free/deepseek-v4.1-flash` then `FALLBACK_MODELS` → `HARNESS_MODEL` | no (fresh per task) | refused | free, daily cap | `npm i -g cline` |
 | `cline-acp` | one `cline --acp` process, ACP | `stealth/space-bunny-alpha` → `CLINE_MODEL` (verified before task 1) | yes | refused | free | `npm i -g cline` |
-| `llama` | pi with a throwaway `PI_CODING_AGENT_DIR` | the only model on the router → `HARNESS_LLAMA_MODEL` / `--executor-model` | yes | refused | free, local | running `llama-server` router |
+| `llama` | pi with a throwaway `PI_CODING_AGENT_DIR` | the only model on the router → `HARNESS_LLAMA_MODEL` / `--executor llama:<model>` | yes | refused | free, local | running `llama-server` router |
 
 Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `claude`,
 `cline`, `cline-acp`. No `llama` planner.
@@ -61,8 +61,8 @@ Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `
 | 4b | Timeout | exit 124 | warm session dropped; retry starts fresh; no repair |
 | 4c | Grade | acceptance ok, exit 0, no stray file, no new suppression | `pass` → next task |
 | 4d | Stray / lock edit | file outside `files` touched, or lock changed | `fail` at once, no retry, no repair |
-| 4e | Plain failure | acceptance failed or suppression added | `feedback.md`, retry (`--retries`, default 1) |
-| 5 | Repair | still a plain failure after retries | `repair<k>.md`, scope = this task + all earlier tasks' files (`--repair`, default 1) |
+| 4e | Plain failure | acceptance failed or suppression added | `feedback.md`, retry (1 retry) |
+| 5 | Repair | still a plain failure after retries | `repair<k>.md`, scope = this task + all earlier tasks' files (1 repair pass) |
 | 5a | Repair ok | grade passes | `pass`, summary says `REPAIRED` |
 | 5b | Repair fails | grade fails | `fail`, plan stops |
 | 6 | Report | always | `items/T<n>.report.md` + metrics row |
@@ -73,8 +73,8 @@ Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `
 |---|---|---|
 | `pass` | graded ok (maybe `REPAIRED`) | review the diff |
 | `fail` | check, exit code, stray file or suppression after retries + repair | fix the brief, rerun (passed tasks skipped); second fail of the same task → stop, investigate read-only |
-| `check-invalid` | check passed before any work | tighten the check, rerun with `--relock` (the check is hash-locked) |
-| `lock-mismatch` | `tasks.json` or a check changed | your edit → run with `--relock`; the executor's edit → discard it |
+| `check-invalid` | check passed before any work | tighten the check, rerun with `--relock-only` (the check is hash-locked) |
+| `lock-mismatch` | `tasks.json` or a check changed | your edit → run `--relock-only`; the executor's edit → discard it |
 | `running` | runner crashed mid-task | rerun; counts as a failed attempt, no red-first |
 
 ## 6. Edge flows

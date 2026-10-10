@@ -59,26 +59,26 @@ commits are identical; what differs is who types the code and who enforces the g
 
 ### Claude mode
 
-<img src="docs/mode-claude.svg" alt="Claude mode: Decide, Plan with @planner, Execute with @claude-executor, Check with --check, Land with --land" width="100%">
+<img src="docs/mode-claude.svg" alt="Claude mode: Decide, Plan with @planner, Execute with @claude-executor, Check by rerunning --executor agent:haiku, Land with --land" width="100%">
 
-Stay inside Claude Code. After your go, `run_plan.py <slug> --prepare` creates the same worktree the
+Stay inside Claude Code. After your go, `run_plan.py <slug> --executor agent:haiku` creates the same worktree the
 runner would use (`.worktrees/<slug>`, a snapshot of your tree with the plan files copied in), then
 the main session spawns the `claude-executor` subagent (`.claude/agents/claude-executor.md`) in the
 background so it shows up in the agents panel. It defaults to Haiku; pass `model: sonnet` or
 `model: opus` for harder work. It edits only each task's `files` inside that worktree, runs each acceptance command, and retries
-once. `--prepare` also records a baseline of your main tree, so `--check` fails (`MAIN <path>`) if
+once. That first call also records a baseline of your main tree, so the second call fails (`MAIN <path>`) if
 the agent wrote anything outside its worktree or moved HEAD. A hook in the agent file also blocks
-this, but Claude Code does not always load agent hooks, so `--check` is the guarantee.
+this, but Claude Code does not always load agent hooks, so the second call is the guarantee.
 
 ```
-python .harness/run_plan.py <slug> --prepare    # worktree: <abs path>; run nothing
-python .harness/run_plan.py <slug> --check      # grade it: lock, scope, acceptance
-python .harness/run_plan.py <slug> --land       # you: the same land as runner mode
+python .harness/run_plan.py <slug> --executor agent:haiku   # call 1: worktree: <abs path> + handoff; runs nothing
+python .harness/run_plan.py <slug> --executor agent:haiku   # call 2, after the agent: grade it, report, commit
+python .harness/run_plan.py <slug> --land                   # you: the same land as runner mode
 ```
 
 Trade-off: the runner is not driving, so there is no automatic retry-with-feedback or repair pass.
-`--check` applies the lock, scope and acceptance checks afterwards. `--land --from DIR` still exists
-for a worktree made outside the runner; it runs `--check` first and applies only the plan's files.
+Call 2 applies the lock, scope and acceptance checks afterwards, writes the same `items/T<n>.report.md`,
+commits each passing task and skips tasks that already passed.
 
 ### Runner mode (pi / opencode)
 
@@ -169,33 +169,29 @@ you read the reports and the diff, then run --land. Nobody in this chain commits
 | `pass` | check passed, only listed files touched (summary says `REPAIRED` if a repair pass fixed it) | review the diff |
 | `fail` | check failed, executor error, out-of-scope file, or a new suppression comment | fix the brief, rerun (passed tasks are skipped) |
 | `check-invalid` | the check passed before any work | tighten the check |
-| `lock-mismatch` | tasks.json or a check changed after the first run | your edit: rerun with `--relock`; the executor's: discard it |
+| `lock-mismatch` | tasks.json or a check changed after the first run | your edit: rerun with `--relock-only`; the executor's: discard it |
 
 ## Runner flags
 
 | Flag | Does |
 |---|---|
 | `--land` | your command, not the agent's: apply a finished worktree run here, copy its plan records, remove the worktree and branch ([details](#landing-a-finished-run---land)) |
-| `--land --from DIR` | land work done outside the runner (a Claude subagent worktree): runs `--check` first, applies only the plan's listed files, removes `DIR` and its branch |
-| `--check DIR` | grade worktree `DIR` against the plan in this tree (grader lock, file scope, every acceptance run in `DIR`); exit 0 only if clean; runs nothing else |
 | `--lint` | validate the plan and prove every check fails; runs nothing else |
 | `--only T2` | run one task |
-| `--retries N` | executor reruns on a plain failure (default 1) |
-| `--repair N` | repair passes after retries, with earlier tasks' files in scope (default 1) |
-| `--review` | cheap Sonnet review pass after a fresh full run → `REVIEW.md` |
-| `--relock` | re-record the check hashes after you edited a check |
-| `--watch` | watch this plan's executor output live in this terminal; runs nothing |
-| `--window` / `--no-window` | a real run also opens a shared Windows Terminal window with a live tab (Windows only, on by default; `HARNESS_WINDOW=0` opts out globally) |
-| `--executor pi\|opencode\|claude\|cline\|cline-acp\|llama` | which executor writes the code (default pi; see [Executors](#executors) and [Requirements](#requirements)) |
-| `--executor-model` | model override for `--executor` claude/pi/opencode/cline/llama (llama: the router's model id; each has its own default; for bench comparisons only) |
+| `--review [claude[:MODEL]]` | cheap review pass after a fresh full run → `REVIEW.md` (claude only, bare = sonnet; slug goes before it) |
+| `--relock-only` | re-record the check hashes after you edited a check; runs nothing |
+| `--status` | task states, the first failure's tail and the next command; runs nothing |
+| `--pending` | list worktrees not landed yet; runs nothing |
+| `--no-window` | a real run opens a shared Windows Terminal window with a live tab (Windows only, on by default; this or `HARNESS_WINDOW=0` opts out) |
+| `--executor BACKEND[:MODEL]` | which executor writes the code, with an optional model: pi, opencode, claude, cline, cline-acp, llama, or `agent:haiku` (the `@claude-executor` agent; run twice, see Claude mode). Default pi; see [Executors](#executors) and [Requirements](#requirements) |
 | `--stats` | cost and time totals (see [Test and measure](#test-and-measure)) |
 | `--timeout S` | per-task executor timeout, default 900 |
 | `--fresh` | a new executor session per task instead of one warm session for the plan |
 | `--session ID` | continue an existing executor session (refused with `--fresh` or `--parallel > 1`) |
 | `--plan SPEC.md` | have the planner backend write and lint the plan for `<slug>`; runs no tasks ([details](#main-session-without-claude)) |
-| `--planner` / `--planner-model` | planner backend and model for `--plan` (default `HARNESS_PLANNER`, else pi) |
+| `--planner BACKEND[:MODEL]` | planner backend and model for `--plan` (default `HARNESS_PLANNER` / `HARNESS_PLANNER_MODEL`, else pi) |
 | `--parallel N` | run up to N tasks at once (DAG scheduler, no shared files); refused for `cline`, `cline-acp` and `llama` (single shared session/settings file or one local model slot, not thread-safe) |
-| `--worktree` / `--no-worktree` | run the plan in its own git worktree (on by default for a real run; `HARNESS_WORKTREE=0` opts out globally) |
+| `--no-worktree` | run in place instead of in its own git worktree (the worktree is the default for a real run; `HARNESS_WORKTREE=0` opts out globally) |
 
 ## Executors
 
@@ -207,7 +203,7 @@ session never writes code for delegable work, which keeps its context small and 
 - **pi** (default): writes code with Bunny (`opencode/space-bunny-free`, an OpenCode Zen model),
   so a run is free.
 - **opencode**: one warm `opencode serve` per run over HTTP+SSE, also free on Bunny.
-- **claude**: `claude -p` per task; bills you; for comparisons. `--executor-model` defaults to
+- **claude**: `claude -p` per task; bills you; for comparisons. `--executor claude:<model>` defaults to
   sonnet (pi and opencode honor that flag too, each with its own default).
 - **cline**: the Cline CLI headless (`cline --json`) on its free model. Its `--id` session resume
   is rejected in headless mode, so every task is fresh.
@@ -233,7 +229,7 @@ metrics. Read both before changing harness internals.
 
 ## Worktrees and the live window
 
-A real run (`run_plan.py <slug>`, no `--lint`/`--plan`/`--stats`/`--watch`) happens in its own git
+A real run (`run_plan.py <slug>`, no `--lint`/`--plan`/`--stats`) happens in its own git
 worktree at `.worktrees/<slug>` on branch `harness/<slug>`, so several plans can run at once, and
 opens a shared Windows Terminal window with a tab per plan. **The tree must be clean** (no unstaged
 changes or untracked files outside `.gitignore`); if not, `worktree.ensure()` refuses with a message
@@ -399,7 +395,7 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
   `--planner cline`. The cline executor has no single default it can trust: it probes
   `cline-free/deepseek-v4.1-flash`, then `FALLBACK_MODELS` in `.harness/runner/executors/cline.py`,
   and uses the first that answers, so a capped free model no longer ends a run. An explicit
-  `HARNESS_MODEL` or `--executor-model` is never substituted.
+  `HARNESS_MODEL` or `--executor <backend>:<model>` is never substituted.
 - For `--executor llama`: llama.cpp (`winget install ggml.llamacpp`) and a GGUF model with tool
   calling, served as `llama-server --models-dir <dir> --jinja --port 8080`. The executor loads the
   model itself. A small model on CPU is slow and weak: Qwen3-1.7B ran the pipeline end to end but
