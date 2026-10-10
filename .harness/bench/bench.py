@@ -295,7 +295,7 @@ def run_planner_arm(task, variant, rep):
 ARMS = {"A", "P", "C", "S1", "S2", "S3", "S4", "L", "H"}  # L = lean plan, free executor; H = lean plan, Haiku executor  # S4 = optional combined arm: S3 planning + S1 warm, one session
 PLAN_KIND = {"A": "slim", "C": "slim", "S1": "slim", "S2": "lanes", "L": "lean", "H": "lean"}
 RUNNER_FLAGS = {"C": ["--fresh"], "S1": [], "S2": ["--parallel", "3"], "S3": ["--fresh"], "S4": [],
-                "L": [], "H": ["--executor", "claude", "--executor-model", "haiku"]}
+                "L": [], "H": ["--executor", "claude:haiku"]}
 LANES_ADDENDUM = """
 
 ## Parallel execution (this plan runs with `run_plan.py --parallel 3`)

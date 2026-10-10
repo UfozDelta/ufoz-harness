@@ -581,7 +581,7 @@ def _window_opened(slug, timeout=WINDOW_POLL_S):
         return ""
     ps = (f"$ErrorActionPreference='SilentlyContinue';"
           f"Get-CimInstance Win32_Process | Where-Object {{$_.CommandLine -like '*{slug}*' -and "
-          f"$_.CommandLine -like '*--watch*'}} | Select-Object -First 1 -ExpandProperty CommandLine")
+          f"$_.CommandLine -like '*runner*watch.py*'}} | Select-Object -First 1 -ExpandProperty CommandLine")
     deadline = time.time() + timeout
     while time.time() < deadline:
         proc = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
@@ -594,8 +594,8 @@ def _window_opened(slug, timeout=WINDOW_POLL_S):
 
 
 def _watch_ok(slug, repo_root, wt):
-    """A separate headless --watch run must report a completed plan."""
-    proc = subprocess.run([sys.executable, ".harness/run_plan.py", slug, "--watch", "--no-window"],
+    """A separate headless watch.py run must report a completed plan."""
+    proc = subprocess.run([sys.executable, ".harness/runner/watch.py", slug],
                           cwd=str(wt), capture_output=True, text=True, encoding="utf-8",
                           errors="replace", timeout=180)
     return "true" if "done:" in ((proc.stdout or "") + (proc.stderr or "")) else "false"
@@ -659,12 +659,13 @@ def _apply_window_verdict(row):
 
 
 def _plan_args(cell, wt, parallel=0, isolated=False):
-    args = [sys.executable, ".harness/run_plan.py", cell["slug"], "--executor", cell["executor"]]
-    if not isolated:
-        args.append("--no-worktree")
+    spec = cell["executor"]
     if model := (cell.get("model") or os.environ.get("HARNESS_EXECUTOR_MODEL")
                  or EXECUTOR_MODELS.get(cell["executor"])):
-        args += ["--executor-model", model]
+        spec += f":{model}"
+    args = [sys.executable, ".harness/run_plan.py", cell["slug"], "--executor", spec]
+    if not isolated:
+        args.append("--no-worktree")
     if cell["mode"] != "window":
         args.append("--no-window")
     if parallel > 1:
@@ -1177,9 +1178,7 @@ def _planner_plan(cell, project, repo_root, kit_hash, runner):
     spec_copy.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(spec, spec_copy)
     cmd = [sys.executable, ".harness/run_plan.py", slug, "--plan", str(spec_copy),
-           "--planner", cell["planner"]]
-    if model:
-        cmd += ["--planner-model", model]
+           "--planner", f"{cell['planner']}:{model}" if model else cell["planner"]]
     try:
         done = runner(cmd, cwd=str(project), timeout=1800, capture_output=True, text=True,
                       encoding="utf-8", errors="replace")

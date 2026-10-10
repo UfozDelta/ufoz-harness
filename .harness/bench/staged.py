@@ -338,7 +338,7 @@ def _run_plan(wt, slug):
     try:
         result = subprocess.run(
             [sys.executable, ".harness/run_plan.py", slug,
-             *os.environ.get("HARNESS_RUNNER_FLAGS", "").split()],  # e.g. "--executor claude --executor-model haiku"
+             *os.environ.get("HARNESS_RUNNER_FLAGS", "").split()],  # e.g. "--executor claude:haiku"
             cwd=wt, capture_output=True, text=True, stdin=subprocess.DEVNULL,
             timeout=10800,
         )
