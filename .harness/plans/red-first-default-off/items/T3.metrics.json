@@ -1,0 +1,17 @@
+{
+  "slug": "red-first-default-off",
+  "task": "T3",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 19.1,
+  "accept_s": 0.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 6263,
+    "output": 2558,
+    "reasoning": 515,
+    "cache_read": 154432,
+    "cost": 0.0
+  }
+}

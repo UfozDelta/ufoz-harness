@@ -1,0 +1,17 @@
+{
+  "slug": "red-first-default-off",
+  "task": "T4",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 322.8,
+  "accept_s": 0.2,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 5858,
+    "output": 3323,
+    "reasoning": 351,
+    "cache_read": 538306,
+    "cost": 0.0
+  }
+}
