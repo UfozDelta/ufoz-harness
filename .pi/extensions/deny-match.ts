@@ -35,6 +35,11 @@ function checkTokens(tokens: string[], rules: DenyRules, depth: number): string 
 	const head = tokens[i];
 	const base = head.replace(/\\/g, "/").split("/").pop()!.toLowerCase();
 
+	// the runner's --land is the main session's command, never an executor's
+	if (tokens.some((t) => t.replace(/\\/g, "/").split("/").pop() === "run_plan.py") && tokens.includes("--land")) {
+		return "run_plan.py --land";
+	}
+
 	// sh -c "..." / bash -c "..." : check the inner script too.
 	if (["sh", "bash", "zsh", "dash", "sh.exe", "bash.exe"].includes(base)) {
 		const c = tokens.indexOf("-c", i + 1);

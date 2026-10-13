@@ -30,7 +30,8 @@ RATES = {"haiku": (0.10, 0.50, 0.01)}
 def _deny_bash():
     """The bash commands .pi/deny.json bans, as claude --disallowedTools patterns."""
     deny = json.loads(Path(".pi/deny.json").read_text(encoding="utf-8")).get("bash", [])
-    return ",".join(f"Bash({cmd}:*)" for cmd in deny)
+    # `--land` is the main session's command: an executor never lands its own work
+    return ",".join([*(f"Bash({cmd}:*)" for cmd in deny), "Bash(*run_plan.py*--land*)"])
 
 
 def _executor_prompt(rules=None):

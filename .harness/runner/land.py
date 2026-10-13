@@ -8,12 +8,14 @@ The merge is tried first as a fast-forward; if that fails (main moved on), a
 is aborted and everything is left in place for manual recovery. On success, drop the
 junctions, the worktree and the branch.
 """
+import json
 import os
 import shutil
 import subprocess
 from pathlib import Path
 
 from . import worktree
+from .plan import report_result
 
 
 def _git(*args, **kwargs):
@@ -37,6 +39,31 @@ def land(slug):
         return 1
     if (wt / ".harness" / "plans" / slug / "run.lock").exists():
         print("run in progress")
+        return 1
+
+    # `worktree remove --force` below deletes whatever is not on the branch: refuse to land a
+    # plan that has unpassed tasks or uncommitted work, so nothing is lost silently.
+    plan_dir = wt / ".harness" / "plans" / slug
+    try:
+        task_ids = [t["id"] for t in json.loads((plan_dir / "tasks.json").read_text(
+            encoding="utf-8")).get("tasks", [])]
+    except (OSError, ValueError, KeyError):
+        task_ids = []
+    unpassed = []
+    for tid in task_ids:
+        try:
+            result = report_result((plan_dir / "items" / f"{tid}.report.md").read_text(encoding="utf-8"))
+        except OSError:
+            result = ""
+        if result != "pass":
+            unpassed.append(tid)
+    if unpassed:
+        print(f"not landing {slug}: tasks not passed: {unpassed}")
+        return 1
+    dirty = _git("-C", str(wt), "status", "--porcelain", "--", ".",
+                 f":(exclude).harness/plans/{slug}").stdout.decode("utf-8", "replace").strip()
+    if dirty:
+        print(f"not landing {slug}: uncommitted changes in the worktree would be lost:\n{dirty}")
         return 1
 
     # Count the files that will change (for the report message)

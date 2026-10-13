@@ -8,6 +8,8 @@ import json
 import subprocess
 from pathlib import Path
 
+from .plan import report_result
+
 
 def _total(worktree, slug):
     """Total tasks in the worktree's own copy of the plan (0 if it has none yet)."""
@@ -28,10 +30,10 @@ def _passed(worktree, slug):
     passed = 0
     for report in items.glob("*.report.md"):
         try:
-            first = report.read_text(encoding="utf-8").splitlines()[:1]
+            text = report.read_text(encoding="utf-8")
         except OSError:
             continue
-        if first and first[0].strip() == "RESULT: pass":
+        if report_result(text) == "pass":
             passed += 1
     return passed
 

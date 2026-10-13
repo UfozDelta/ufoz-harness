@@ -8,6 +8,8 @@ last line "next: <command>". State comes from files only: a report containing
 import json
 from pathlib import Path
 
+from .plan import report_result
+
 TAIL_LINES = 15
 
 
@@ -56,7 +58,7 @@ def render(slug, plan_dir):
             state = "pending"
             any_unfinished = True
         else:
-            state = "pass" if "RESULT: pass" in text else "fail"
+            state = "pass" if report_result(text) == "pass" else "fail"
             if state == "fail" and first_fail is None:
                 first_fail, first_fail_report = tid, text
         lines.append(_line(tid, state, plan_dir))

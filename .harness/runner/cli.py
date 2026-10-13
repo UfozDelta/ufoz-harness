@@ -8,7 +8,7 @@ from pathlib import Path
 from . import check, land, pending, planner, scheduler, skills, status, watch, worktree
 from .executors import get, REGISTRY
 from .lint import lint
-from .plan import PLANS_ROOT, Plan
+from .plan import PLANS_ROOT, Plan, report_result
 from .report import record_plan_event
 from .reviewer import run_reviewer
 from .stats import print_stats
@@ -282,6 +282,6 @@ def _run(ap, args):
     if args.lint:
         # red-first only means something before the first attempt (same rule as the run loop)
         attempted = {t.id for t in plan.tasks
-                     if any(f"RESULT: {r}" in plan.report_text(t.id) for r in ("pass", "fail", "running"))}
+                     if report_result(plan.report_text(t.id)) in ("pass", "fail", "running")}
         return lint(plan.dir, [t.raw for t in plan.tasks], attempted)
     return _execute(plan, args, metrics)

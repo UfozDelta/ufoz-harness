@@ -76,7 +76,7 @@ Always redirect output (keeps the trace out of context) and always close stdin (
 or pi hangs waiting on it.
 
 ### Failures
-- Report lists out-of-scope files: discard those changes and re-brief with tighter FILES.
+- Report lists out-of-scope files: the runner already reverted them and retried once; if the report still lists them, re-brief with tighter FILES.
 - A task fails twice after re-briefing: stop, investigate read-only, then re-brief with the diagnosis.
 - pi exit 124 (timeout) or empty log: check stdin is closed and the model is reachable before retrying.
 - Any harness/tool/process quirk that SHOULD be fixed: append it to `log.md` as `what → fix (or Open)`

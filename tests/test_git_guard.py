@@ -102,3 +102,15 @@ def test_writes_must_stay_inside_a_worktree(tmp_path):
         assert out.returncode == 2 and "outside a worktree" in out.stderr, bad
     claude_wt = str(tmp_path / ".claude" / "worktrees" / "agent-1" / "a.py")
     assert _hook({"tool_name": "Write", "tool_input": {"file_path": claude_wt}}).returncode == 0
+
+
+def test_blocks_wrapped_and_nested_git():
+    for cmd in ["(git commit -m x)", 'bash -c "git commit -m x"', "env git commit", "xargs git add",
+                "echo $(git stash pop)", "sh -c 'git add .'"]:
+        assert git_guard.blocked(cmd, DENY), cmd
+
+
+def test_dotdot_does_not_escape_a_worktree(tmp_path):
+    inside = tmp_path / ".worktrees" / "p" / "a.py"
+    assert not git_guard.outside_worktree(str(inside))
+    assert git_guard.outside_worktree(str(tmp_path / ".worktrees" / "p" / ".." / ".." / "a.py"))

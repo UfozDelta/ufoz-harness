@@ -41,14 +41,20 @@ def revertable(paths):
 
 def commit_task(slug, tid, title, files):
     """Commit the given files after a task passes. Returns the new commit sha, or None
-    if there was nothing to commit. Uses the harness identity in the git environment."""
+    if there was nothing to commit. Raises RuntimeError when git itself fails (a hook, a lock):
+    a passed task left uncommitted would be lost when its worktree is landed.
+    Uses the harness identity in the git environment."""
     if not files:
         return None
+    if subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True,
+                      check=False).returncode != 0:
+        return None  # not a git repo: nothing to commit into
 
     # Stage only the files listed in the task
-    add_res = subprocess.run(["git", "add", "-A", "--", *files], capture_output=True, check=False)
+    add_res = subprocess.run(["git", "add", "-A", "--", *files], capture_output=True, text=True,
+                             check=False)
     if add_res.returncode != 0:
-        return None
+        raise RuntimeError(f"git add failed: {add_res.stderr.strip()}")
 
     # Check if there's anything staged
     check_res = subprocess.run(["git", "diff", "--cached", "--name-only"], capture_output=True,
@@ -69,7 +75,7 @@ def commit_task(slug, tid, title, files):
     commit_res = subprocess.run(["git", "commit", "-m", message], capture_output=True,
                                 text=True, env=env, check=False)
     if commit_res.returncode != 0:
-        return None
+        raise RuntimeError(f"git commit failed: {(commit_res.stderr or commit_res.stdout).strip()}")
 
     # Get the sha of the new commit
     sha_res = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True,
@@ -309,6 +315,14 @@ class TaskRunner:
             if got.code == EXIT_TIMEOUT:
                 session = None
 
+        # commit before the report says pass: a task git refused to commit is not a pass
+        sha = None
+        if ok:
+            try:
+                sha = commit_task(plan.slug, tid, t.get("title", ""), list(t.norm_files))
+            except RuntimeError as e:
+                ok = False
+                got.out = f"{e}\n\n{got.out}"
         result = "pass" if ok else "fail"
         seconds = round(time.time() - st.t0, 1)
         self._record_metrics(st, result, attempt + 1 + st.repairs, seconds)
@@ -323,11 +337,8 @@ class TaskRunner:
         lines = report.summary_lines(tid, args.executor, ok, got.code, attempt + 1 + st.repairs,
                                      st.repairs, seconds, st.usage, got.stray, got.broken, log)
 
-        # commit passing task with its files
-        if ok:
-            sha = commit_task(plan.slug, tid, t.get("title", ""), list(t.norm_files))
-            if sha:
-                lines[0] = f"{lines[0]} [{sha[:7]}]"
+        if sha:
+            lines[0] = f"{lines[0]} [{sha[:7]}]"
 
         if got.unattributed:
             lines.append(f"{tid} note: strays not in its trace (not failing it): {got.unattributed}")

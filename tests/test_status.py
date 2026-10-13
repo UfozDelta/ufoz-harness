@@ -59,3 +59,10 @@ def test_lock_mismatch_nexts_the_relock_only_command(tmp_path):
 
     assert "LOCK-MISMATCH" in out
     assert out.splitlines()[-1] == "next: python .harness/run_plan.py slug --relock-only"
+
+
+def test_pass_quoted_in_a_failed_report_is_not_a_pass():
+    from runner.plan import report_result
+    assert report_result("RESULT: fail\n\nacceptance output:\nRESULT: pass\n") == "fail"
+    assert report_result("# T1\nRESULT: pass\n") == "pass"
+    assert report_result("no result here") == ""

@@ -69,7 +69,7 @@ def _parallel(plan, args, runner, todo, done, summary, result):
                 active[t.id] = pool.submit(runner.run, t)
             if not active:
                 if pending and not result.failed:
-                    summary.append(f"BLOCKED: {[t['id'] for t in pending]} (deps never passed)")
+                    summary.append(f"BLOCKED: {[t.id for t in pending]} (deps never passed)")
                     result.failed = True
                 break
             finished, _ = wait(list(active.values()), return_when=FIRST_COMPLETED)

@@ -10,7 +10,7 @@ from pathlib import Path
 from .acceptance import run_acceptance
 from .guards import GIT_MOVED, git_state, snapshot
 from . import worktree
-from .plan import PLANS_ROOT, Plan, in_scope
+from .plan import PLANS_ROOT, Plan, in_scope, report_result
 from .task_runner import commit_task
 
 # Paths the harness itself writes or Claude Code keeps: never part of a task's scope.
@@ -92,7 +92,7 @@ def scope_violations(changed, task_files):
 
 def _passed_before(items, tid):
     rep = items / f"{tid}.report.md"
-    return rep.exists() and "RESULT: pass" in rep.read_text(encoding="utf-8")
+    return rep.exists() and report_result(rep.read_text(encoding="utf-8")) == "pass"
 
 
 def check(slug, root):
@@ -118,13 +118,18 @@ def check(slug, root):
         print(f"MAIN {path}")
     if moved:
         print("main tree changed since the worktree was prepared: an agent write outside it, or your own edit")
-    clean = not broken and not violations and not moved
     all_passed = True
     items = root / ".harness" / "plans" / slug / "items"
     items.mkdir(parents=True, exist_ok=True)
     home = Path.cwd()
     os.chdir(root)  # acceptance commands run from the worktree root
     try:
+        # the grader the acceptance commands run is the worktree's copy: the agent must not
+        # have edited its tasks.json or checks/ (lock keys are cwd-relative, so this compares them)
+        wt_broken = plan.lock_broken()
+        for path in wt_broken:
+            print(f"LOCK worktree {path}")
+        clean = not broken and not wt_broken and not violations and not moved
         for t in plan.tasks:
             if _passed_before(items, t.id):
                 print(f"SKIP {t.id}")
@@ -138,7 +143,11 @@ def check(slug, root):
                 body += f"\n{out.strip()[-500:]}\n"
             (items / f"{t.id}.report.md").write_text(body, encoding="utf-8")
             if passed and clean:
-                commit_task(slug, t.id, t.get("title", ""), list(t.norm_files))
+                try:
+                    commit_task(slug, t.id, t.get("title", ""), list(t.norm_files))
+                except RuntimeError as err:
+                    print(f"ERROR {t.id} passed but could not be committed: {err}")
+                    all_passed = False
     finally:
         os.chdir(home)
     return 0 if all_passed and clean else 1

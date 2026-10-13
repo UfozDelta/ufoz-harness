@@ -1,6 +1,7 @@
 """One plan on disk: tasks.json, briefs, reports, the grader lock, and the file scope
 each task owns (its own files plus the dep-closure of earlier ones)."""
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -17,6 +18,13 @@ def in_scope(path, entries):
 def overlaps(a, b):
     """True when two tasks' file entries could name the same file."""
     return any(in_scope(x, b) for x in a) or any(in_scope(y, a) for y in b)
+
+
+def report_result(text):
+    """The `RESULT: <word>` a report opens with ("" if none). The first such line only: a failed
+    report quotes acceptance output further down, which may contain the words `RESULT: pass`."""
+    match = re.search(r"^RESULT: (\S+)", text, re.MULTILINE)
+    return match.group(1) if match else ""
 
 
 @dataclass
@@ -83,7 +91,7 @@ class Plan:
         return rep.read_text(encoding="utf-8") if rep.exists() else ""
 
     def passed(self, tid):
-        return "RESULT: pass" in self.report_text(tid)
+        return report_result(self.report_text(tid)) == "pass"
 
     def brief_of(self, t):  # slim plans: no items/T<n>.md, the task is a `## T<n>` section of plan.md
         if "brief" in t.raw:

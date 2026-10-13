@@ -77,7 +77,8 @@ def opencode_config(deny_bash, profile="default"):
             "plan_exit": "deny",
             "webfetch": "deny",
             "external_directory": "deny",
-            "bash": {"*": "allow", **{f"{cmd} *": "deny" for cmd in deny_bash}},
+            "bash": {"*": "allow", **{f"{cmd} *": "deny" for cmd in deny_bash},
+                     "*run_plan.py*--land*": "deny"},
         }
     if rank >= _profile_rank("tools"):
         permission.update({tool: "deny" for tool in DENIED_TOOLS})

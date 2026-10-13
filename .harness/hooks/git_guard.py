@@ -13,9 +13,13 @@ from pathlib import Path
 DEFAULT_DENY = ["git add", "git commit", "git push", "git reset", "git checkout", "git switch",
                 "git restore", "git stash", "git clean", "git rebase", "git merge", "git branch",
                 "git worktree"]
-SEGMENT = re.compile(r"&&|\|\||;|\||\n")
-# `git`, then global options (-C dir, -c k=v, --git-dir=..), then the subcommand
-GIT = re.compile(r"^\s*git\s+(?:(?:-[Cc]\s+\S+|--\S+)\s+)*([a-z][a-z-]*)")
+# a command starts after a separator, a subshell/command-substitution opener or a backtick
+SEGMENT = re.compile(r"&&|\|\||;|\||\n|\r|`|\$\(|\(|\)")
+TOKEN = re.compile(r'"((?:\\.|[^"\\])*)"|' + r"'([^']*)'|(\S+)")
+WRAPPERS = {"sudo", "env", "command", "exec", "nohup", "time", "xargs"}
+SHELLS = {"sh", "bash", "zsh", "dash", "sh.exe", "bash.exe"}
+# `git`, then global options that take a separate value, then the subcommand
+GIT_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 LAND = re.compile(r"run_plan\.py\b.*--land\b")
 
 
@@ -27,14 +31,45 @@ def deny_list():
         return DEFAULT_DENY
 
 
-def blocked(command, deny):
-    """The denied thing a shell command would run, or None."""
+def _base(token):
+    return token.replace("\\", "/").rsplit("/", 1)[-1].lower()
+
+
+def _check(tokens, deny, depth):
+    i = 0
+    while i < len(tokens) and (re.match(r"^[A-Za-z_]\w*=", tokens[i]) or tokens[i] in WRAPPERS
+                               or (i and tokens[i].startswith("-") and tokens[i - 1] in WRAPPERS)):
+        i += 1
+    if i >= len(tokens):
+        return None
+    head = _base(tokens[i])
+    if head in SHELLS:
+        if "-c" in tokens[i + 1:] and depth < 3:
+            c = tokens.index("-c", i + 1)
+            if c + 1 < len(tokens):
+                return blocked(tokens[c + 1], deny, depth + 1)
+        return None
+    if head not in ("git", "git.exe"):
+        return None
+    j = i + 1
+    while j < len(tokens) and tokens[j].startswith("-"):
+        opt = tokens[j].split("=")[0]
+        j += 2 if opt in GIT_OPTS_WITH_VALUE and "=" not in tokens[j] else 1
+    if j < len(tokens) and f"git {tokens[j]}" in deny:
+        return f"git {tokens[j]}"
+    return None
+
+
+def blocked(command, deny, depth=0):
+    """The denied thing a shell command would run, or None. Looks at every command position,
+    through wrappers (env, sudo, xargs ...), `sh -c "..."` and subshells."""
     for part in SEGMENT.split(command):
         if LAND.search(part):
             return "run_plan.py --land"
-        m = GIT.match(part)
-        if m and f"git {m.group(1)}" in deny:
-            return f"git {m.group(1)}"
+        tokens = [m[1] or m[2] or m[3] for m in TOKEN.finditer(part)]
+        hit = _check(tokens, deny, depth)
+        if hit:
+            return hit
     return None
 
 
@@ -44,9 +79,12 @@ WORKTREE_DIRS = (".worktrees", ".claude/worktrees")
 
 def outside_worktree(path):
     """True when a path to write is not inside a worktree dir. Relative paths resolve against
-    the main tree, so they count as outside: the agent is told to use absolute paths."""
-    norm = "/" + str(path).replace("\\", "/").lstrip("/")
-    return not any(f"/{d}/" in norm for d in WORKTREE_DIRS) or not Path(str(path)).is_absolute()
+    the main tree, so they count as outside: the agent is told to use absolute paths. The
+    path is resolved first, so `.worktrees/x/../../src/a.py` does not count as inside."""
+    if not Path(str(path)).is_absolute():
+        return True
+    norm = "/" + Path(str(path)).resolve().as_posix().lstrip("/")
+    return not any(f"/{d}/" in norm for d in WORKTREE_DIRS)
 
 
 def outside_dir(path, allowed):

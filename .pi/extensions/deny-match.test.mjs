@@ -33,8 +33,10 @@ const blocked = [
 	"echo $(git stash pop)",
 	"git merge dev",
 	"git branch -D x",
+	"python .harness/run_plan.py slug --land",
+	"cd x && python3 .harness/run_plan.py slug --land --yes",
 ];
-const allowed = ["git status", "git diff", "git log --oneline", "echo git commit", "ls", "python -m pytest", "git -C . status"];
+const allowed = ["git status", "git diff", "git log --oneline", "echo git commit", "ls", "python -m pytest", "git -C . status", "python .harness/run_plan.py slug --lint"];
 
 let fail = 0;
 for (const c of blocked) if (!isDeniedBash(c, rules)) { console.log("NOT BLOCKED:", c); fail++; }

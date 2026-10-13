@@ -27,7 +27,8 @@ def run_reviewer(plan, all_files, metrics, slug, timeout=300, model="sonnet"):
         "\n\nReview them now per the checklist above."
     )
     cmd = ["claude", "-p", prompt, "--model", model, "--output-format", "json",
-           "--dangerously-skip-permissions"]
+           "--allowedTools", "Read,Grep",
+           "--disallowedTools", "Edit,Write,MultiEdit,NotebookEdit,Bash"]
     t0 = time.time()
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=timeout)

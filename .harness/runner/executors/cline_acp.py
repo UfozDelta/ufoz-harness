@@ -73,6 +73,8 @@ def _permission_policy(denied):
         options = params.get("options") or []
         blob = json.dumps(params).lower()
         blocked = [cmd for cmd in denied if cmd and cmd.lower() in blob]
+        if "run_plan.py" in blob and "--land" in blob:
+            blocked.append("run_plan.py --land")
         wanted = "reject_once" if blocked else "allow_once"
         for option in options:
             if option.get("kind") == wanted:

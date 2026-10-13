@@ -11,7 +11,8 @@ Usage: python .harness/run_plan.py <slug> [--only T2] [--timeout 900] [--review 
 
 Reads .harness/plans/<slug>/tasks.json, runs tasks in list order, writes
 .harness/plans/<slug>/logs/<id>.<executor>.log and .harness/plans/<slug>/items/<id>.report.md,
-stops at the first failure, prints a short summary. Never touches git state.
+stops at the first failure, prints a short summary. Git: creates the plan's worktree and branch
+(harness/<slug>) and commits each passing task there; --land merges it into the main tree.
 An opt-in final build_gate can use repair_check in the repair pass and gate on SUMMARY.md.
 
 A task's brief is items/<id>.md ("brief" key) or, when "brief" is absent, the
