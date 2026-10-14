@@ -22,7 +22,7 @@ from .. import skills
 from ..procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS, stop_process_tree
 from .base import ExecResult, Executor
 
-DEFAULT_MODEL = "opencode/space-bunny-free"
+DEFAULT_MODEL = "opencode/muse-spark-1.3"
 HEALTH_PROMPT = "Health check, not a task. Reply OK."
 RATE_LIMIT_TEXT = "rate limit"
 CONNECT_TIMEOUT = 10     # seconds for the event stream to connect

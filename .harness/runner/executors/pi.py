@@ -14,7 +14,7 @@ from .base import ExecResult, Executor
 
 RATE_LIMIT = b"Rate limit exceeded"
 RATE_LIMIT_GIVEUP = 120
-DEFAULT_MODEL = "opencode/space-bunny-free"
+DEFAULT_MODEL = "opencode/muse-spark-1.3"
 
 
 def _model(model=None):

@@ -5,7 +5,7 @@ Portable: copy `.harness/`, `.pi/`, `.claude/agents/`, add `@.harness/HARNESS.md
 **Default / override.** Delegable work goes through the harness by default. If the user says "do it here", "inline" or "no harness" for a task, implement it in the session: no plan, no clean-tree check. The override covers that task only unless the user says "always".
 
 **Roles.** You (the main session) decide, review, and accept. `@planner` (sonnet subagent) writes
-plans. The pi executor (`opencode/space-bunny-free`, free, effort `medium`) writes the code, driven by
+plans. The pi executor (`opencode/muse-spark-1.3`, cheap, effort `medium`) writes the code, driven by
 `.harness/run_plan.py`; `--executor BACKEND[:MODEL]` picks who codes (e.g. `claude:sonnet`); `--executor opencode` a warm `opencode serve`,
 `--executor llama` a local llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model),
 `--executor claude` `claude -p`, `--executor agent:haiku` the `@claude-executor` agent (below). Executors and `@planner` never touch git or land: enforced by `.pi/deny.json`, the runner's HEAD check, and
@@ -70,7 +70,7 @@ needed); every other dirty path still refuses.
    Stop and ask only on a second failure of the same task, anything destructive, or a design question.
 7. **Report.** End with exactly three lines: `Blocked on me:` / `Changed:` / `Found:` (write `none` if empty).
 
-**Raw pi calls.** Only when needed: `node ~/.pi/agent/bin/pi-launcher.js -p --mode json --no-extensions --no-skills --no-prompt-templates -e .pi/extensions/deny-list.ts --append-system-prompt .pi/executor.md --model opencode/space-bunny-free --thinking medium "<prompt>" > <log> 2>&1 < /dev/null`.
+**Raw pi calls.** Only when needed: `node ~/.pi/agent/bin/pi-launcher.js -p --mode json --no-extensions --no-skills --no-prompt-templates -e .pi/extensions/deny-list.ts --append-system-prompt .pi/executor.md --model opencode/muse-spark-1.3 --thinking medium "<prompt>" > <log> 2>&1 < /dev/null`.
 Always redirect output (keeps the trace out of context) and always close stdin (`< /dev/null`),
 or pi hangs waiting on it.
 

@@ -21,7 +21,7 @@ from .plan import PLANS_ROOT
 
 PLANNER_MD = Path(".claude/agents/planner.md")
 DEFAULT_BACKEND = "pi"
-DEFAULT_MODEL = "opencode/space-bunny-free"
+DEFAULT_MODEL = "opencode/muse-spark-1.3"
 CLAUDE_MODEL = "sonnet"
 BACKEND_MODELS = {"claude": CLAUDE_MODEL}
 TIMEOUT = 1800

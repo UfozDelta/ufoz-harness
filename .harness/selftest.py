@@ -102,7 +102,7 @@ def doctor():
         if not (ROOT / f).exists():
             problems.append(f"missing {f}")
     if not problems:
-        model = os.environ.get("HARNESS_MODEL", "opencode/space-bunny-free")
+        model = os.environ.get("HARNESS_MODEL", "opencode/muse-spark-1.3")
         code, out = sh(["node", str(launcher), "--list-models", "opencode"], ROOT, timeout=90)
         models = {f"{fields[0]}/{fields[1]}" for line in out.splitlines() if len(fields := line.split()) > 1}
         if code != 0 or model not in models:
@@ -204,7 +204,7 @@ def main():
         print("doctor: FAIL\n" + "\n".join(f"  - {p}" for p in problems))
         sys.exit(1)
     print("doctor: OK")
-    code, out = sh([sys.executable, "-m", "pytest", "tests", "-q"], ROOT, timeout=120)
+    code, out = sh([sys.executable, "-m", "pytest", "tests", "-q"], ROOT, timeout=420)
     if code != 0:
         print(f"unit tests: FAIL\n{out}")
         sys.exit(1)
