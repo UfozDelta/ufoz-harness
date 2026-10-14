@@ -1,2 +1,0 @@
-Removed the cline-acp executor everywhere. Deleted runner/executors/cline_acp.py and its REGISTRY entry (now pi, claude, opencode, llama); dropped it from cli.py choices, watch.py, register.tsx, selftest.py, guards/planner comments; stripped bench arms (suite, cells, duel), tests, docs, .env.example, HARNESS.md, MAIN.md. Wired via the registry only; no cline text remains in live files.
-BUILD: pass

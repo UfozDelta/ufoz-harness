@@ -1,8 +1,0 @@
-{
-  ".harness/plans/worktree-commits/tasks.json": "a303df364c5d91deea243523528b48022e09edc66d36a4f18ed19a23290e9d4c",
-  ".harness/plans/worktree-commits/checks/check_t1.py": "2c89677f230690c4f26149efd0f6a9036b07210dc632c158433f555c6c31dd03",
-  ".harness/plans/worktree-commits/checks/check_t2.py": "cfd143042e1ec068b897acc1e03d333065e333f97fc8ee4f295426e2170e79ac",
-  ".harness/plans/worktree-commits/checks/check_t3.py": "dc186f10fdc6b5cb29e6312351e46699ea07e0555962a80b8d1343044494bcf9",
-  ".harness/plans/worktree-commits/checks/check_t4.py": "e3cda8461be751d7b25f0a25c9a721f66b5d51c19da6013913f500b1c993aaf3",
-  ".harness/plans/worktree-commits/checks/check_t5.py": "2a6c1a4ac8b57e3ea52b8b6f083ad3bfca4acace3f8699b803e3b9baa1a7c058"
-}
