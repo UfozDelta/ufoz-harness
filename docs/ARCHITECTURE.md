@@ -13,7 +13,6 @@ diagram see [mermaid.md](mermaid.md).
 | Planner (`--plan`) | one executor backend (`HARNESS_PLANNER`, default pi) | Bunny, or sonnet for claude | only `.harness/plans/<slug>/` | no |
 | Executor | `node ~/.pi/agent/bin/pi-launcher.js -p` | Bunny (`opencode/space-bunny-free`, OpenCode Zen; `.pi/executor.md`) | only the task's `files` | no |
 
-| Executor (cline-acp) | `cline --acp` (Agent Client Protocol over stdio) | `CLINE_MODEL` (ACP ignores `-m`); default `stealth/space-bunny-alpha`, verified before the first task | only the task's `files` | no |
 | Executor (llama) | `pi-launcher.js -p` with `PI_CODING_AGENT_DIR` = a throwaway dir | local GGUF on a user-started `llama-server` router (`HARNESS_LLAMA_MODEL`) | only the task's `files` | no |
 | Runner | `python .harness/run_plan.py` | none | reports, feedback, logs, metrics | **yes**, the only grader |
 | Reviewer (optional) | `claude -p --model sonnet` | Sonnet | `REVIEW.md` | advisory only |
@@ -155,17 +154,6 @@ continues an existing one.
 **`--executor claude`**: the same contract via `claude -p`, with a warm session and the
 executor rules appended as its system prompt (3.5). Used only for A/B cost comparisons.
 
-**`--executor cline-acp`**: the same Cline CLI driven over the Agent Client Protocol
-(`cline --acp`): one warm ACP process for the whole plan, `session/prompt` per task, and a
-resumable session id. ACP ignores `-m`, so the model is pinned with `CLINE_MODEL` and read back
-before anything runs (the account default is a paid model, so a silent fallback would bill you).
-A dead or unresponsive agent process (`AcpDead`) always drops the session and returns
-`EXIT_TIMEOUT`; a `session/prompt` error (`AcpError`) now also drops the session — so a retry
-starts fresh instead of prompting into a session that may still be mid-turn — and returns
-`EXIT_TIMEOUT` when the error itself was a timeout, else `1`. Rate-limit detection scans only
-the notifications collected during the current task's prompt, not a fixed tail, so a hit
-from an earlier task can't bleed into the next one's result.
-
 **`--executor opencode`**: one warm `opencode serve` per run, driven over HTTP+SSE
 (`prompt_async` + `/event` until `session.idle`). The config lives in a throwaway
 `XDG_CONFIG_HOME`: snapshot, LSP, formatter, autoupdate off, share disabled, title and
@@ -207,8 +195,7 @@ without counting as stray; each owner's own acceptance covers those files. Pi ta
 independently.
 
 Not every executor can run this way: `Executor.thread_safe` (base.py, default `True`) is
-`False` on `cline-acp` (one stdio process,
-one session, shared by every task) and `llama` (one local model slot). `cli.py` checks `REGISTRY[args.executor].thread_safe`
+`False` on `llama` (one local model slot). `cli.py` checks `REGISTRY[args.executor].thread_safe`
 before the run lock is even acquired and exits with an error if `--parallel > 1` is combined
 with one of these — refused up front rather than racing two tasks on the same session.
 
@@ -227,8 +214,8 @@ Who writes the code is pluggable: `executors/base.py` defines `ExecResult` and t
 template — `probe`, `wait_for_quota`, `start`/`stop` via the context manager, class attrs
 `name`/`has_sessions`/`thread_safe`). `procs.zero_usage()` is the shared zero-token/zero-cost
 usage dict every executor returns on a hard failure.
-`executors/__init__.py` holds `REGISTRY = {pi, claude, opencode, cline-acp, llama}` and `get(name, **opts)`;
-`pi.py`, `claude.py`, `opencode.py`, `cline_acp.py` and `llama.py` implement it
+`executors/__init__.py` holds `REGISTRY = {pi, claude, opencode, llama}` and `get(name, **opts)`;
+`pi.py`, `claude.py`, `opencode.py` and `llama.py` implement it
 (opencode = one server driven over HTTP+SSE, `.pi/executor.md` travels as the
 prompt's `system` field, and the throwaway `XDG_CONFIG_HOME` config is derived from the
 patterns in `.pi/deny.json`). Core modules only import `executors.get`, never a backend module.
@@ -260,8 +247,7 @@ into the same warm session (2 retries max) and the result is written to `planner
 `Executor.run(..., rules=None)` is the one parameter that makes this backend-neutral: with a
 path, the executor uses its text instead of its default prompt (pi: `--append-system-prompt`;
 opencode: the `system` field; claude: `--append-system-prompt` without the `AGENTS.md`
-concatenation; cline-acp: inlined into the prompt text, because `-s` would replace Cline's own system
-prompt). Default `None` is every other call site's existing behavior.
+concatenation). Default `None` is every other call site's existing behavior.
 
 ### 3.7 Worktree, live window and `--land`
 
@@ -306,9 +292,7 @@ It runs nothing but checks:
   entry per request id, with cache writes at 1.25x (5 min) or 2x (1 h) input. Main-session
   tokens are not included.
 
-Token mapping is per backend: pi sums `message_end` deltas, claude sums stream-json deltas, and
-`--executor cline-acp` sums `agent_event.usage` deltas with `run_result.aggregateUsage` as the
-total. The `mode` column reads `fresh` for a backend without sessions even without `--fresh`,
+Token mapping is per backend: pi sums `message_end` deltas, claude sums stream-json deltas. The `mode` column reads `fresh` for a backend without sessions even without `--fresh`,
 because `Executor.has_sessions` is false there. `--plan` and each run also add `kind: plan_event`
 rows (`created`, `run_start`, `run_end`) that carry no tokens.
 
@@ -321,17 +305,13 @@ Where the money goes: the executor is free, so Claude cost = planner + main sess
 |---|---|
 | `HARNESS_MODEL` | override the executor model without editing `.pi/executor.md` (applies to the pi and opencode executors) |
 | `HARNESS_PI` | override the pi launcher path |
-| `HARNESS_CLINE` | path to the cline executable (default: the compiled binary next to the npm shim) |
-| `HARNESS_CLINE_DATA` | isolated Cline data dir; the account must have authenticated in it, so off by default |
-| `HARNESS_CLINE_PROVIDER` | Cline provider id (`-P`); the default account's provider needs no override |
 | `HARNESS_VARIANT` | thinking / effort level for every executor, default `medium` |
 | `HARNESS_RUNNER_FLAGS` | extra `run_plan` flags in the bench, e.g. `--executor opencode` |
 | `HARNESS_ARM_LABEL` | bench arm name written into the rows and the run folder |
-| `HARNESS_PLANNER` | planner backend for `run_plan.py --plan` (pi, opencode, claude or cline-acp), default `pi` |
-| `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (Bunny for pi/opencode); cline-acp resolves its own (pinned with `CLINE_MODEL`, since the account default is a paid model) |
+| `HARNESS_PLANNER` | planner backend for `run_plan.py --plan` (pi, opencode or claude), default `pi` |
+| `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (Bunny for pi/opencode) |
 | `HARNESS_LLAMA_URL` | llama executor: `llama-server` router URL, default `http://127.0.0.1:8080` |
 | `HARNESS_LLAMA_MODEL` | llama executor: router model id; unset = the only model the router lists |
-| `CLINE_MODEL` | cline-acp model, default `stealth/space-bunny-alpha` |
 | `HARNESS_WORKTREE` | `0` runs plans in place instead of in `.worktrees/<slug>` |
 | `HARNESS_WINDOW` | `0` skips the live Windows Terminal window |
 
@@ -355,11 +335,6 @@ All of them can also be set in `.harness/.env` (template: `.harness/.env.example
 - The opencode and claude logs write a step only when it finishes, so a slow model looks
   idle in the log.
 - The claude executor's new warm-session / `stream-json` path has not been run live yet.
-- Cline reports no separate reasoning tokens, so `reasoning` is always 0 for that arm, and its
-  exit codes for rate limits are undocumented: `75` is inferred from "rate limit" in the output.
-- Cline's free models are capped per day (a `429 ... Daily free limit reached` arrives as a
-  normal `error`, so it becomes a plain task failure, not a quota wait: the text has no "rate
-  limit" in it).
 - The llama executor never starts `llama-server`; the run fails fast if it is down. Pi's
   `--thinking` level is sent but ignored (the provider is declared `reasoning: false`), and
   `--session <id>` from an earlier run cannot resume, because each run gets a fresh

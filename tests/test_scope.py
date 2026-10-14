@@ -57,7 +57,7 @@ def test_written_paths_reads_every_executor_log_format(tmp_path, monkeypatch):
     log.write_text(
         '[toolCall write] {"path": "app/a.py", "content": "x"}\n'                  # pi
         '[toolCall Edit] {"file_path": "' + (tmp_path / "app" / "b.py").as_posix() + '"}\n'  # claude, absolute
-        '[toolCall write_to_file] {"filePath": "app\\\\c.py", "content": "trunc\n'  # cline, cut at 200
+        '[toolCall write_to_file] {"filePath": "app\\\\c.py", "content": "trunc\n'  # cut at 200
         '[toolCall read] {"path": "app/read_only.py"}\n'                           # a read is not a write
         '[toolCall bash] {"command": "echo hi > app/d.py"}\n',                     # bash: unattributable
         encoding="utf-8")

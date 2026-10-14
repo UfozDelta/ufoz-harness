@@ -28,7 +28,7 @@ TASKS = discover_tasks()
 SIZES = sorted(TASKS)
 LEGACY_SIZES = ["small", "medium", "large"]
 MODES = ["serial", "parallel", "multi", "window"]
-EXECUTORS = ["pi", "opencode", "cline-acp", "llama", "claude"]
+EXECUTORS = ["pi", "opencode", "llama", "claude"]
 
 # Final results.csv column order.
 COLUMNS = [

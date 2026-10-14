@@ -1,13 +1,12 @@
 """Executors: who writes the code. The run loop asks for one by name and never imports
 a backend module directly."""
-from .cline_acp import ClineAcpExecutor
 from .base import ExecResult, Executor
 from .claude import ClaudeExecutor
 from .llama import LlamaExecutor
 from .opencode import OpenCodeExecutor
 from .pi import PiExecutor
 
-REGISTRY = {"pi": PiExecutor, "claude": ClaudeExecutor, "cline-acp": ClineAcpExecutor,
+REGISTRY = {"pi": PiExecutor, "claude": ClaudeExecutor,
             "opencode": OpenCodeExecutor, "llama": LlamaExecutor}
 
 

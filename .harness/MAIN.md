@@ -1,7 +1,7 @@
 # MAIN.md
 
-Main-session rules, backend-neutral: works the same under pi, opencode or cline-acp. `AGENTS.md` (auto-loaded by
-pi/opencode/cline-acp) holds the EXECUTOR's rules; they do not apply to this main session, so ignore them here.
+Main-session rules, backend-neutral: works the same under pi or opencode. `AGENTS.md` (auto-loaded by
+pi/opencode) holds the EXECUTOR's rules; they do not apply to this main session, so ignore them here.
 These rules bias toward caution over speed; for trivial tasks, use judgment.
 
 ## 1. Think before coding
@@ -28,8 +28,7 @@ really done.
 
 **Roles.** You (the main session) decide, review, and accept. The planner backend writes the plan; the
 executor backend (`opencode/space-bunny-free`, free, effort `medium`) writes the code, driven by
-`.harness/run_plan.py`; `--executor cline-acp` the free Cline CLI over ACP (warm: one process for the whole plan, model
-pinned with `CLINE_MODEL`), `--executor opencode` a warm `opencode serve`, `--executor llama` a local
+`.harness/run_plan.py`; `--executor opencode` a warm `opencode serve`, `--executor llama` a local
 llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model), `--executor claude`
 `claude -p`. The main session never writes code for delegable work. Nobody commits: no agent
 runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews commits separately.

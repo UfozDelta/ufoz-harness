@@ -70,8 +70,7 @@ def build_parser():
                      help="Run up to N tasks at once (deps passed, no shared files).")
     ap.add_argument("--executor", default="pi", metavar="BACKEND[:MODEL]",
                     help="Who writes the code, optionally with a model (claude:sonnet). Backends: pi, "
-                         "claude (`claude -p`), opencode (its HTTP server), cline-acp (Cline over ACP, "
-                         "one warm process per plan), llama (pi "
+                         "claude (`claude -p`), opencode (its HTTP server), llama (pi "
                          "driving a local llama.cpp router: HARNESS_LLAMA_URL/HARNESS_LLAMA_MODEL), "
                          "agent (agent:haiku: the main session spawns @claude-executor; run this "
                          "command once to prepare the worktree, again to grade it).")
@@ -79,7 +78,7 @@ def build_parser():
                     help="Plan <slug> from this spec file with the planner backend, lint the "
                          "plan, and run no tasks.")
     ap.add_argument("--planner", default=os.environ.get("HARNESS_PLANNER", "pi"), metavar="BACKEND[:MODEL]",
-                    help="Who writes the plan for --plan: pi, opencode, claude or cline-acp, "
+                    help="Who writes the plan for --plan: pi, opencode or claude, "
                          "optionally with a model (claude:sonnet; else HARNESS_PLANNER_MODEL).")
     return ap
 
@@ -126,7 +125,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     args.executor, args.executor_model = parse_backend(args.executor, (*REGISTRY, "agent"))
     args.planner, args.planner_model = parse_backend(
-        args.planner, ("pi", "opencode", "claude", "cline-acp"))
+        args.planner, ("pi", "opencode", "claude"))
     args.planner_model = args.planner_model or os.environ.get("HARNESS_PLANNER_MODEL")
     args.review_model = None
     if args.review is not None:
@@ -219,8 +218,8 @@ def _execute(plan, args, metrics):
     skills.apply_default([t.raw for t in tasks], os.environ)
     chosen = skills.chosen_dirs()
     print(f"skills: on ({len(chosen)})" if skills.enabled() else "skills: off")
-    # only when the flag is given: claude keeps its own sonnet default, cline-acp falls back to
-    # HARNESS_MODEL, pi/opencode to their model lists
+    # only when the flag is given: claude keeps its own sonnet default, pi/opencode fall back to
+    # their model lists
     opts = {"model": args.executor_model} if args.executor_model else {}
     run_started = time.time()
     record_plan_event(metrics, args.slug, "run_start", executor=args.executor)

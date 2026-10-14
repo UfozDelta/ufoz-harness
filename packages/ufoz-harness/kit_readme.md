@@ -7,8 +7,7 @@ delegable work, which keeps its context small and the bill low.
 
 Executors: `pi` (default, Bunny `opencode/space-bunny-free`, one warm session per
 plan, $0), `opencode` (warm `opencode serve`, also free on Bunny), `claude` (bills
-you; for comparisons), `cline-acp` (the Cline CLI over ACP, keeps one warm process
-per plan), and `llama` (pi against a local `llama-server`
+you; for comparisons), and `llama` (pi against a local `llama-server`
 you start). Pick one with `--executor <name>`; the others are optional.
 
 ## How it works
@@ -84,7 +83,7 @@ python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff
 | `--only T2` | run one task |
 | `--review` | cheap Sonnet review pass after a fresh full run → `REVIEW.md` |
 | `--relock-only` | re-record the check hashes after you edited a check; runs nothing |
-| `--executor pi\|opencode\|claude\|cline-acp\|llama` | which executor writes the code (default pi) |
+| `--executor pi\|opencode\|claude\|llama` | which executor writes the code (default pi) |
 | `--stats` | cost and time totals (see below) |
 | `--timeout S` | per-task executor timeout, default 900 |
 
@@ -156,5 +155,4 @@ AGENTS.md                    executor rules (~10 lines on purpose; add a line on
 - Claude Code, Python 3 (stdlib only), git.
 - pi installed with its `~/.pi/agent/bin/pi-launcher.js` (or `pi` on PATH), using the free
   `opencode/space-bunny-free` model. Override per run with `HARNESS_MODEL=provider/model`.
-- Optional, only for the executor you pick: opencode on PATH, the claude CLI, the
-  Cline CLI (`npm i -g cline`), or llama.cpp plus a `llama-server` you start.
+- Optional, only for the executor you pick: opencode on PATH, the claude CLI, or llama.cpp plus a `llama-server` you start.

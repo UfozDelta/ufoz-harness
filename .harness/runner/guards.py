@@ -103,8 +103,8 @@ def runner_owned(f, run_lock, plan, metrics):
                      or re.search(r"\.repair\d+\.md$", f))))
 
 
-# executor logs: one `[toolCall <name>] <json args>` line per call (pi, claude, opencode, cline).
-# The json may be cut at 200 chars (cline), so the path is matched, not parsed.
+# executor logs: one `[toolCall <name>] <json args>` line per call (pi, claude, opencode).
+# The json may be cut at 200 chars, so the path is matched, not parsed.
 TOOL_CALL = re.compile(r"^\[toolCall (?P<name>[^\]]+)\] (?P<args>.*)$")
 PATH_ARG = re.compile(r'"(?:path|file_path|filePath)"\s*:\s*"(?P<path>(?:[^"\\]|\\.)+)"')
 WRITE_TOOLS = ("write", "edit", "patch", "replace", "create", "insert", "apply")

@@ -43,11 +43,9 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 | `opencode` | one `opencode serve`, HTTP+SSE | same as pi | yes | allowed | free | opencode on PATH |
 | `claude` | `claude -p` per task, `--resume` | sonnet → `--executor claude:<model>` | yes | allowed | billed | claude CLI |
 
-| `cline-acp` | one `cline --acp` process, ACP | `stealth/space-bunny-alpha` → `CLINE_MODEL` (verified before task 1) | yes | refused | free | `npm i -g cline` |
 | `llama` | pi with a throwaway `PI_CODING_AGENT_DIR` | the only model on the router → `HARNESS_LLAMA_MODEL` / `--executor llama:<model>` | yes | refused | free, local | running `llama-server` router |
 
-Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `claude`,
-`cline-acp`. No `llama` planner.
+Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `claude`. No `llama` planner.
 
 ## 4. One task through the guards
 
@@ -82,7 +80,7 @@ Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `
 | Situation | What happens |
 |---|---|
 | `--session` with `--fresh` or `--parallel > 1` | exits 1 before anything runs |
-| `--parallel > 1` with `cline-acp` / `llama` | exits 1 before the run lock |
+| `--parallel > 1` with `llama` | exits 1 before the run lock |
 | Second run of the same plan while one runs | refused by `run.lock` |
 
 | `llama`: server down | exits with the `llama-server` start command |

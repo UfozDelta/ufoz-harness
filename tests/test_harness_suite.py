@@ -21,8 +21,8 @@ from suite import build_matrix, preflight_executor  # noqa: E402
 
 # ----------------------------------------------------------------- unsupported
 def test_parallel_unsupported_for_non_thread_safe_executors():
-    rows = build_matrix(["small"], ["parallel"], ["cline-acp", "llama"], reps=1)
-    assert [r["status"] for r in rows] == ["unsupported", "unsupported"]
+    rows = build_matrix(["small"], ["parallel"], ["llama", "pi"], reps=1)
+    assert {r["executor"]: r["status"] for r in rows} == {"llama": "unsupported", "pi": "pending"}
 
 
 def test_llama_unsupported_for_multi_and_parallel():
@@ -60,7 +60,7 @@ def test_build_matrix_never_marks_skipped():
 
 # ------------------------------------------------------------------- preflight
 def test_preflight_executor_true_for_local_executors():
-    for name in ("pi", "opencode", "cline-acp", "claude"):
+    for name in ("pi", "opencode", "claude"):
         assert preflight_executor(name) is True
 
 

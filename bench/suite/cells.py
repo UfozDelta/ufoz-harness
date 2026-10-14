@@ -57,8 +57,6 @@ TAMPER_PATTERNS = (_TS + "ignore", _TS + "expect-error", "pytest.mark.skip",
 SKIP_DIRS = ("node_modules", ".git", "__pycache__", ".pytest_cache", ".next", ".check-tmp")
 KIT_DIRS = (".claude", ".harness", ".worktrees", ".opencode", ".pi", ".agents")
 FIXTURE_SKIP_DIRS = {"__pycache__", ".pytest_cache", "node_modules"}
-# executors that read HARNESS_MODEL from .harness/.env and pick the wrong model
-EXECUTOR_MODELS = {"cline-acp": "stealth/space-bunny-alpha"}
 
 
 # --------------------------------------------------------------------------- utils
@@ -638,7 +636,7 @@ def _blank(cell):
                 "reasoning": "", "cache_read": "", "cost": "", "window_opened": "",
                 "watch_ok": "", "peak_worktrees": "",
                 "model": (cell.get("model") or os.environ.get("HARNESS_EXECUTOR_MODEL")
-                          or EXECUTOR_MODELS.get(cell["executor"]) or cell["executor"]),
+                          or cell["executor"]),
                 "harness_sha": "", "batch_wall_s": "", "tampered": "",
                 "fixture_hash": _fixture_hash(cell["size"]),
                 "plan_source": cell.get("plan_source", "fixture"),
@@ -659,8 +657,7 @@ def _apply_window_verdict(row):
 
 def _plan_args(cell, wt, parallel=0, isolated=False):
     spec = cell["executor"]
-    if model := (cell.get("model") or os.environ.get("HARNESS_EXECUTOR_MODEL")
-                 or EXECUTOR_MODELS.get(cell["executor"])):
+    if model := (cell.get("model") or os.environ.get("HARNESS_EXECUTOR_MODEL")):
         spec += f":{model}"
     args = [sys.executable, ".harness/run_plan.py", cell["slug"], "--executor", spec]
     if not isolated:

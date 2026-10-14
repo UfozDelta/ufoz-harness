@@ -122,7 +122,7 @@ python .harness/run_plan.py <slug>
    │  per task, in order:
    │    lock unchanged?            else RESULT: lock-mismatch
    │    check fails before work?   else RESULT: check-invalid (the check proves nothing)
-   │    executor (pi / opencode / claude / cline-acp / llama) does the brief
+   │    executor (pi / opencode / claude / llama) does the brief
    │    runner runs the check itself
    │    file touched outside the task's `files`?  → fail
    │    new @ts-ignore / @ts-nocheck / eslint-disable line?  → fail
@@ -183,21 +183,20 @@ you read the reports and the diff, then run --land. Nobody in this chain commits
 | `--status` | task states, the first failure's tail and the next command; runs nothing |
 | `--pending` | list worktrees not landed yet; runs nothing |
 | `--no-window` | a real run opens a shared Windows Terminal window with a live tab (Windows only, on by default; this or `HARNESS_WINDOW=0` opts out) |
-| `--executor BACKEND[:MODEL]` | which executor writes the code, with an optional model: pi, opencode, claude, cline-acp, llama, or `agent:haiku` (the `@claude-executor` agent; run twice, see Claude mode). Default pi; see [Executors](#executors) and [Requirements](#requirements) |
+| `--executor BACKEND[:MODEL]` | which executor writes the code, with an optional model: pi, opencode, claude, llama, or `agent:haiku` (the `@claude-executor` agent; run twice, see Claude mode). Default pi; see [Executors](#executors) and [Requirements](#requirements) |
 | `--stats` | cost and time totals (see [Test and measure](#test-and-measure)) |
 | `--timeout S` | per-task executor timeout, default 900 |
 | `--fresh` | a new executor session per task instead of one warm session for the plan |
 | `--session ID` | continue an existing executor session (refused with `--fresh` or `--parallel > 1`) |
 | `--plan SPEC.md` | have the planner backend write and lint the plan for `<slug>`; runs no tasks ([details](#main-session-without-claude)) |
 | `--planner BACKEND[:MODEL]` | planner backend and model for `--plan` (default `HARNESS_PLANNER` / `HARNESS_PLANNER_MODEL`, else pi) |
-| `--parallel N` | run up to N tasks at once (DAG scheduler, no shared files); refused for `cline-acp` and `llama` (one shared process or one local model slot, not thread-safe) |
+| `--parallel N` | run up to N tasks at once (DAG scheduler, no shared files); refused for `llama` (one local model slot, not thread-safe) |
 | `--no-worktree` | run in place instead of in its own git worktree (the worktree is the default for a real run; `HARNESS_WORKTREE=0` opts out globally) |
 
 ## Executors
 
-All five runner executors follow the same brief and guards; pick one with `--executor <name>`.
-pi, opencode and claude keep one warm session per plan (llama too, since it is pi underneath);
-cline-acp keeps one warm ACP process per plan. The main
+All four runner executors follow the same brief and guards; pick one with `--executor <name>`.
+pi, opencode and claude keep one warm session per plan (llama too, since it is pi underneath). The main
 session never writes code for delegable work, which keeps its context small and the bill low.
 
 - **pi** (default): writes code with Bunny (`opencode/space-bunny-free`, an OpenCode Zen model),
@@ -205,14 +204,10 @@ session never writes code for delegable work, which keeps its context small and 
 - **opencode**: one warm `opencode serve` per run over HTTP+SSE, also free on Bunny.
 - **claude**: `claude -p` per task; bills you; for comparisons. `--executor claude:<model>` defaults to
   sonnet (pi and opencode honor that flag too, each with its own default).
-- **cline-acp**: the Cline CLI over the Agent Client Protocol (`cline --acp`): one warm process
-  for the whole plan, `session/prompt` per task, `has_sessions` true.
 
 <details>
-<summary>cline-acp and llama details</summary>
+<summary>llama details</summary>
 
-- **cline-acp**: ACP ignores `-m`, so the model is pinned with `CLINE_MODEL` and read back before
-  anything runs. The account default is a *paid* model, so a silent fallback would bill you.
 - **llama**: pi against a local GGUF served by a llama.cpp `llama-server` in router mode that you
   start yourself. `HARNESS_LLAMA_MODEL` picks the model (default: the only one the server lists)
   and `HARNESS_LLAMA_URL` the server (default `http://127.0.0.1:8080`). Pi's built-in llama.cpp
@@ -305,14 +300,10 @@ change. A real env var already set in your shell always wins over the same key i
 
 | Var | Default | Effect |
 |---|---|---|
-| `HARNESS_PLANNER` | `pi` | planner backend for `--plan`: `pi`, `opencode`, `claude` or `cline-acp` |
+| `HARNESS_PLANNER` | `pi` | planner backend for `--plan`: `pi`, `opencode` or `claude` |
 | `HARNESS_PLANNER_MODEL` | unset | model for the planner backend; falls back to sonnet for claude, else the backend's own default |
 | `HARNESS_MODEL` | `opencode/space-bunny-free` | executor model for pi and opencode |
-| `CLINE_MODEL` | unset | model for the cline-acp executor; its `DEFAULT_MODEL` is `stealth/space-bunny-alpha` |
 | `HARNESS_PI` | unset | path to pi; falls back to `~/.pi/agent/bin/pi-launcher.js` |
-| `HARNESS_CLINE` | unset | path to the cline binary; falls back to `cline` on `PATH` |
-| `HARNESS_CLINE_DATA` | unset | cline data dir; falls back to `~/.cline/data` |
-| `HARNESS_CLINE_PROVIDER` | unset | provider id passed to cline-acp |
 | `HARNESS_VARIANT` | `medium` | reasoning effort for every executor (pi `--thinking`, opencode `variant`, claude `--effort`) |
 | `HARNESS_WORKTREE` | on | `0` runs every plan in place instead of in `.worktrees/<slug>` |
 | `HARNESS_WINDOW` | on | `0` skips the live Windows Terminal window |
@@ -344,7 +335,7 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
 <details>
 <summary>Benchmark details and results</summary>
 
-- `bench/speed/`: `duel.py` compares opencode, pi and cline-acp on the same model and hidden tests,
+- `bench/speed/`: `duel.py` compares opencode and pi on the same model and hidden tests,
   then `report.py` writes `RESULTS.md` from `results.csv`. `bench.py` copies the current on-disk
   tree (`git ls-files -co --exclude-standard`, skipping deleted files and `bench/speed/`), not
   HEAD, and `staged.py` honors `HARNESS_ARM_LABEL`. Across 9 small/medium/large runs each, both
@@ -389,16 +380,12 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
 - pi installed with its `~/.pi/agent/bin/pi-launcher.js` (or `pi` on PATH), using Bunny.
   Override per run with `HARNESS_MODEL=provider/model`.
 - opencode on PATH for `--executor opencode`, the claude CLI for `--executor claude`.
-- The Cline CLI (`npm i -g cline`, signed in) for `--executor cline-acp` and
-  `--planner cline-acp`. The cline-acp executor pins its model with `CLINE_MODEL` and reads it
-  back before anything runs, because the account default is a *paid* model; an explicit
-  `HARNESS_MODEL` or `--executor <backend>:<model>` is never substituted.
 - For `--executor llama`: llama.cpp (`winget install ggml.llamacpp`) and a GGUF model with tool
   calling, served as `llama-server --models-dir <dir> --jinja --port 8080`. The executor loads the
   model itself. A small model on CPU is slow and weak: Qwen3-1.7B ran the pipeline end to end but
   failed a one-function task (it garbled file paths).
 
-Full form: `--executor pi|claude|opencode|cline-acp|llama` (pi is the default).
+Full form: `--executor pi|claude|opencode|llama` (pi is the default).
 
 ## Files
 

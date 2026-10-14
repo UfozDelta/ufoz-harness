@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 DETAIL_KEYS = ("path", "command", "file_path", "filePath", "pattern", "url")
-EXECUTORS = ("pi", "claude", "opencode", "cline-acp", "llama")
+EXECUTORS = ("pi", "claude", "opencode", "llama")
 WIDTH = 110
 RESET, CYAN, RED, GREEN, DIM = "\x1b[0m", "\x1b[36m", "\x1b[31m", "\x1b[32m", "\x1b[2m"
 
