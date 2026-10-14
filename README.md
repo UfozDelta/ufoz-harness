@@ -251,14 +251,14 @@ git worktree remove .worktrees/<slug>
 
 ### Landing a finished run: `--land`
 
-`python .harness/run_plan.py <slug> --land` brings a finished run into the main tree using a
-fast-forward merge. In order it:
+`python .harness/run_plan.py <slug> --land` brings a finished run into the main tree. In order it:
 
-1. checks that `.worktrees/<slug>` is a real worktree and no run is in progress (no `run.lock`),
-2. copies the plan's records (reports, logs, `SUMMARY.md`) into `.harness/plans/<slug>/`,
-3. `git merge --ff-only harness/<slug>` to fast-forward your HEAD to the branch tip: on success
-   the merged commits are now in your tree; on failure (your main tree moved after the plan started),
-   nothing changes, the worktree and branch stay, and you can rebase the worktree or resolve by hand,
+1. checks that `.worktrees/<slug>` is a real worktree, no run is in progress (no `run.lock`), every
+   task passed and the worktree has no uncommitted changes; otherwise it refuses,
+2. `git merge --ff-only harness/<slug>`; if your main tree moved after the plan started it falls back to
+   `git merge --no-ff`. On a conflict it aborts the merge, the worktree and branch stay, and you resolve by hand,
+3. after a successful merge, copies the plan's records (reports, logs, `SUMMARY.md`) into
+   `.harness/plans/<slug>/` and commits them, so the tree stays clean,
 4. removes the shared-dir junctions (never their targets), the worktree and the branch
    `harness/<slug>`, then prints `landed <slug>: <n> files`.
 
