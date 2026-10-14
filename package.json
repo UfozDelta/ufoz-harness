@@ -1,18 +1,16 @@
 {
   "name": "harness-test",
   "version": "1.0.0",
-  "description": "This repo is where the harness is built and tested. It has one job:",
-  "main": "index.js",
+  "private": true,
+  "description": "Development repo for the plan/execute harness: runner, executors, benchmarks and the ufoz-harness installer.",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "python -m pytest tests -q"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@testing-library/dom": "10.4.2",
