@@ -36,7 +36,7 @@ Written for: the repo owner, as a record of what changed in the plan → execute
 ## Open follow-ups
 
 - `--lint` now flags POSIX-style acceptance on Windows in two older plans: `map-skip-worktrees` T2 and `plan-status` T3. They were already broken on Windows.
-- `HARNESS.md` Failures still says "discard + re-brief" for out-of-scope files. That is now automatic (one revert and retry).
-- `docs/findings.md` keeps cline results as benchmark history. `packages/ufoz-harness/kit/` is stale until the next prepack.
+- Done 2026-10-14: `HARNESS.md` Failures wording fixed (out-of-scope files are reverted and retried once automatically), the `run_plan.py` docstring no longer claims it never touches git, `packages/ufoz-harness/kit/` re-exported (it is gitignored), and all 40 old plan directories removed (still in git history before `ee81fe0`). The two POSIX-acceptance plans above went with them.
+- `docs/findings.md` keeps cline results as benchmark history.
 - `agent:haiku` problems noted but not fixed: the `git_guard` hook did not fire in two live probes (`log.md`), and `SUMMARY.md` needs a heredoc workaround.
 - `run_plan.py` docstring says it never touches git state, but worktree mode creates branches and worktrees.
