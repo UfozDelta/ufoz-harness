@@ -42,6 +42,11 @@ class FakeExecutor(Executor):
         return True
 
 
+def _no_commit(monkeypatch):
+    """These plans keep their files in tmp_path, outside any repo: committing them would fail."""
+    monkeypatch.setattr(task_runner, "commit_task", lambda *a, **k: None)
+
+
 def make_plan(tmp_path, succeed_on):
     plan_dir = tmp_path / "plans" / "slug"
     (plan_dir / "checks").mkdir(parents=True)
@@ -62,7 +67,8 @@ def make_plan(tmp_path, succeed_on):
     return plan, args, executor
 
 
-def test_retry_then_repair_feedback_files_and_eventual_pass(tmp_path):
+def test_retry_then_repair_feedback_files_and_eventual_pass(tmp_path, monkeypatch):
+    _no_commit(monkeypatch)
     plan, args, executor = make_plan(tmp_path, succeed_on=3)
     ok, lines, session = task_runner.TaskRunner(plan, args, executor).run(plan.tasks[0])
 
@@ -125,6 +131,7 @@ def test_parallel_stray_written_by_own_trace_fails_the_task(tmp_path, monkeypatc
 
 
 def test_parallel_stray_not_in_trace_is_reported_not_failed(tmp_path, monkeypatch):
+    _no_commit(monkeypatch)
     ok, lines, state = _parallel_stray_run(tmp_path, monkeypatch,
                                            '[toolCall bash] {"command": "echo x > side.txt"}')
     assert ok is True
@@ -195,6 +202,7 @@ def _git_repo(monkeypatch, tmp_path):
 
 
 def _stray_run(tmp_path, monkeypatch, every_call):
+    _no_commit(monkeypatch)
     plan, args, executor = make_plan(tmp_path, succeed_on=1)
     executor = StrayExecutor(executor.plan_dir, executor.done, every_call=every_call)
     repo = _git_repo(monkeypatch, tmp_path)

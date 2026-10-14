@@ -32,6 +32,6 @@
 
   <text class="note mono" x="40" y="238">• run_plan.py &lt;slug&gt; opens .worktrees/&lt;slug&gt; on branch harness/&lt;slug&gt;; several plans run at once</text>
   <text class="note mono" x="40" y="260">• one warm executor session per plan; a task touching a file outside its list fails</text>
-  <text class="note mono" x="40" y="282">• executors: pi (default), opencode, cline, cline-acp, llama, or claude -p</text>
+  <text class="note mono" x="40" y="282">• executors: pi (default), opencode, llama, or claude -p</text>
   <text class="note mono" x="40" y="304">• you land and commit; no agent ever does</text>
 </svg>

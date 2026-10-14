@@ -21,6 +21,7 @@ Written for: the repo owner, as a record of what changed in the plan → execute
 | `red-first-default-off` | `red_first` now defaults to false; opt in per task with `"red_first": true`. The `red_first_reason` lint rule is gone. Docs and `planner.md` updated. Plans with no key stop running red-first. |
 | `land-drop-yes` | Removed the interactive-terminal gate on `--land` and the `interactive()` helper. `--yes` stays as a hidden no-op for one release. Agents are still blocked from landing by `git_guard.py` and `.pi/deny.json`. |
 | `prune-executors` | Removed the cold `cline` executor, `--planner cline`, its bench arms and docs, and a duplicate `log.md` section. `cline-acp`, `llama` and `--session` stay (they are used outside bench copies). |
+| `cline-cut` | Removed the `cline-acp` executor (`cline_acp.py`, `--executor`/`--planner cline-acp`, `CLINE_MODEL`, `HARNESS_CLINE*`), its bench arms, tests and docs. Registry is now pi, claude, opencode, llama. |
 
 ## Decided against
 
@@ -36,6 +37,6 @@ Written for: the repo owner, as a record of what changed in the plan → execute
 
 - `--lint` now flags POSIX-style acceptance on Windows in two older plans: `map-skip-worktrees` T2 and `plan-status` T3. They were already broken on Windows.
 - `HARNESS.md` Failures still says "discard + re-brief" for out-of-scope files. That is now automatic (one revert and retry).
-- `docs/flows.html`, `docs/mermaid.md` and `docs/mode-runner.svg` may still mention cline. `packages/ufoz-harness/kit/` is stale until the next prepack.
+- `docs/findings.md` keeps cline results as benchmark history. `packages/ufoz-harness/kit/` is stale until the next prepack.
 - `agent:haiku` problems noted but not fixed: the `git_guard` hook did not fire in two live probes (`log.md`), and `SUMMARY.md` needs a heredoc workaround.
 - `run_plan.py` docstring says it never touches git state, but worktree mode creates branches and worktrees.

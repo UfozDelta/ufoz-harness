@@ -123,7 +123,7 @@
 
   <section class="sec" id="executors">
     <h2><span class="n">04</span>Executors</h2>
-    <p>Pick one with <code>--executor</code>; pi is the default. Planner backends (<code>--planner</code>, <code>HARNESS_PLANNER</code>): pi, opencode, claude, cline, cline-acp.</p>
+    <p>Pick one with <code>--executor</code>; pi is the default. Planner backends (<code>--planner</code>, <code>HARNESS_PLANNER</code>): pi, opencode, claude.</p>
     <div class="execs">
       <div class="exec default"><h3>pi <span class="pill ok">default</span></h3><dl>
         <dt>transport</dt><dd>pi-launcher.js -p per task</dd><dt>model</dt><dd>space-bunny-free</dd>
@@ -134,12 +134,6 @@
       <div class="exec"><h3>claude</h3><dl>
         <dt>transport</dt><dd>claude -p, --resume</dd><dt>model</dt><dd>sonnet</dd>
         <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>allowed</dd><dt>cost</dt><dd><span class="badge paid">billed</span></dd></dl></div>
-      <div class="exec"><h3>cline</h3><dl>
-        <dt>transport</dt><dd>cline --json per task</dd><dt>model</dt><dd>deepseek-v4.1-flash, then fallbacks</dd>
-        <dt>warm</dt><dd>no, fresh per task</dd><dt>parallel</dt><dd>refused</dd><dt>cost</dt><dd><span class="badge free">free</span> daily cap</dd></dl></div>
-      <div class="exec"><h3>cline-acp</h3><dl>
-        <dt>transport</dt><dd>one cline --acp process</dd><dt>model</dt><dd>space-bunny-alpha</dd>
-        <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>refused</dd><dt>cost</dt><dd><span class="badge free">free</span></dd></dl></div>
       <div class="exec"><h3>llama</h3><dl>
         <dt>transport</dt><dd>pi on a local llama-server</dd><dt>model</dt><dd>the router's only model</dd>
         <dt>warm</dt><dd>yes</dd><dt>parallel</dt><dd>refused</dd><dt>cost</dt><dd><span class="badge free">free</span> local</dd></dl></div>
@@ -172,9 +166,8 @@
       <table>
         <tr><th>Situation</th><th>What happens</th></tr>
         <tr><td class="key">--session with --fresh or --parallel &gt; 1</td><td>exits 1 before anything runs</td></tr>
-        <tr><td class="key">--parallel &gt; 1 with cline, cline-acp or llama</td><td>exits 1 before the run lock</td></tr>
+        <tr><td class="key">--parallel &gt; 1 with llama</td><td>exits 1 before the run lock</td></tr>
         <tr><td>Second run of the same plan while one runs</td><td>refused by run.lock</td></tr>
-        <tr><td class="key">--session &lt;id&gt; with cline</td><td>task fails with code 1 (no sessions)</td></tr>
         <tr><td>llama: server down</td><td>exits with the llama-server start command</td></tr>
         <tr><td>llama: several models, none chosen</td><td>exits listing the model ids</td></tr>
         <tr><td>llama: model unloaded</td><td>POST /models/load, waits up to 300 s</td></tr>

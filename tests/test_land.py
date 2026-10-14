@@ -137,3 +137,28 @@ def test_land_conflict_aborts(tmp_path, capsys, monkeypatch):
     finally:
         os.chdir(home)
     assert (repo / "shared.txt").read_text(encoding="utf-8") == "one\nfrom p\n"
+
+
+def test_land_refuses_unpassed_task_and_dirty_worktree(tmp_path, capsys):
+    repo = tmp_path / "repo"
+    plan = repo / ".harness" / "plans" / "p"
+    plan.mkdir(parents=True)
+    (plan / "tasks.json").write_text('{"tasks": [{"id": "T1"}]}\n', encoding="utf-8")
+    _git(repo, "init", "-q")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "init")
+    home = os.getcwd()
+    os.chdir(repo)
+    try:
+        wt = Path(worktree.ensure("p"))
+        assert land.land("p") == 1  # T1 has no passing report
+        assert "tasks not passed" in capsys.readouterr().out
+        items = wt / ".harness" / "plans" / "p" / "items"
+        items.mkdir(parents=True, exist_ok=True)
+        (items / "T1.report.md").write_text("RESULT: pass\n", encoding="utf-8")
+        (wt / "loose.py").write_text("x = 1\n", encoding="utf-8")
+        assert land.land("p") == 1  # passed, but uncommitted work would be deleted
+        assert "uncommitted" in capsys.readouterr().out
+        assert wt.is_dir()
+    finally:
+        os.chdir(home)

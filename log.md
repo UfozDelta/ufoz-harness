@@ -128,3 +128,13 @@ Each entry: what happened → fix applied (or open).
 ## 2026-10-10 prune-flags
 - `--land` aborted ("untracked working tree files would be overwritten") when the branch already committed a plan file (SUMMARY.md): land copied plan records into the main tree before the merge. → Fixed: merge first, then copy records (`tests/test_land.py`). The landed-files count also used the worktree's own HEAD (always 0); now `HEAD...harness/<slug>`.
 - Old `--relock`, `--prepare`, `--check`, `--watch` and `--land --from` are gone (CLI is 18 flags; `--executor agent:haiku` is the claude-executor path, run twice). Earlier entries above name them as history. bench arms J/J0 now say `--relock-only`.
+
+## 2026-10-13 review-fixes
+- `--parallel` "deps never passed" branch did `t['id']` on a `Task` (no `__getitem__`) → TypeError. → Fixed: `t.id`.
+- `git_guard.py` only matched `git` at the start of a segment; `(git commit)`, `bash -c "git ..."`, `env git`, `xargs git`, `$(git ...)` slipped through, and `.worktrees/x/../../a.py` counted as inside a worktree. → Fixed: tokenised command positions through wrappers and `sh -c`; paths resolved first. Open: `python -c "subprocess..."` still bypasses it.
+- `--review` ran `claude -p --dangerously-skip-permissions`, so the "read-only" reviewer had every tool. → Fixed: `--allowedTools Read,Grep`, edit/write/bash disallowed.
+- `--land` removed the worktree with `--force` even when tasks had not passed or work was uncommitted; `commit_task` swallowed git failures. → Fixed: land refuses on unpassed tasks / dirty worktree; `commit_task` raises and the task fails.
+- `agent:haiku` grading ignored `.harness/plans/`, so the agent could edit its own `checks/`. → Fixed: `check` also compares the worktree's grader files to the lock.
+- `"RESULT: pass" in text` matched quoted acceptance output in failed reports. → Fixed: `plan.report_result()` reads the first `RESULT:` line (plan, status, pending, check, land, lint).
+- Executors could run `--land` (TTY gate was dropped). → Fixed: denied in `.pi` deny-match, claude, opencode, git_guard.
+- Open: stale `run.lock` after a hard kill blocks `--land` until deleted by hand; retest the `agent:haiku` hook in a fresh session.
