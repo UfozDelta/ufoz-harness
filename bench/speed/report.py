@@ -14,6 +14,7 @@ COLUMNS = [
     ("runs", "Runs"),
     ("pass rate", "Pass rate"),
     ("median wall_s", "Median wall_s"),
+    ("wall_s min-max", "wall_s min-max"),
     ("median output tokens", "Median output tokens"),
     ("median input+cache_read tokens", "Median input+cache_read tokens"),
     ("median tool_calls", "Median tool_calls"),
@@ -32,6 +33,13 @@ def display(value):
     return f"{value:g}"
 
 
+def spread(values):
+    values = [float(value) for value in values]
+    if len(values) < 2:
+        return None
+    return (min(values), max(values))
+
+
 def table(title, rows, level=2):
     lines = [f"{'#' * level} {title}", ""]
     lines.append("| Harness | " + " | ".join(label for _, label in COLUMNS) + " |")
@@ -45,10 +53,13 @@ def table(title, rows, level=2):
         )
         pass_rate = f"{100 * passed / len(group):.1f}%" if group else "0.0%"
         input_cache = [number(row, "input") + number(row, "cache_read") for row in group]
+        wall_spread = spread(number(row, "wall_s") for row in group)
+        spread_cell = "-" if wall_spread is None else f"{display(wall_spread[0])}-{display(wall_spread[1])}"
         values = [
             str(len(group)),
             pass_rate,
             display(median(number(row, "wall_s") for row in group)),
+            spread_cell,
             display(median(number(row, "output") for row in group)),
             display(median(input_cache)),
             display(median(number(row, "tool_calls") for row in group)),
@@ -71,6 +82,15 @@ def build_report(rows):
     for task in tasks:
         lines.extend(table(task, [row for row in rows if row.get("task", "") == task]))
     lines.extend(table("Overall", rows))
+    for task in tasks:
+        task_rows = [row for row in rows if row.get("task", "") == task]
+        for harness in sorted({row["harness"] for row in task_rows}):
+            group = [row for row in task_rows if row["harness"] == harness]
+            if len(group) < 3:
+                lines.append(
+                    f"Low-rep: {harness} / {task}: {len(group)} run(s) (< 3); "
+                    "medians and spread untrustworthy"
+                )
     return "\n".join(lines).rstrip() + "\n"
 
 
