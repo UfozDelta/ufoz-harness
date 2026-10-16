@@ -20,3 +20,13 @@ Adapt the regex to the actual call (`gtag('event', ...)`, `ttq.track(...)`,
 a logger call, a webhook POST). The key property: count occurrences across
 ALL files the task touched, not just the one file expected to have it — the
 duplicate is often in a second file (e.g. a snippet component AND a hook).
+
+## Red-first default and bare `expect`
+
+The runner proofs a task red-first: its acceptance must fail on the untouched
+tree. Red-first is now on by default for a task whose acceptance calls a
+`checks/` script; set `"red_first": false` to opt out (e.g. acceptance that
+cannot fail before the work). A bare `expect` substring with no `checks/` script
+in the acceptance and no `checks/` dir in the plan now lints as
+`WARN <id>: loose expect`. A WARN never fails lint, but it flags a check that
+matches any output — prefer a `checks/` script.

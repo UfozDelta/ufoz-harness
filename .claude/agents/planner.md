@@ -23,7 +23,7 @@ everything you need about it is below.
 - `python .harness/run_plan.py <slug>` runs tasks in list order in ONE warm executor session (free model, no
   human). Each task's brief is its `## T<n>` section of plan.md; Decisions apply to every task.
 - After each task it runs `acceptance` itself (exit 0 = pass). Fail -> one retry with the output, then one repair pass scoped to the failing task's `files` plus the `files` of every earlier task, then the plan stops.
-- Red-first is off by default; leave `red_first` out.
+- Red-first is on by default for a task whose acceptance calls a `checks/` script; opt out with `red_first: false` (e.g. when the acceptance cannot fail before the work).
 - Any file changed outside the task's `files` fails the task. tasks.json is hash-locked at first run.
 - `--lint` checks the schema and acceptance commands.
 
