@@ -15,7 +15,7 @@ from .base import ExecResult, Executor
 
 RATE_LIMIT = b"Rate limit exceeded"
 RATE_LIMIT_GIVEUP = 120
-DEFAULT_MODEL = "opencode/muse-spark-1.3"
+DEFAULT_MODEL = "opencode/deepseek-v4.1-flash"
 
 
 def _model(model=None):
@@ -54,7 +54,7 @@ def run_pi(brief, log, timeout, feedback=None, session=None, raw_prompt=None, ru
     usage = zero_usage()
     env = dict(os.environ, PWD=os.getcwd(), **(env or {}))
     cmd = ["node", launcher, "-p", "--mode", "json", "--no-extensions", *_skill_args(),
-           "--no-prompt-templates", "-e", ".pi/extensions/deny-list.ts",
+           "--no-prompt-templates", "--no-context-files", "-e", ".pi/extensions/deny-list.ts",
            "--append-system-prompt", rules or ".pi/executor.md",
            "--model", _model(model),
            "--thinking", os.environ.get("HARNESS_VARIANT", "medium"),
