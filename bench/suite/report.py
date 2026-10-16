@@ -7,6 +7,7 @@ already exists, which is then kept.
 import argparse
 import csv
 import math
+import random
 import statistics
 from collections import OrderedDict, defaultdict
 from pathlib import Path
@@ -242,6 +243,28 @@ def _scorecard(graded, field):
     return lines
 
 
+def _bootstrap_ratio_ci(numer, denom, seed=0, resamples=1000):
+    """95% percentile bootstrap CI of median(numer)/median(denom).
+
+    Resamples each side with replacement using a fixed seed so the band is
+    reproducible run to run. Returns None when either side is unusable."""
+    if len(numer) < 2 or len(denom) < 2:
+        return None
+    rng = random.Random(seed)
+    ratios = []
+    for _ in range(resamples):
+        n = statistics.median(rng.choice(numer) for _ in numer)
+        d = statistics.median(rng.choice(denom) for _ in denom)
+        if d:
+            ratios.append(n / d)
+    if not ratios:
+        return None
+    ratios.sort()
+    lo = ratios[min(len(ratios) - 1, max(0, int(0.025 * len(ratios))))]
+    hi = ratios[min(len(ratios) - 1, max(0, int(0.975 * len(ratios))))]
+    return (lo, hi)
+
+
 def _mode_comparison(graded):
     """serial vs parallel speedup and multi overhead, per executor+size."""
     by_exec_size_mode = defaultdict(list)
@@ -249,15 +272,15 @@ def _mode_comparison(graded):
         key = (row.get("executor") or "?", row.get("size") or "?", row.get("mode") or "?")
         by_exec_size_mode[key].append(row)
 
-    def _med_wall(executor, size, mode):
+    def _walls(executor, size, mode):
         rows = by_exec_size_mode.get((executor, size, mode), [])
-        if not rows:
-            return None
         if mode == "multi":
-            batch = [w for w in (_num(r.get("batch_wall_s")) for r in rows) if w is not None]
-            return _median(batch)
-        walls = [w for w in (_num(r.get("wall_s")) for r in rows) if w is not None]
-        return _median(walls)
+            return [w for w in (_num(r.get("batch_wall_s")) for r in rows) if w is not None]
+        return [w for w in (_num(r.get("wall_s")) for r in rows) if w is not None]
+
+    def _med_wall(executor, size, mode):
+        walls = _walls(executor, size, mode)
+        return _median(walls) if walls else None
 
     lines = [
         "| executor | size | serial wall | parallel wall | speedup | multi wall | multi overhead |",
@@ -270,13 +293,21 @@ def _mode_comparison(graded):
             serial = _med_wall(executor, size, "serial")
             parallel = _med_wall(executor, size, "parallel")
             multi = _med_wall(executor, size, "multi")
-            speedup = (serial / parallel) if (serial and parallel) else None
+            serial_walls = _walls(executor, size, "serial")
+            parallel_walls = _walls(executor, size, "parallel")
+            if serial and parallel and len(serial_walls) >= 2 and len(parallel_walls) >= 2:
+                speedup = serial / parallel
+                ci = _bootstrap_ratio_ci(serial_walls, parallel_walls)
+                noise = ci is not None and ci[0] <= 1.0 <= ci[1]
+                sp_cell = f"{speedup:.2f}x" + (" (noise)" if noise else "")
+            else:
+                sp_cell = "-"
             overhead = (multi / serial - 1.0) if (multi and serial) else None
             lines.append(
                 "| {e} | {s} | {ser} | {par} | {sp} | {mu} | {ov} |".format(
                     e=executor, s=size,
                     ser=_fmt(serial, "{:.1f}"), par=_fmt(parallel, "{:.1f}"),
-                    sp=_fmt(speedup, "{:.2f}x"),
+                    sp=sp_cell,
                     mu=_fmt(multi, "{:.1f}"),
                     ov=_fmt(None if overhead is None else overhead * 100, "{:+.0f}%"),
                 )
@@ -341,11 +372,23 @@ def _delta_section(rows):
     newest = list(shas)[-1]
     previous = list(shas)[-2]
     old, new = shas[previous], shas[newest]
-    old_rate = old["pass"] / old["n"] if old["n"] else 0.0
-    new_rate = new["pass"] / new["n"] if new["n"] else 0.0
     lines.append("")
-    lines.append(f"Delta `{previous}` -> `{newest}`: pass-rate {old_rate * 100:.0f}% -> {new_rate * 100:.0f}%, "
-                 f"cost {new['cost'] - old['cost']:+.2f} USD.")
+    if old["n"] == 0 or new["n"] == 0:
+        lines.append(f"Delta `{previous}` -> `{newest}`: pass-rate - (empty revision), "
+                     f"cost {new['cost'] - old['cost']:+.2f} USD.")
+        return lines
+
+    old_rate, old_lo, old_hi = wilson_ci(old["pass"], old["n"])
+    new_rate, new_lo, new_hi = wilson_ci(new["pass"], new["n"])
+    overlap = old_lo <= new_hi and new_lo <= old_hi
+    if overlap:
+        lines.append(f"Delta `{previous}` -> `{newest}`: pass-rate delta within noise "
+                     f"(CIs overlap {old_lo * 100:.0f}%-{old_hi * 100:.0f}% vs "
+                     f"{new_lo * 100:.0f}%-{new_hi * 100:.0f}%), "
+                     f"cost {new['cost'] - old['cost']:+.2f} USD.")
+    else:
+        lines.append(f"Delta `{previous}` -> `{newest}`: pass-rate {old_rate * 100:.0f}% -> {new_rate * 100:.0f}%, "
+                     f"cost {new['cost'] - old['cost']:+.2f} USD.")
     return lines
 
 
@@ -407,7 +450,7 @@ def build_report(rows, all_shas=False):
 
     lines.append("## Harness revision delta")
     lines.append("")
-    lines.extend(_delta_section(deduped))
+    lines.extend(_delta_section(rows))
     lines.append("")
 
     excluded = len(scoped) - len(graded)
