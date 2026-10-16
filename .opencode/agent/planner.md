@@ -1,7 +1,7 @@
 ---
 description: Plan large work. Explores read-only, writes .harness/plans/<slug>/plan.md + tasks.json for the free executor. Returns a short summary only.
 mode: subagent
-model: opencode/space-bunny-free
+model: opencode/deepseek-v4.1-flash
 temperature: 0.1
 permission:
   edit: allow
