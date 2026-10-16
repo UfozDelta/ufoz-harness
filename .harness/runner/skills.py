@@ -23,14 +23,19 @@ def default_roots():
 
 
 def resolve(names, roots=None):
-    """One directory per name: the first root holding a SKILL.md. Missing names are skipped,
-    and a name never resolves twice (the first root wins, not every root)."""
+    """One directory per distinct path: the first root holding a SKILL.md. Missing names are
+    skipped, the first root wins per name, and the same dir reached by several spellings
+    (shared, ./shared, shared/) is returned once, in input order."""
     dirs = []
+    seen = set()
     for name in names:
         for root in roots if roots is not None else default_roots():
             candidate = root / name
             if (candidate / "SKILL.md").is_file():
-                dirs.append(candidate)
+                key = os.path.normcase(str(candidate.resolve()))
+                if key not in seen:
+                    seen.add(key)
+                    dirs.append(candidate)
                 break
     return dirs
 
