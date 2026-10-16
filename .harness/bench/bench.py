@@ -15,6 +15,8 @@ to .harness/bench/runs/results.csv. Never commits, never touches the
 main checkout.
 """
 import argparse
+import ast
+import hashlib
 import json
 import shutil
 import subprocess
@@ -28,6 +30,142 @@ BENCH = ROOT / ".harness" / "bench"
 sys.path.insert(0, str(ROOT / ".harness"))
 import envfile  # noqa: E402
 envfile.load_env()
+
+# ---------------------------------------------------------------- acceptance contract
+# A readable, source-free summary of what the hidden tests assert, so the planner sees the
+# behaviour under test without ever seeing the test code itself.
+CONTRACT_FILENAME = "contract.md"
+_HTTP_ORDER = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+_HTTP_VERBS = {"get": "GET", "post": "POST", "put": "PUT", "patch": "PATCH",
+               "delete": "DELETE", "head": "HEAD", "options": "OPTIONS"}
+_PATH_MARK = "\x00"  # stands in for an f-string placeholder until normalised
+
+
+def _contract_path(node):
+    """Normalised path for a `client.<verb>(<path>, ...)` first argument, else None."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        raw = node.value
+    elif isinstance(node, ast.JoinedStr):
+        raw = "".join(v.value if (isinstance(v, ast.Constant) and isinstance(v.value, str))
+                      else _PATH_MARK for v in node.values)
+    else:
+        return None
+    return "/".join("{id}" if (seg.isdigit() or _PATH_MARK in seg) else seg for seg in raw.split("/"))
+
+
+def _client_call(node):
+    """(METHOD, path) for a `client.<verb>(...)` call, else None."""
+    if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+        return None
+    func = node.func
+    if not isinstance(func.value, ast.Name) or func.value.id != "client" or not node.args:
+        return None
+    method = _HTTP_VERBS.get(func.attr)
+    if method is None:
+        return None
+    path = _contract_path(node.args[0])
+    return (method, path) if path is not None else None
+
+
+class _ContractScanner(ast.NodeVisitor):
+    def __init__(self):
+        self.endpoints = set()
+        self.status = {}
+        self.params = set()
+        self._vars = {}
+
+    def visit_Assign(self, node):
+        if isinstance(node.value, ast.Call) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            mp = _client_call(node.value)
+            if mp is not None:
+                self._vars[node.targets[0].id] = mp
+        self.generic_visit(node)
+
+    def visit_Call(self, node):
+        mp = _client_call(node)
+        if mp is not None:
+            self.endpoints.add(mp)
+            for kw in node.keywords:
+                if kw.arg == "params" and isinstance(kw.value, ast.Dict):
+                    for key in kw.value.keys:
+                        if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                            self.params.add(key.value)
+        self.generic_visit(node)
+
+    def visit_Compare(self, node):
+        left = node.left
+        if isinstance(left, ast.Attribute) and left.attr == "status_code":
+            mp = None
+            if isinstance(left.value, ast.Name):
+                mp = self._vars.get(left.value.id)
+            elif isinstance(left.value, ast.Call):
+                mp = _client_call(left.value)
+            if mp is not None:
+                for op, comp in zip(node.ops, node.comparators):
+                    if (isinstance(op, ast.Eq) and isinstance(comp, ast.Constant)
+                            and isinstance(comp.value, int) and not isinstance(comp.value, bool)):
+                        self.status.setdefault(mp, set()).add(comp.value)
+        self.generic_visit(node)
+
+
+def _contract_sort_key(mp):
+    method = mp[0]
+    idx = _HTTP_ORDER.index(method) if method in _HTTP_ORDER else len(_HTTP_ORDER)
+    return (idx, method, mp[1])
+
+
+def hidden_contract(task):
+    """Readable acceptance contract derived from `<task>/hidden_tests/*.py` with `ast`.
+    Returns "" when the directory is missing; a bad file is skipped, never raised."""
+    tests_dir = BENCH / "tasks" / task / "hidden_tests"
+    if not tests_dir.is_dir():
+        return ""
+    endpoints, status, params, edges = set(), {}, set(), []
+    for src in sorted(tests_dir.glob("*.py")):
+        try:
+            tree = ast.parse(src.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError, UnicodeDecodeError):
+            continue
+        for fn in tree.body:
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            scan = _ContractScanner()
+            for stmt in fn.body:
+                scan.visit(stmt)
+            endpoints |= scan.endpoints
+            for mp, codes in scan.status.items():
+                status.setdefault(mp, set()).update(codes)
+            params |= scan.params
+            if fn.name.startswith("test_"):
+                edges.append(fn.name[len("test_"):].replace("_", " "))
+    lines = ["# Acceptance contract", "", "## Endpoints"]
+    lines += [f"- `{m} {p}`" for m, p in sorted(endpoints, key=_contract_sort_key)]
+    lines += ["", "## Status codes"]
+    lines += [f"- `{mp[0]} {mp[1]}`: {', '.join(str(c) for c in sorted(status[mp]))}"
+              for mp in sorted(status, key=_contract_sort_key)]
+    lines += ["", "## Query params"]
+    lines += [f"- `{key}`" for key in sorted(params)]
+    lines += ["", "## Edge cases"]
+    lines += [f"- {edge}" for edge in sorted(edges)]
+    return "\n".join(lines) + "\n"
+
+
+def ensure_contract(task):
+    """Write `<task>/contract.md` (UTF-8, LF); return the Path, or None when the contract is empty."""
+    text = hidden_contract(task)
+    if not text:
+        return None
+    out = BENCH / "tasks" / task / CONTRACT_FILENAME
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+    return out
+
+
+def contract_fingerprint(task):
+    """sha1 hex of the contract text, or "-" when there is no contract."""
+    text = hidden_contract(task)
+    return hashlib.sha1(text.encode()).hexdigest() if text else "-"
 
 ARM_PROMPTS = {
     "A": "Read CLAUDE.md and follow it: implement the frozen plan yourself, task by task.",

@@ -29,3 +29,4 @@ bench/speed/results*.csv
 bench/speed/latency.jsonl
 bench/speed/run.log
 .harness/bench/data/
+.harness/bench/tasks/*/contract.md
