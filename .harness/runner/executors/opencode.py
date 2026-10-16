@@ -22,7 +22,7 @@ from .. import skills
 from ..procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS, stop_process_tree
 from .base import ExecResult, Executor
 
-DEFAULT_MODEL = "opencode/muse-spark-1.3"
+DEFAULT_MODEL = "opencode/deepseek-v4.1-flash"
 HEALTH_PROMPT = "Health check, not a task. Reply OK."
 RATE_LIMIT_TEXT = "rate limit"
 CONNECT_TIMEOUT = 10     # seconds for the event stream to connect
@@ -54,7 +54,7 @@ def _profile_rank(profile):
     try:
         return PROFILES.index(profile)
     except ValueError:
-        raise ValueError(f"HARNESS_OPENCODE_PROFILE must be one of {PROFILES}, not {profile!r}") from None
+        raise ValueError(f"HARNESS_OPENCODE_PROFILE must be one of {PROFILES} (default 'noproj'), not {profile!r}") from None
 
 
 def _agent_prompt():
@@ -200,7 +200,7 @@ class OpenCodeExecutor(Executor):
 
     def __init__(self, model=None):
         self.model = model or os.environ.get("HARNESS_MODEL", DEFAULT_MODEL)
-        self.profile = os.environ.get("HARNESS_OPENCODE_PROFILE", "default")
+        self.profile = os.environ.get("HARNESS_OPENCODE_PROFILE", "noproj")
         _profile_rank(self.profile)
         self.url = None
         self.process = None
