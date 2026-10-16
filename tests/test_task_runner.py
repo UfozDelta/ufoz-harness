@@ -2,6 +2,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".harness"))
@@ -231,3 +232,33 @@ def test_stray_revert_second_stray_fails(tmp_path, monkeypatch):
     assert executor.calls == 2
     assert ok is False
     assert "stray.txt" in plan.report_text("T1")
+
+
+class HungExecutor(FakeExecutor):
+    """run() never returns: the outer watchdog must abandon it instead of waiting forever."""
+
+    def __init__(self, plan_dir, done):
+        super().__init__(plan_dir, done, succeed_on=1)
+        self.stopped = 0
+
+    def run(self, brief, log, timeout, feedback=None, session=None, rules=None, raw_prompt=None):
+        Path(log).parent.mkdir(parents=True, exist_ok=True)
+        with open(log, "ab") as f:
+            f.write(b"[hung] started, never returns\n")
+        time.sleep(60)
+        return ExecResult(code=0, usage={}, session=None)
+
+    def stop(self):
+        self.stopped += 1
+
+
+def test_outer_deadline_fails_a_hung_executor(tmp_path, monkeypatch):
+    monkeypatch.setattr(task_runner, "RUN_GRACE", 0)
+    plan, args, executor = make_plan(tmp_path, succeed_on=1)
+    args.timeout = 0.1
+    hung = HungExecutor(executor.plan_dir, executor.done)
+    ok, _lines, _session = task_runner.TaskRunner(plan, args, hung).run(plan.tasks[0])
+
+    assert ok is False
+    assert hung.stopped >= 1
+    assert "exit: 124" in plan.report_text("T1")

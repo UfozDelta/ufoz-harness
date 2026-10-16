@@ -13,14 +13,16 @@ from pathlib import Path
 
 from . import report
 from .acceptance import run_acceptance
+from .executors.base import ExecResult
 from .guards import (GIT_MOVED, attribute, git_state, marker_counts, revert_paths, runner_owned,
                      snapshot, suppression_markers, written_paths)
 from .plan import in_scope
-from .procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS
+from .procs import EXIT_RATE_LIMIT, EXIT_TIMEOUT, TOKEN_KEYS, zero_usage
 from .worktree import IDENTITY
 
 RETRIES = 1  # reruns with the failure attached, per task
 REPAIRS = 1  # repair passes after the retries
+RUN_GRACE = 30  # seconds past args.timeout before the watchdog abandons a stalled backend
 
 
 def revertable(paths):
@@ -171,6 +173,35 @@ class TaskRunner:
                          "BUILD: unverified (repair_check passed)"),
             encoding="utf-8")
 
+    def _bounded_run(self, t, log, feedback, session):
+        """Run the executor under a daemon-thread watchdog so a backend that stalls for a
+        non-subprocess reason (a hung pipe, a wedged HTTP client) cannot outrun the deadline.
+        A normal return inside `args.timeout + RUN_GRACE` is returned unchanged; an overrun
+        stops the backend and yields the same EXIT_TIMEOUT a killed process would."""
+        holder = {}
+
+        def work():
+            try:
+                holder["res"] = self.executor.run(self.plan.brief_of(t), log.as_posix(),
+                                                  self.args.timeout, feedback, session)
+            except BaseException as e:  # re-raised on the caller's thread, as before
+                holder["exc"] = e
+
+        th = threading.Thread(target=work, daemon=True)
+        th.start()
+        th.join(self.args.timeout + RUN_GRACE)
+        if th.is_alive():
+            stop = getattr(self.executor, "stop", None)
+            if callable(stop):
+                try:
+                    stop()
+                except Exception:
+                    pass
+            return ExecResult(code=EXIT_TIMEOUT, usage=zero_usage(), session=None)
+        if "exc" in holder:
+            raise holder["exc"]
+        return holder["res"]
+
     # --- the one attempt, shared by the retry and repair loops -----------------------------
 
     def _attempt(self, t, st, before, log, feedback, session, command, scope, bucket,
@@ -181,7 +212,7 @@ class TaskRunner:
         plan, args = self.plan, self.args
         while True:
             started = time.time()
-            res = self.executor.run(plan.brief_of(t), log.as_posix(), args.timeout, feedback, session)
+            res = self._bounded_run(t, log, feedback, session)
             if res.code != EXIT_RATE_LIMIT:
                 if bucket == "exec":
                     st.exec_s += time.time() - started
