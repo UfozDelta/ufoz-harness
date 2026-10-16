@@ -31,6 +31,9 @@ TOKEN_COLUMNS = ["input", "output", "reasoning", "cache_read"]
 # Rows with these statuses are excluded from pass-rate math entirely.
 EXCLUDED_STATUSES = {"infra_error", "harness_fail"}
 
+# A grid cell needs at least this many distinct reps to trust its bands.
+MIN_REPS = 3
+
 
 def load_rows(csv_path=RESULTS_CSV):
     """Read the results CSV into a list of dicts. Missing/empty -> []."""
@@ -148,6 +151,11 @@ def _max_rep(rows):
     return max(reps) if reps else 1
 
 
+def rep_count(rows):
+    """Distinct non-empty `rep` values in `rows`; 0 when there are none."""
+    return len({r.get("rep") for r in (rows or []) if r.get("rep") not in (None, "")})
+
+
 def _regressions_cell(rows):
     with_reg = [r for r in rows if r.get("regression_total") not in (None, "")]
     if not with_reg:
@@ -160,12 +168,21 @@ def _regressions_cell(rows):
 def _grid_table(cells, k=3):
     k = max(1, _int(k, 1))
     lines = [
-        "| executor | size | mode | n | pass@1 | first_try | pass^{k} | wilson95 | median wall_s | cost/task | tokens/task | regressions |".format(k=k),
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "| executor | size | mode | n | reps | pass@1 | first_try | pass^{k} | wilson95 | median wall_s | cost/task | tokens/task | regressions |".format(k=k),
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
+    any_low_reps = False
     for (executor, size, mode), rows in cells.items():
         graded = _graded(rows)
         n = len(graded)
+        reps = rep_count(graded)
+        if reps == 0:
+            reps_cell = "-"
+        elif reps < MIN_REPS:
+            reps_cell = f"{reps} (low-reps)"
+            any_low_reps = True
+        else:
+            reps_cell = f"{reps}"
         passes = sum(1 for r in graded if r.get("status") == "pass")
         rate, low, high = wilson_ci(passes, n)
         fams = defaultdict(list)
@@ -185,8 +202,8 @@ def _grid_table(cells, k=3):
         tok_per = total_tokens / len(solved) if solved else None
         ft = sum(1 for r in graded if first_try(r))
         lines.append(
-            "| {e} | {s} | {m} | {n} | {rate} | {ft} | {p3} | [{lo}, {hi}] | {wall} | {cost} | {tok} | {reg} |".format(
-                e=executor, s=size, m=mode, n=n,
+            "| {e} | {s} | {m} | {n} | {reps} | {rate} | {ft} | {p3} | [{lo}, {hi}] | {wall} | {cost} | {tok} | {reg} |".format(
+                e=executor, s=size, m=mode, n=n, reps=reps_cell,
                 rate=f"{rate * 100:.0f}%" if n else "-",
                 ft=f"{ft / n * 100:.0f}%" if n else "-",
                 p3=passk,
@@ -197,6 +214,10 @@ def _grid_table(cells, k=3):
                 reg=_regressions_cell(graded),
             )
         )
+    if any_low_reps:
+        lines.append("")
+        lines.append(f"Cells with fewer than {MIN_REPS} reps are marked `low-reps`; "
+                     "their pass-rate bands are untrustworthy.")
     return lines
 
 
