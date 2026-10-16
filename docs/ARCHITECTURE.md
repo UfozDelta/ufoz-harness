@@ -8,10 +8,10 @@ diagram see [mermaid.md](mermaid.md).
 
 | Component | Process | Model | Writes | Trusted to grade? |
 |---|---|---|---|---|
-| Main session | Claude Code (`CLAUDE.md`), or pi / opencode (`.harness/MAIN.md`) | Opus, or Bunny | plans (small tasks), review notes | no, it reads runner output |
-| `@planner` | Claude Code subagent (`.claude/agents/planner.md`), opencode subagent (`.opencode/agent/planner.md`), or pi with `.pi/planner.md` as system prompt | Sonnet (Claude) or Bunny (opencode/pi) | only `.harness/plans/<slug>/` | no |
-| Planner (`--plan`, fallback) | one executor backend (`HARNESS_PLANNER`, default pi) | Bunny, or sonnet for claude | only `.harness/plans/<slug>/` | no |
-| Executor | `node ~/.pi/agent/bin/pi-launcher.js -p` | Bunny (`opencode/space-bunny-free`, OpenCode Zen; `.pi/executor.md`) | only the task's `files` | no |
+| Main session | Claude Code (`CLAUDE.md`), or pi / opencode (`AGENTS.md` → `.harness/MAIN.md`) | Opus, or `opencode/deepseek-v4.1-flash` | plans (small tasks), review notes | no, it reads runner output |
+| `@planner` | Claude Code subagent (`.claude/agents/planner.md`), opencode subagent (`.opencode/agent/planner.md`), or pi with `.pi/planner.md` as system prompt | Sonnet (Claude) or `opencode/deepseek-v4.1-flash` (opencode/pi) | only `.harness/plans/<slug>/` | no |
+| Planner (`--plan`, fallback) | one executor backend (`HARNESS_PLANNER`, default pi) | `opencode/deepseek-v4.1-flash`, or sonnet for claude | only `.harness/plans/<slug>/` | no |
+| Executor | `node ~/.pi/agent/bin/pi-launcher.js -p` | `opencode/deepseek-v4.1-flash` (OpenCode Zen; `.pi/executor.md`) | only the task's `files` | no |
 
 | Executor (llama) | `pi-launcher.js -p` with `PI_CODING_AGENT_DIR` = a throwaway dir | local GGUF on a user-started `llama-server` router (`HARNESS_LLAMA_MODEL`) | only the task's `files` | no |
 | Executor (ollama) | `pi-launcher.js -p` with `PI_CODING_AGENT_DIR` = a throwaway dir | local model on a user-started Ollama server (`HARNESS_OLLAMA_MODEL`) | only the task's `files` | no |
@@ -134,7 +134,7 @@ owned. A retry can't reach those files; a repair can.
 
 ```
 node ~/.pi/agent/bin/pi-launcher.js -p --mode json --no-extensions --no-skills
-     --no-prompt-templates -e .pi/extensions/deny-list.ts
+     --no-prompt-templates --no-context-files -e .pi/extensions/deny-list.ts
      --append-system-prompt .pi/executor.md --model $HARNESS_MODEL
      --thinking medium --session-id <id> "<prompt>"
 ```
@@ -163,7 +163,8 @@ summary agents disabled; permissions allow `edit`, deny `question` / `plan_enter
 `.pi/deny.json`. Every session is created with `question` / `plan_enter` / `plan_exit`
 denied, and every prompt sends the model, `variant` = `$HARNESS_VARIANT` (default
 `medium`) and `system` = `.pi/executor.md` (appended to opencode's own prompt, +188
-tokens). A `question.asked` or `permission.asked` event fails the task immediately;
+tokens). The default profile is `noproj` (`OPENCODE_DISABLE_PROJECT_CONFIG=1`), so the executor does
+not read the project `AGENTS.md` / `opencode.json`. A `question.asked` or `permission.asked` event fails the task immediately;
 finished tool calls and text are logged once; a timeout aborts the session.
 
 Why (measured in `bench/speed/latency.py`): without `variant` the model reasoned up
@@ -234,7 +235,8 @@ patterns in `.pi/deny.json`). Core modules only import `executors.get`, never a 
 and the same guards as pi, so A/B comparisons only differ in who wrote the code. It carries
 one warm session across the plan: the first task passes a fresh `--session-id`, every later
 task `--resume`s it, and `--executor claude:<model>` picks the model (default sonnet). `.pi/executor.md`
-plus `AGENTS.md` are appended as its system prompt, the git commands from `.pi/deny.json` are
+is appended as its system prompt (no `AGENTS.md`), `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` stops it loading
+project `CLAUDE.md`/`AGENTS.md`, the git commands from `.pi/deny.json` are
 disallowed, and `--setting-sources project,local --strict-mcp-config` keeps the run off the
 user's global settings and MCP servers. The `stream-json` events are pumped into the log as
 text, `[toolCall ...]` and `[tool error]` lines, and a rate-limit event (or a usage-limit
@@ -261,8 +263,8 @@ into the same warm session (2 retries max) and the result is written to `planner
 
 `Executor.run(..., rules=None)` is the one parameter that makes this backend-neutral: with a
 path, the executor uses its text instead of its default prompt (pi: `--append-system-prompt`;
-opencode: the `system` field; claude: `--append-system-prompt` without the `AGENTS.md`
-concatenation). Default `None` is every other call site's existing behavior.
+opencode: the `system` field; claude: `--append-system-prompt`). Default `None` is every other
+call site's existing behavior.
 
 ### 3.7 Worktree, live window and `--land`
 
@@ -318,13 +320,13 @@ Where the money goes: the executor is free, so Claude cost = planner + main sess
 
 | Var | Effect |
 |---|---|
-| `HARNESS_MODEL` | override the executor model without editing `.pi/executor.md` (applies to the pi and opencode executors) |
+| `HARNESS_MODEL` | override the executor model (default `opencode/deepseek-v4.1-flash`) for the pi and opencode executors |
 | `HARNESS_PI` | override the pi launcher path |
 | `HARNESS_VARIANT` | thinking / effort level for every executor, default `medium` |
 | `HARNESS_RUNNER_FLAGS` | extra `run_plan` flags in the bench, e.g. `--executor opencode` |
 | `HARNESS_ARM_LABEL` | bench arm name written into the rows and the run folder |
 | `HARNESS_PLANNER` | planner backend for `run_plan.py --plan` (pi, opencode or claude), default `pi` |
-| `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (Bunny for pi/opencode) |
+| `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (`opencode/deepseek-v4.1-flash` for pi/opencode) |
 | `HARNESS_LLAMA_URL` | llama executor: `llama-server` router URL, default `http://127.0.0.1:8080` |
 | `HARNESS_LLAMA_MODEL` | llama executor: router model id; unset = the only model the router lists |
 | `HARNESS_OLLAMA_URL` | ollama executor: Ollama server URL, default `http://127.0.0.1:11434` |

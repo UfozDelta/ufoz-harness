@@ -2,7 +2,7 @@
 
 <img src="docs/hero.svg" alt="ufoz-harness: Claude plans, a cheap executor (pi, opencode or Haiku) writes the code, a runner checks every task" width="100%">
 
-![executor cost](https://img.shields.io/badge/executor-%240-1f7a45)
+![executor cost](https://img.shields.io/badge/executor-~%240.01-1f7a45)
 ![main session](https://img.shields.io/badge/main%20session-Claude%20%7C%20pi%20%7C%20opencode-1f6f5c)
 ![executors](https://img.shields.io/badge/executors-6-5d6864)
 ![python](https://img.shields.io/badge/python-3%20stdlib%20only-5d6864)
@@ -26,8 +26,8 @@ model decides its own work is done. The harness splits those jobs.
 
 - **No model grades its own work.** A Python runner runs each task's acceptance command, hashes
   the file tree, and writes the verdict. An executor's "done" is ignored.
-- **The expensive model only thinks.** Claude (or any main session) plans and reviews; a free
-  model writes the code. On the staged benchmark that cut the bill 2–3x.
+  - **The expensive model only thinks.** Claude (or any main session) plans and reviews; a cheap
+    model writes the code. On the staged benchmark that cut the bill 2–3x.
 - **Mistakes stay contained.** Each run gets its own git worktree, a task that touches a file
   outside its list fails, and no agent can commit. You land the result with one command.
 - **Nothing is locked in.** Three main sessions (Claude Code, pi, opencode), five runner
@@ -36,7 +36,7 @@ model decides its own work is done. The harness splits those jobs.
 
 <img src="docs/bench-cost.svg" alt="Staged shop bench: pure Sonnet $3.39 in 13.6 min, harness + opencode $1.18 in 22.1 min, harness + pi $1.47 in 26.4 min" width="100%">
 
-The trade-off is time: a free model is slower, so a run takes longer than one Sonnet session.
+The trade-off is time: a cheap model is slower, so a run takes longer than one Sonnet session.
 More runs in [Test and measure](#test-and-measure).
 
 ## Quick start
@@ -84,7 +84,7 @@ commits each passing task and skips tasks that already passed.
 
 <img src="docs/mode-runner.svg" alt="Runner mode: Decide with Claude, pi or opencode, Plan, Execute with pi or opencode, Check with retry and repair, Land" width="100%">
 
-`run_plan.py <slug>` drives a free executor (pi by default, or `--executor opencode`) in its own
+`run_plan.py <slug>` drives a cheap executor (pi by default, or `--executor opencode`) in its own
 `.worktrees/<slug>`. The runner does the checking: lock, scope, suppression guard, one retry with
 feedback, one repair pass. The main session can be Claude, pi or opencode. This is the mode the
 benchmarks measure, and the cheapest.
@@ -200,9 +200,8 @@ pi, opencode and claude keep one warm session per plan (llama and ollama too, si
 underneath). The main
 session never writes code for delegable work, which keeps its context small and the bill low.
 
-- **pi** (default): writes code with Bunny (`opencode/space-bunny-free`, an OpenCode Zen model),
-  so a run is free.
-- **opencode**: one warm `opencode serve` per run over HTTP+SSE, also free on Bunny.
+- **pi** (default): writes code with `opencode/deepseek-v4.1-flash` (an OpenCode Zen model).
+- **opencode**: one warm `opencode serve` per run over HTTP+SSE, same model.
 - **claude**: `claude -p` per task; bills you; for comparisons. `--executor claude:<model>` defaults to
   sonnet (pi and opencode honor that flag too, each with its own default).
 
@@ -282,8 +281,8 @@ The agent never runs `--land`; you do, once you are happy with the diff.
 `.harness/MAIN.md` holds the same plan → execute loop, backend-neutral. Start it directly, no
 wrapper script:
 
-- **pi**: `pi --no-context-files --append-system-prompt .harness/MAIN.md --model opencode/space-bunny-free`
-  (`--no-context-files` keeps the executor's `AGENTS.md` out of the main session). On PowerShell
+- **pi**: `pi --model opencode/deepseek-v4.1-flash`
+  (`AGENTS.md` auto-loads the main-session rules and points at `.harness/HARNESS.md`). On PowerShell
   `~` doesn't expand, so if `pi` isn't on PATH use the full path:
   `node "$env:USERPROFILE\.pi\agent\bin\pi-launcher.js" ...` (bash: `node ~/.pi/agent/bin/pi-launcher.js ...`).
 - **opencode**: `opencode --agent orchestrator`; the repo's `opencode.json` defines that agent
@@ -317,7 +316,7 @@ change. A real env var already set in your shell always wins over the same key i
 |---|---|---|
 | `HARNESS_PLANNER` | `pi` | planner backend for `--plan`: `pi`, `opencode` or `claude` |
 | `HARNESS_PLANNER_MODEL` | unset | model for the planner backend; falls back to sonnet for claude, else the backend's own default |
-| `HARNESS_MODEL` | `opencode/space-bunny-free` | executor model for pi and opencode |
+| `HARNESS_MODEL` | `opencode/deepseek-v4.1-flash` | executor model for pi and opencode |
 | `HARNESS_PI` | unset | path to pi; falls back to `~/.pi/agent/bin/pi-launcher.js` |
 | `HARNESS_VARIANT` | `medium` | reasoning effort for every executor (pi `--thinking`, opencode `variant`, claude `--effort`) |
 | `HARNESS_WORKTREE` | on | `0` runs every plan in place instead of in `.worktrees/<slug>` |
@@ -379,7 +378,7 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
 ## Guardrails
 
 - The executor (`.pi/executor.md` with `.pi/deny.json` and `.pi/extensions/deny-list.ts`) is
-  denied git state commands and writes/edits outside cwd, and runs with the rules in `AGENTS.md`:
+  denied git state commands and writes/edits outside cwd, and runs with the rules in `.pi/executor.md`:
   only the brief's files, never `.harness/`, finish with `DONE:` or `BLOCKED:`. Reads outside cwd
   are not blocked.
 - The runner fails any task that moves git HEAD or the branch, even if no file changed.
@@ -394,8 +393,8 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
 ## Requirements
 
 - Python 3 (stdlib only), git, Node (for pi), and a main session: Claude Code, pi or opencode.
-- pi installed with its `~/.pi/agent/bin/pi-launcher.js` (or `pi` on PATH), using Bunny.
-  Override per run with `HARNESS_MODEL=provider/model`.
+- pi installed with its `~/.pi/agent/bin/pi-launcher.js` (or `pi` on PATH), using
+  `opencode/deepseek-v4.1-flash` by default. Override per run with `HARNESS_MODEL=provider/model`.
 - opencode on PATH for `--executor opencode`, the claude CLI for `--executor claude`.
 - For `--executor llama`: llama.cpp (`winget install ggml.llamacpp`) and a GGUF model with tool
   calling, served as `llama-server --models-dir <dir> --jinja --port 8080`. The executor loads the
@@ -412,8 +411,8 @@ Full form: `--executor pi|claude|opencode|llama|ollama` (pi is the default).
 <summary>Repo layout</summary>
 
 ```
-CLAUDE.md                    main-session rules and the plan → execute loop
-AGENTS.md                    executor rules (~10 lines on purpose; add a line only when a failure earns it)
+CLAUDE.md                    main-session rules (Claude Code) and the plan → execute loop
+AGENTS.md                    main-session rules (pi / opencode); executor rules live in .pi/executor.md
 docs/mermaid.md              the plan → execute flow as a diagram
 docs/FLOWS.md                every path through the harness in tables (commands, executors, results)
 docs/ARCHITECTURE.md         runner internals: guards, retry/repair, executor calls, metrics
@@ -438,12 +437,12 @@ docs/harness.css             shared style for the docs pages
 .claude/agents/reviewer.md   post-run checklist reviewer (sonnet), used by --review
 .claude/agents/validator.md  blind A/B code-quality judge (opus), used by the lab bench
 .claude/skills/              caveman, adhd, animation/design skills
-.pi/executor.md              pi executor (Bunny, free)
+.pi/executor.md              executor rules (system prompt for pi / opencode / claude)
 .pi/deny.json                pi deny list
 .pi/extensions/deny-list.ts  pi deny-list extension
 .pi/extensions/deny-match.ts pi deny matcher (pure helper; exports a no-op default so
                              bare `pi` can auto-load it as an extension too)
-opencode.json                opencode `orchestrator` agent: MAIN.md as the main session
+opencode.json                opencode `orchestrator` agent (MAIN.md) + `instructions` (MAIN.md, HARNESS.md)
 .harness/MAIN.md             backend-neutral main-session rules (pi / opencode)
 .harness/.env.example        every env var, commented out; copy to .harness/.env
 .harness/envfile.py          loads .harness/.env (a real env var wins)
@@ -471,10 +470,10 @@ Everything after Plan is identical; only the main session, the planner and the e
 
 ### pi
 
-<img src="docs/pi.svg" alt="pi setup: a pi main session on .harness/MAIN.md, planner via .pi/planner.md, run_plan.py drives a free pi executor in a worktree, the runner grades, you land" width="100%">
+<img src="docs/pi.svg" alt="pi setup: a pi main session on .harness/MAIN.md, planner via .pi/planner.md, run_plan.py drives a pi executor in a worktree, the runner grades, you land" width="100%">
 
 pi has no native subagent, so the planner is a second `pi` call with `.pi/planner.md` as its
-system prompt (`--plan SPEC.md` is the fallback). The runner drives a free `pi` executor
+system prompt (`--plan SPEC.md` is the fallback). The runner drives a `pi` executor
 (`node ~/.pi/agent/bin/pi-launcher.js -p`) in `.worktrees/<slug>`, one warm session per plan.
 
 ### opencode
@@ -487,8 +486,8 @@ with `.pi/executor.md` as its system prompt.
 
 ### Claude Code
 
-<img src="docs/claude.svg" alt="Claude Code setup: Claude decides, the @planner sonnet subagent plans, execution runs with the free pi or opencode executor or all-Claude via @claude-executor, the runner grades, you land" width="100%">
+<img src="docs/claude.svg" alt="Claude Code setup: Claude decides, the @planner sonnet subagent plans, execution runs with the pi or opencode executor or all-Claude via @claude-executor, the runner grades, you land" width="100%">
 
-Claude Code decides and plans (`@planner`, sonnet). Execution can stay free (`run_plan.py <slug>`
+Claude Code decides and plans (`@planner`, sonnet). Execution can stay cheap (`run_plan.py <slug>`
 drives pi/opencode) or stay in Claude: `run_plan.py <slug> --executor agent:haiku` makes the
 worktree, the main session spawns `@claude-executor` in it, and the rerun grades and lands it.

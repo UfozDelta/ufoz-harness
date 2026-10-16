@@ -138,3 +138,8 @@ Each entry: what happened → fix applied (or open).
 - `"RESULT: pass" in text` matched quoted acceptance output in failed reports. → Fixed: `plan.report_result()` reads the first `RESULT:` line (plan, status, pending, check, land, lint).
 - Executors could run `--land` (TTY gate was dropped). → Fixed: denied in `.pi` deny-match, claude, opencode, git_guard.
 - Open: stale `run.lock` after a hard kill blocks `--land` until deleted by hand; retest the `agent:haiku` hook in a fresh session.
+
+## 2026-10-16 agents-md-role-split
+- `run_plan.py <slug> --plan <spec>` refreshes the tracked `.harness/context/REPO_MAP.md`, so the tree is dirty and the next run's `_require_clean_tree` refuses ("uncommitted changes") → restored REPO_MAP by hand before running; fix: add `.harness/context/` to `worktree._dirty_paths`'s ignored prefixes (like `.harness/plans/<slug>/`).
+- `worktree._lf_agents` rewrites `.claude/agents/*.md` to LF (Claude Code cannot read CRLF agent files), but under `core.autocrlf=true` git then reports them modified, so `--land` refuses ("uncommitted changes in the worktree would be lost") → fix: `git update-index --assume-unchanged` after the rewrite, or exclude `.claude/agents/` from the land dirty check.
+- Plan `agents-md-role-split` (main rules in AGENTS.md, executors stop auto-loading project rule files, defaults → `opencode/deepseek-v4.1-flash`): 7/7 first try; build smoke `BUILD: fail test_preflight_executor_true_for_local_executors` is pre-existing (no `claude` CLI here). `agent:haiku` path still does not get `CLAUDE_CODE_DISABLE_CLAUDE_MDS` (Open).

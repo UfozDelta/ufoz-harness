@@ -25,8 +25,8 @@ flowchart TD
     V --> Y[You run --land, review and commit]
 ```
 
-- Claude cost: planner call(s) + a thin main session. The executor is free with pi or
-  opencode on Bunny, or with llama/ollama on a local GGUF;
+- Claude cost: planner call(s) + a thin main session. The executor is cheap with pi or
+  opencode on deepseek-v4.1-flash, or free with llama/ollama on a local GGUF;
   `--executor claude` bills Claude.
 - Checks: `tsc --noEmit` / one-line smoke per task. Full build only in the last task, never a gate.
 - Stray files, lock edits and timeouts skip the repair pass.

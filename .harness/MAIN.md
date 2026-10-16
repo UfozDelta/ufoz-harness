@@ -1,7 +1,8 @@
 # MAIN.md
 
 Main-session rules, backend-neutral: works the same under pi or opencode. `AGENTS.md` (auto-loaded by
-pi/opencode) holds the EXECUTOR's rules; they do not apply to this main session, so ignore them here.
+pi/opencode) and `CLAUDE.md` (Claude Code) both carry these MAIN-session rules; executor rules live in
+`.pi/executor.md`, and each executor loads them explicitly (executors do not auto-load project rule files).
 These rules bias toward caution over speed; for trivial tasks, use judgment.
 
 ## 1. Think before coding

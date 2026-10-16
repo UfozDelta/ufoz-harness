@@ -3,6 +3,10 @@
 Dates: 2026-09-28 to 2026-09-30. All numbers come from single runs (1 rep per cell) unless
 stated, so treat small differences as noise.
 
+> Note (2026-10-16): the harness default executor and planner model is now
+> `opencode/deepseek-v4.1-flash` (cheap, ~$0.013/plan — see section 6), not the free
+> `space-bunny-free` used in the runs below. The tables are historical records of those runs.
+
 ## TL;DR
 
 - **The harness works end to end.** On the fixed suite, 28 of 29 cells passed across pi,

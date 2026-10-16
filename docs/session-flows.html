@@ -14,7 +14,7 @@
     <nav class="pages" aria-label="Harness docs"><a href="session-flows.html" aria-current="page">Session flows</a><a href="flows.html">Every path</a></nav>
     <span class="eyebrow">harness-test · plan → execute loop</span>
     <h1>From opening the terminal to landing the code</h1>
-    <p class="lede">The same loop run from three main sessions. The main session decides, plans and reviews; the executor that writes code is pi on <code>opencode/space-bunny-free</code> in every case. Based on <code>CLAUDE.md</code>, <code>.harness/MAIN.md</code>, <code>docs/FLOWS.md</code> and <code>.harness/.env.example</code>.</p>
+    <p class="lede">The same loop run from three main sessions. The main session decides, plans and reviews; the executor that writes code is pi on <code>opencode/deepseek-v4.1-flash</code> in every case. Based on <code>CLAUDE.md</code>, <code>.harness/MAIN.md</code>, <code>docs/FLOWS.md</code> and <code>.harness/.env.example</code>.</p>
   </header>
 
   <div class="filters" role="group" aria-label="Show main sessions">
@@ -31,25 +31,25 @@
         <dt>Rules</dt><dd><code>CLAUDE.md</code> + caveman hooks</dd>
         <dt>Main</dt><dd><span class="badge paid">billed</span> Opus</dd>
         <dt>Planner</dt><dd><span class="badge paid">billed</span> itself or <code>@planner</code> (sonnet)</dd>
-        <dt>Executor</dt><dd><span class="badge free">free</span> pi · Bunny</dd>
+        <dt>Executor</dt><dd><span class="badge free">cheap</span> pi · deepseek-v4.1-flash</dd>
       </dl>
     </div>
     <div class="sum t-pi" style="--c:var(--pi)">
       <h2>pi</h2>
       <dl>
         <dt>Rules</dt><dd><code>.harness/MAIN.md</code></dd>
-        <dt>Main</dt><dd><span class="badge free">free</span> Bunny</dd>
-        <dt>Planner</dt><dd><span class="badge free">free</span> pi by default (<code>HARNESS_PLANNER</code>)</dd>
-        <dt>Executor</dt><dd><span class="badge free">free</span> pi · Bunny</dd>
+        <dt>Main</dt><dd><span class="badge free">cheap</span> deepseek-v4.1-flash</dd>
+        <dt>Planner</dt><dd><span class="badge free">cheap</span> pi by default (<code>HARNESS_PLANNER</code>)</dd>
+        <dt>Executor</dt><dd><span class="badge free">cheap</span> pi · deepseek-v4.1-flash</dd>
       </dl>
     </div>
     <div class="sum t-oc" style="--c:var(--oc)">
       <h2>opencode</h2>
       <dl>
         <dt>Rules</dt><dd><code>MAIN.md</code> via <code>opencode.json</code></dd>
-        <dt>Main</dt><dd><span class="badge free">free</span> Bunny</dd>
-        <dt>Planner</dt><dd><span class="badge free">free</span> pi by default (<code>HARNESS_PLANNER</code>)</dd>
-        <dt>Executor</dt><dd><span class="badge free">free</span> pi · Bunny</dd>
+        <dt>Main</dt><dd><span class="badge free">cheap</span> deepseek-v4.1-flash</dd>
+        <dt>Planner</dt><dd><span class="badge free">cheap</span> pi by default (<code>HARNESS_PLANNER</code>)</dd>
+        <dt>Executor</dt><dd><span class="badge free">cheap</span> pi · deepseek-v4.1-flash</dd>
       </dl>
     </div>
   </section>
@@ -68,7 +68,7 @@
       <!-- row B -->
       <g class="box you"><rect x="20" y="250" width="130" height="64" rx="8"/><text x="85" y="277">Main tree</text><text class="sub" x="85" y="296">your repo</text></g>
       <g class="box"><rect x="250" y="250" width="190" height="64" rx="8"/><text x="345" y="277">Worktree</text><text class="sub" x="345" y="296">.worktrees/&lt;slug&gt;</text></g>
-      <g class="box free"><rect x="520" y="250" width="190" height="64" rx="8"/><text x="615" y="277">Executor</text><text class="sub" x="615" y="296">pi · Bunny</text></g>
+      <g class="box free"><rect x="520" y="250" width="190" height="64" rx="8"/><text x="615" y="277">Executor</text><text class="sub" x="615" y="296">pi · deepseek-v4.1-flash</text></g>
       <g class="box"><rect x="790" y="250" width="170" height="64" rx="8"/><text x="875" y="277">Runner</text><text class="sub" x="875" y="296">guards · retries</text></g>
       <!-- arrows -->
       <g class="ar">
@@ -98,7 +98,7 @@
       </g>
     </svg>
     </div>
-    <figcaption>The only box that changes between the three options is <b>Main session</b>. Everything to its right is the same runner, the same free pi executor and the same worktree. Green marks the free executor.</figcaption>
+    <figcaption>The only box that changes between the three options is <b>Main session</b>. Everything to its right is the same runner, the same pi executor and the same worktree. Green marks the executor.</figcaption>
   </figure>
 
   <figure class="fig">
@@ -110,11 +110,11 @@
       <div class="mr t-claude" role="row"><span role="rowheader"><span class="dot d-claude"></span>Claude</span>
         <i class="u" role="cell">you</i><i class="p" role="cell">Opus</i><i class="p" role="cell">sonnet</i><i class="p" role="cell">Opus</i><i class="f" role="cell">pi</i><i class="p" role="cell">Opus</i><i class="p" role="cell">Opus</i><i class="u" role="cell">you</i></div>
       <div class="mr t-pi" role="row"><span role="rowheader"><span class="dot d-pi"></span>pi</span>
-        <i class="u" role="cell">you</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">Bunny</i><i class="u" role="cell">you</i></div>
+        <i class="u" role="cell">you</i><i class="f" role="cell">deepseek</i><i class="f" role="cell">pi</i><i class="f" role="cell">deepseek</i><i class="f" role="cell">pi</i><i class="f" role="cell">deepseek</i><i class="f" role="cell">deepseek</i><i class="u" role="cell">you</i></div>
       <div class="mr t-oc" role="row"><span role="rowheader"><span class="dot d-oc"></span>opencode</span>
-        <i class="u" role="cell">you</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">pi</i><i class="f" role="cell">Bunny</i><i class="f" role="cell">Bunny</i><i class="u" role="cell">you</i></div>
+        <i class="u" role="cell">you</i><i class="f" role="cell">deepseek</i><i class="f" role="cell">pi</i><i class="f" role="cell">deepseek</i><i class="f" role="cell">pi</i><i class="f" role="cell">deepseek</i><i class="f" role="cell">deepseek</i><i class="u" role="cell">you</i></div>
     </div>
-    <figcaption>Who does each stage, and whether it costs money. With the default <code>HARNESS_PLANNER=pi</code>, a pi or opencode session costs nothing; <code>HARNESS_PLANNER=claude</code> turns their Plan cell billed.</figcaption>
+    <figcaption>Who does each stage, and whether it costs money. With the default <code>HARNESS_PLANNER=pi</code>, a pi or opencode session costs cents (executor + planner); <code>HARNESS_PLANNER=claude</code> turns their Plan cell billed.</figcaption>
   </figure>
 
   <section class="flow" aria-label="Step by step flow">
@@ -129,7 +129,7 @@
       <div class="stage"><span class="n">0 · once</span><h2>Setup</h2><span class="who">you</span></div>
       <div class="cell same">
         <p>Copy <code>.harness/.env.example</code> to <code>.harness/.env</code> and uncomment what you change. Install pi (and opencode or the claude CLI if you use them), then check the setup with <code>python .harness/selftest.py</code> (one pi smoke task, $0).</p>
-        <p class="warn">The planner comes from <code>HARNESS_PLANNER</code>, default <code>pi</code> (free). Set it to <code>claude</code> and planning is billed even from a pi or opencode session.</p>
+        <p class="warn">The planner comes from <code>HARNESS_PLANNER</code>, default <code>pi</code> (cheap). Set it to <code>claude</code> and planning is billed even from a pi or opencode session.</p>
       </div>
     </div>
 
@@ -143,15 +143,13 @@ claude</pre>
       <div class="cell t-pi"><span class="tag"><span class="dot d-pi"></span>pi</span>
         <pre>cd ~/Desktop/harness-test
 node "$env:USERPROFILE\.pi\agent\bin\pi-launcher.js" `
-  --no-context-files `
-  --append-system-prompt .harness/MAIN.md `
-  --model opencode/space-bunny-free</pre>
-        <p class="note"><code>--no-context-files</code> keeps the executor rules in <code>AGENTS.md</code> out of the main session.</p>
+  --model opencode/deepseek-v4.1-flash</pre>
+        <p class="note">pi auto-loads <code>AGENTS.md</code>, which now carries the main-session rules and points at <code>.harness/HARNESS.md</code>.</p>
       </div>
       <div class="cell t-oc"><span class="tag"><span class="dot d-oc"></span>opencode</span>
         <pre>cd ~/Desktop/harness-test
 opencode --agent orchestrator</pre>
-        <p class="note"><code>opencode.json</code> points the orchestrator agent at <code>MAIN.md</code>. <code>AGENTS.md</code> still auto-loads; MAIN.md only tells the model to ignore it.</p>
+        <p class="note"><code>opencode.json</code> points the orchestrator agent at <code>MAIN.md</code> and loads <code>MAIN.md</code> + <code>HARNESS.md</code> as instructions; <code>AGENTS.md</code> carries the same main-session rules.</p>
       </div>
     </div>
 
@@ -216,7 +214,7 @@ opencode --agent orchestrator</pre>
           <li>On a failure it rewrites the brief and reruns without asking; passed tasks are skipped.</li>
           <li>It stops and asks you on a second failure of the same task, anything destructive, or a design question.</li>
         </ul>
-        <p class="note t-pi t-oc">Under pi or opencode, Bunny does this review. It is a weaker judge of diffs than Claude, so read the diff yourself.</p>
+        <p class="note t-pi t-oc">Under pi or opencode, deepseek-v4.1-flash does this review. It is a weaker judge of diffs than Claude, so read the diff yourself.</p>
       </div>
     </div>
 
@@ -240,8 +238,8 @@ Found: …</pre>
 
   <section class="diffs">
     <div class="diff t-claude"><span class="eyebrow">Pick Claude Code when</span><p>The work needs judgment: design calls, unclear specs, or a careful review of what the executor wrote. You pay for the main session and planning.</p></div>
-    <div class="diff t-pi"><span class="eyebrow">Pick pi when</span><p>The task is well specified and you want it free. Fastest startup, and the executor rules are cleanly kept out of the main session.</p></div>
-    <div class="diff t-oc"><span class="eyebrow">Pick opencode when</span><p>You prefer the opencode UI. Same free model as pi, but <code>AGENTS.md</code> still loads, so the main session sees executor rules it has to ignore.</p></div>
+    <div class="diff t-pi"><span class="eyebrow">Pick pi when</span><p>The task is well specified and you want it cheap. Fastest startup, and the executor rules stay in <code>.pi/executor.md</code>, out of the main session.</p></div>
+    <div class="diff t-oc"><span class="eyebrow">Pick opencode when</span><p>You prefer the opencode UI. Same cheap model as pi; <code>opencode.json</code> loads the main rules and the executor reads none of them.</p></div>
   </section>
 </div>
 

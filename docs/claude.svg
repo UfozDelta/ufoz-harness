@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" width="980" height="470" role="img" aria-label="Claude Code setup: Claude decides, the @planner sonnet subagent writes the plan, execution runs either with the free pi or opencode executor or all-Claude via the @claude-executor haiku subagent, the runner grades every task, and you land it.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" width="980" height="470" role="img" aria-label="Claude Code setup: Claude decides, the @planner sonnet subagent writes the plan, execution runs either with the pi or opencode executor or all-Claude via the @claude-executor haiku subagent, the runner grades every task, and you land it.">
   <style>
     svg{--bg:#f5f6f4;--panel:#ffffff;--ink:#1c2321;--muted:#5d6864;--line:#dde2df;--code-bg:#eef1ef;--accent:#1f6f5c;--free:#1f7a45;--free-bg:#e3f2e8;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
     @media (prefers-color-scheme: dark){svg{--bg:#131816;--panel:#1b2220;--ink:#e4e9e6;--muted:#9aa6a1;--line:#2c3531;--code-bg:#232c29;--accent:#5cc0a3;--free:#7fd4a0;--free-bg:#1d3226}}
@@ -66,7 +66,7 @@
   <g class="note">
     <text x="20" y="380">• main session: Claude Code (<tspan class="mono">CLAUDE.md</tspan> → <tspan class="mono">.harness/HARNESS.md</tspan> loop)</text>
     <text x="20" y="402">• plan: <tspan class="mono">@planner</tspan> sonnet subagent lints its own plan; <tspan class="mono">--plan SPEC.md</tspan> fallback</text>
-    <text x="20" y="424">• run: <tspan class="mono">run_plan.py &lt;slug&gt;</tspan> → free pi/opencode executor in a worktree</text>
+    <text x="20" y="424">• run: <tspan class="mono">run_plan.py &lt;slug&gt;</tspan> → pi/opencode executor in a worktree</text>
     <text x="20" y="446">• all-Claude: <tspan class="mono">--executor agent:haiku</tspan>, spawn <tspan class="mono">@claude-executor</tspan>; the rerun grades and lands</text>
   </g>
 </svg>

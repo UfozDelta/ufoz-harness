@@ -39,8 +39,8 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 
 | Executor | Transport | Model (default → override) | Warm session | `--parallel > 1` | Cost | Needs |
 |---|---|---|---|---|---|---|
-| `pi` (default) | `pi-launcher.js -p` per task, `--session-id` | `opencode/space-bunny-free` → `HARNESS_MODEL` / `--executor pi:<model>` | yes | allowed | free | pi |
-| `opencode` | one `opencode serve`, HTTP+SSE | same as pi | yes | allowed | free | opencode on PATH |
+| `pi` (default) | `pi-launcher.js -p` per task, `--session-id` | `opencode/deepseek-v4.1-flash` → `HARNESS_MODEL` / `--executor pi:<model>` | yes | allowed | cheap | pi |
+| `opencode` | one `opencode serve`, HTTP+SSE | same as pi | yes | allowed | cheap | opencode on PATH |
 | `claude` | `claude -p` per task, `--resume` | sonnet → `--executor claude:<model>` | yes | allowed | billed | claude CLI |
 
 | `llama` | pi with a throwaway `PI_CODING_AGENT_DIR` | the only model on the router → `HARNESS_LLAMA_MODEL` / `--executor llama:<model>` | yes | refused | free, local | running `llama-server` router |

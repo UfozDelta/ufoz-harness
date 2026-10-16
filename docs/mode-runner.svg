@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 320" width="960" height="320" role="img" aria-label="Runner mode: a main session (Claude, pi or opencode) decides, the planner writes the plan, run_plan.py drives a free pi or opencode executor in its own worktree, the runner checks every task, and you land the result.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 320" width="960" height="320" role="img" aria-label="Runner mode: a main session (Claude, pi or opencode) decides, the planner writes the plan, run_plan.py drives a pi or opencode executor in its own worktree, the runner checks every task, and you land the result.">
   <style>
     svg{--bg:#f5f6f4;--panel:#ffffff;--ink:#1c2321;--muted:#5d6864;--line:#dde2df;--accent:#1f6f5c;--free:#1f7a45;--free-bg:#e3f2e8;--grid:#e6eae7;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
     @media (prefers-color-scheme: dark){svg{--bg:#131816;--panel:#1b2220;--ink:#e4e9e6;--muted:#9aa6a1;--line:#2c3531;--accent:#5cc0a3;--free:#7fd4a0;--free-bg:#1d3226;--grid:#1c2320}}
@@ -20,7 +20,7 @@
   </style>
   <rect class="bg" width="960" height="320" rx="14"/>
   <text class="title" x="40" y="50">Runner <tspan>mode</tspan> · pi / opencode</text>
-  <text class="tag" x="40" y="76">run_plan.py drives a free executor in its own worktree. The main session can be Claude, pi or opencode.</text>
+  <text class="tag" x="40" y="76">run_plan.py drives an executor in its own worktree. The main session can be Claude, pi or opencode.</text>
   <rect class="band" x="24" y="96" width="912" height="112" rx="12"/>
 
   <path class="wire" d="M180 152H230M370 152H420M560 152H610M750 152H800"/>

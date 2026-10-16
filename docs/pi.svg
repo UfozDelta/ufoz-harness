@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" width="980" height="470" role="img" aria-label="pi setup: you decide, a pi main session running .harness/MAIN.md plans with .pi/planner.md, run_plan.py drives a free pi executor in a worktree, the runner grades every task, and you land it.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" width="980" height="470" role="img" aria-label="pi setup: you decide, a pi main session running .harness/MAIN.md plans with .pi/planner.md, run_plan.py drives a pi executor in a worktree, the runner grades every task, and you land it.">
   <style>
     svg{--bg:#f5f6f4;--panel:#ffffff;--ink:#1c2321;--muted:#5d6864;--line:#dde2df;--code-bg:#eef1ef;--accent:#1f6f5c;--free:#1f7a45;--free-bg:#e3f2e8;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
     @media (prefers-color-scheme: dark){svg{--bg:#131816;--panel:#1b2220;--ink:#e4e9e6;--muted:#9aa6a1;--line:#2c3531;--code-bg:#232c29;--accent:#5cc0a3;--free:#7fd4a0;--free-bg:#1d3226}}
@@ -24,7 +24,7 @@
   </defs>
   <rect class="bg" width="980" height="470" rx="10"/>
   <text class="title" x="20" y="30">Setup <tspan>· pi</tspan></text>
-  <text class="tag" x="20" y="50">A pi main session runs the loop; the runner drives a free pi executor in a worktree.</text>
+  <text class="tag" x="20" y="50">A pi main session runs the loop; the runner drives a pi executor in a worktree.</text>
 
   <!-- row A -->
   <g class="box you"><rect x="20" y="72" width="130" height="64" rx="8"/><text x="85" y="99">You</text><text class="sub" x="85" y="118">decide · approve</text></g>
@@ -34,7 +34,7 @@
   <!-- row B -->
   <g class="box you"><rect x="20" y="250" width="130" height="64" rx="8"/><text x="85" y="277">Main tree</text><text class="sub" x="85" y="296">your repo</text></g>
   <g class="box"><rect x="250" y="250" width="190" height="64" rx="8"/><text x="345" y="277">Worktree</text><text class="sub" x="345" y="296">.worktrees/&lt;slug&gt;</text></g>
-  <g class="box free"><rect x="520" y="250" width="190" height="64" rx="8"/><text x="615" y="277">pi executor</text><text class="sub" x="615" y="296">pi-launcher.js -p · free</text></g>
+  <g class="box free"><rect x="520" y="250" width="190" height="64" rx="8"/><text x="615" y="277">pi executor</text><text class="sub" x="615" y="296">pi-launcher.js -p · cheap</text></g>
   <g class="box"><rect x="790" y="250" width="170" height="64" rx="8"/><text x="875" y="277">Runner</text><text class="sub" x="875" y="296">run_plan.py</text></g>
   <!-- arrows -->
   <g class="ar">
@@ -64,9 +64,9 @@
   </g>
 
   <g class="note">
-    <text x="20" y="380">• main session: <tspan class="mono">pi --no-context-files --append-system-prompt .harness/MAIN.md</tspan></text>
+    <text x="20" y="380">• main session: <tspan class="mono">pi --model opencode/deepseek-v4.1-flash</tspan> (loads AGENTS.md → MAIN.md)</text>
     <text x="20" y="402">• plan: pi with <tspan class="mono">.pi/planner.md</tspan> as system prompt (no native subagent); <tspan class="mono">--plan SPEC.md</tspan> fallback</text>
     <text x="20" y="424">• run: <tspan class="mono">run_plan.py &lt;slug&gt;</tspan> → <tspan class="mono">node ~/.pi/agent/bin/pi-launcher.js -p</tspan> (one warm session)</text>
-    <text x="20" y="446">• free executor (Bunny) touches only the task's files; runner grades and retries; you <tspan class="mono">--land</tspan></text>
+    <text x="20" y="446">• executor (deepseek-v4.1-flash) touches only the task's files; runner grades and retries; you <tspan class="mono">--land</tspan></text>
   </g>
 </svg>

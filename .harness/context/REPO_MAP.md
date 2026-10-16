@@ -1,5 +1,5 @@
 # Repo map
-fingerprint: cf7791ac3bf3
+fingerprint: 2cbedd6b9ba7
 Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before exploring.
 
 ## Routes
@@ -39,17 +39,18 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - .pi/extensions/deny-match.test.mjs
 - .pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
 - .pi/extensions/pi-coding-agent.d.ts
+- .pi/planner.md
 - AGENTS.md
 - CLAUDE.md
 - README.md
 - bench/speed/LATENCY.md
 - bench/speed/README.md
 - bench/speed/RESULTS.md
-- bench/speed/duel.py: parse_models, model_for, cline_binary, parse, task_prompt, acp_run, command_for, display_command, test_result, append_result, ...
+- bench/speed/duel.py: parse_models, model_for, parse, task_prompt, command_for, display_command, test_result, append_result, main, run_one
 - bench/speed/fixtures/opencode.jsonl
 - bench/speed/fixtures/pi.jsonl
 - bench/speed/latency.py: pi_command, opencode_command, build_opencode_config, append_rows, summarize_trace, summarize_opencode_trace, harness_rows, run_startup, run_direct, task_prompt, ...
-- bench/speed/report.py: number, display, table, build_report, main
+- bench/speed/report.py: number, display, spread, table, build_report, main
 - bench/speed/results.csv
 - bench/speed/run.log
 - bench/suite/README.md
@@ -348,7 +349,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - bench/suite/plan_cache/speed-up-claude-sonnet-db055a99/meta.json
 - bench/suite/plan_cache/speed-up-claude-sonnet-db055a99/plan.md
 - bench/suite/plan_cache/speed-up-claude-sonnet-db055a99/tasks.json
-- bench/suite/report.py: load_rows, wilson_ci, latest_per_cell, arm_label, first_try, newest_sha_rows, build_report, main
+- bench/suite/report.py: load_rows, wilson_ci, latest_per_cell, arm_label, first_try, newest_sha_rows, rep_count, build_report, main
 - bench/suite/results.csv
 - bench/suite/results.pre-rerate.csv
 - bench/suite/suite.py: build_matrix, preflight_executor, load_existing_slugs, load_existing_rows, cumulative_cost, parse_args, run_cleanup, main
@@ -476,14 +477,18 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - docs/FLOWS.md
 - docs/bench-cost.svg
 - docs/bench-flow.svg
+- docs/claude.svg
 - docs/findings.md
 - docs/flows.html
 - docs/harness-flow.svg
+- docs/harness-improvements-2026-10-10.md
 - docs/harness.css
 - docs/hero.svg
 - docs/mermaid.md
 - docs/mode-claude.svg
 - docs/mode-runner.svg
+- docs/opencode.svg
+- docs/pi.svg
 - docs/session-flows.html
 - log.md
 - opencode.json
@@ -518,6 +523,7 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - packages/ufoz-harness/kit/.pi/executor.md
 - packages/ufoz-harness/kit/.pi/extensions/deny-list.ts
 - packages/ufoz-harness/kit/.pi/extensions/deny-match.ts: DenyRules, isDeniedBash, isOutside, isChecksPath
+- packages/ufoz-harness/kit/.pi/planner.md
 - packages/ufoz-harness/kit/AGENTS.md
 - packages/ufoz-harness/kit/CLAUDE.md
 - packages/ufoz-harness/kit/opencode.json
@@ -531,19 +537,25 @@ Regenerate: `python .harness/build_map.py` (check: `--check`). Read this before 
 - tests/test_check_main.py: test_no_baseline_means_no_complaint, test_untouched_main_tree_is_clean, test_stray_main_tree_write_is_flagged, test_harness_paths_and_worktrees_are_ignored, test_head_move_with_no_file_change_is_flagged, test_check_exits_1_and_names_the_main_tree_change
 - tests/test_claude_executor.py: test_use_agent_follows_the_model_name, test_use_agent_env_override, test_haiku_runs_the_agent, test_sonnet_keeps_the_plain_command, test_env_zero_turns_haiku_off, test_env_one_turns_sonnet_on, test_non_agent_command_is_unchanged, test_agent_prompt_names_the_worktree, test_assistant_event_records_the_context_size, test_assistant_event_without_usage_counts_zero, ...
 - tests/test_envfile.py: test_comments_and_blank_lines_ignored, test_malformed_lines_skipped, test_missing_file_returns_empty, test_load_env_does_not_overwrite_existing
-- tests/test_git_guard.py: test_blocks_git_state_commands, test_blocks_land, test_allows_read_only_and_other_commands, test_hook_exit_codes, test_deny_json_is_the_source, test_git_state_sees_a_commit_that_changes_no_file_hash, test_git_state_none_outside_a_repo, test_land_refuses_without_a_terminal, test_writes_must_stay_inside_a_worktree
+- tests/test_git_guard.py: test_blocks_git_state_commands, test_blocks_land, test_allows_read_only_and_other_commands, test_hook_exit_codes, test_deny_json_is_the_source, test_git_state_sees_a_commit_that_changes_no_file_hash, test_git_state_none_outside_a_repo, test_land_has_no_terminal_gate, test_writes_must_stay_inside_a_worktree, test_blocks_wrapped_and_nested_git, ...
 - tests/test_guards.py: test_runner_owned_covers_runner_artifacts_only, test_marker_counts_counts_occurrences, test_suppression_markers_reports_only_new_occurrences, test_lock_hashes_covers_tasks_and_checks, test_opencode_bootstrap_files_are_runner_owned, test_npm_lockfile_is_runner_owned_but_package_json_is_not
-- tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, test_force_reruns_slug_already_in_results, ...
-- tests/test_land.py: test_land_with_plan_file_committed_on_branch
-- tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_shared_files_without_dep_warns_but_passes
+- tests/test_harness_suite.py: test_parallel_unsupported_for_non_thread_safe_executors, test_llama_unsupported_for_multi_and_parallel, test_window_only_small_is_supported, test_matrix_shape_slugs_and_order_idx, test_build_matrix_never_marks_skipped, test_preflight_executor_true_for_local_executors, test_preflight_llama_false_when_unreachable, test_preflight_ollama_false_when_unreachable, resume_env, test_resume_skips_slug_already_in_results, ...
+- tests/test_land.py: test_land_with_plan_file_committed_on_branch, test_land_two_plans_in_sequence, test_land_conflict_aborts, test_land_refuses_unpassed_task_and_dirty_worktree
+- tests/test_lint.py: make_plan, test_missing_brief_is_an_error, test_acceptance_that_passes_untouched_is_check_invalid, test_red_first_default_off_skips_untouched_check, test_red_first_false_needs_no_reason, test_shared_files_without_dep_warns_but_passes
+- tests/test_lint_expect.py: make_plan, test_bare_expect_warns_without_checks, test_expect_with_checks_script_does_not_warn, test_expect_warning_does_not_fail_lint
+- tests/test_lint_red_first.py: make_plan, write_tasks, test_red_first_defaults_on_for_checks_script, test_red_first_false_opts_out, test_no_checks_script_stays_off, test_lint_red_first_proofs_defaulted_task
 - tests/test_llama_executor.py: test_start_writes_provider_and_loads_unloaded_model, test_start_does_not_load_an_already_loaded_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
 - tests/test_log_fixes.py: test_shared_files_ordered_through_a_dep_chain_do_not_warn, test_shared_files_without_any_dep_path_still_warn, test_module_shadowing_a_harness_package_warns, test_lint_outside_a_plans_dir_does_not_write_metrics, test_markers_inside_string_literals_are_not_suppressions, test_a_stray_quote_cannot_hide_a_real_suppression, test_relock_only_writes_the_lock_and_runs_nothing, test_worktree_can_exclude_paths_and_drop_main_history
+- tests/test_ollama_executor.py: test_start_writes_provider_for_the_only_served_model, test_explicit_model_is_used_over_the_served_one, test_ambiguous_models_exit_listing_ids, test_no_models_exit, test_dead_url_exits_with_the_start_command, test_probe_true_and_false, test_stop_removes_the_agent_dir, test_run_forwards_env_to_run_pi
 - tests/test_opencode_executor.py: quiet_executor, test_idle_watchdog_aborts_a_silent_session, test_saw_event_is_set_for_matching_events
+- tests/test_pi_executor.py: test_run_pi_returns_exit_timeout_when_the_command_never_exits
 - tests/test_prepare.py: test_prepare_creates_worktree_and_is_idempotent, test_removed_flags_rejected_and_backend_specs_parse
+- tests/test_procs.py: test_job_kills_detached_grandchild
 - tests/test_scope.py: test_in_scope_exact_and_directory_entries, test_overlaps_is_prefix_aware, test_lint_accepts_a_narrow_directory_entry, test_lint_rejects_broad_directory_entries, test_lint_directory_without_trailing_slash_is_an_error, test_written_paths_reads_every_executor_log_format, test_attribute_splits_own_strays_from_unattributed, test_lint_rejects_a_directory_holding_many_tracked_files
+- tests/test_skills.py: test_one_dir_under_three_names_yields_one_skill_arg
 - tests/test_staged.py: test_parse_score_counts_stage_only, test_transcript_usage_window_dedup_cache_and_context, test_transcript_usage_dedup_and_unknown_price, test_csv_line_uses_columns_and_replaces_commas, test_claude_call_returns_error_note, test_score_returns_crash_note
-- tests/test_status.py: make_plan, write_report, test_states_first_failure_tail_and_next_command, test_all_pass_nexts_the_land_command, test_lock_mismatch_nexts_the_relock_only_command
-- tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed, SessionExecutor, test_warm_run_keeps_the_old_session_when_the_executor_has_none, test_warm_run_drops_the_session_when_the_executor_rotated_it
+- tests/test_status.py: make_plan, write_report, test_states_first_failure_tail_and_next_command, test_all_pass_nexts_the_land_command, test_lock_mismatch_nexts_the_relock_only_command, test_pass_quoted_in_a_failed_report_is_not_a_pass
+- tests/test_task_runner.py: FakeExecutor, make_plan, test_retry_then_repair_feedback_files_and_eventual_pass, test_still_failing_after_repair_is_not_ok, TracingExecutor, test_parallel_stray_written_by_own_trace_fails_the_task, test_parallel_stray_not_in_trace_is_reported_not_failed, SessionExecutor, test_warm_run_keeps_the_old_session_when_the_executor_has_none, test_warm_run_drops_the_session_when_the_executor_rotated_it, ...
 - tests/test_worktree.py: test_exclude_worktrees_writes_common_info_exclude_in_linked_worktree, test_link_sources_shared_dir_from_main_worktree, test_link_keeps_existing_target_dir, test_lf_agents_rewrites_crlf_agent_files
 - tests/test_worktree_commits.py: test_git_state_detects_commit_moved_head, test_snapshot_baseline_absorbed_on_new_task, test_out_of_scope_edit_detected_after_prior_commit, test_only_listed_files_is_clean_after_commit
 - tsconfig.json

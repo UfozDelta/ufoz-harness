@@ -26,7 +26,7 @@
   <!-- row B -->
   <g class="box you"><rect x="20" y="250" width="130" height="64" rx="8"/><text x="85" y="277">Main tree</text><text class="sub" x="85" y="296">your repo</text></g>
   <g class="box"><rect x="250" y="250" width="190" height="64" rx="8"/><text x="345" y="277">Worktree</text><text class="sub" x="345" y="296">.worktrees/&lt;slug&gt;</text></g>
-  <g class="box free"><rect x="520" y="250" width="190" height="64" rx="8"/><text x="615" y="277">Executor</text><text class="sub" x="615" y="296">pi · Bunny</text></g>
+  <g class="box free"><rect x="520" y="250" width="190" height="64" rx="8"/><text x="615" y="277">Executor</text><text class="sub" x="615" y="296">pi · deepseek-v4.1-flash</text></g>
   <g class="box"><rect x="790" y="250" width="170" height="64" rx="8"/><text x="875" y="277">Runner</text><text class="sub" x="875" y="296">guards · retries</text></g>
   <!-- arrows -->
   <g class="ar">
