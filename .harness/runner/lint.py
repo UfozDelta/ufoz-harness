@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 from .acceptance import run_acceptance
-from .plan import in_scope
+from .plan import in_scope, uses_checks_script
 
 # a directory entry lets the executor write anything under it: never the harness, git or deps,
 # and never a directory that already holds a lot of the project
@@ -173,7 +173,9 @@ def lint(plan, tasks, passed):
             if shared and a.get("id") not in _ancestors(b, by_id):
                 warns.append(f"{a.get('id')}/{b.get('id')}: share {sorted(shared)} without a dep between them")
     todo = [t for t in tasks
-            if t.get("id") not in passed and t.get("red_first") is True and "acceptance" in t]
+            if t.get("id") not in passed and "acceptance" in t
+            and (t["red_first"] if "red_first" in t
+                 else uses_checks_script(plan, t.get("acceptance", "")))]
     if todo:
         with _worktree(plan) as wt:
             if wt is None:

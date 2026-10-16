@@ -20,6 +20,18 @@ def overlaps(a, b):
     return any(in_scope(x, b) for x in a) or any(in_scope(y, a) for y in b)
 
 
+def uses_checks_script(plan_dir, acceptance):
+    """True when `acceptance` tokenises to a token naming an existing `checks/<name>.py` under
+    `plan_dir` (cwd-independent: the basename is resolved against `plan_dir/"checks"`)."""
+    for tok in acceptance.split():
+        parts = tok.replace("\\", "/").split("/")
+        if "checks" not in parts[:-1] or not parts[-1].endswith(".py"):
+            continue
+        if (plan_dir / "checks" / parts[-1]).is_file():
+            return True
+    return False
+
+
 def report_result(text):
     """The `RESULT: <word>` a report opens with ("" if none). The first such line only: a failed
     report quotes acceptance output further down, which may contain the words `RESULT: pass`."""
@@ -65,6 +77,9 @@ class Plan:
         self.lock_path = self.dir / "plan.lock.json"
         self.tasks = [Task.load(t) for t in
                       json.loads((self.dir / "tasks.json").read_text(encoding="utf-8"))["tasks"]]
+        for t in self.tasks:
+            if "red_first" not in t.raw:  # default on for a task whose acceptance calls checks/<name>.py
+                t.red_first = uses_checks_script(self.dir, t.acceptance)
         self.by_id = {t.id: t for t in self.tasks}
         self._lock = None
 
