@@ -825,3 +825,60 @@ def test_rewrite_slug_points_a_cached_plan_at_the_new_cell(tmp_path):
     for name in ("plan.md", "tasks.json", "checks/check_t1.py"):
         text = (tmp_path / name).read_text(encoding="utf-8")
         assert "NEW" in text and "OLD" not in text
+
+
+# ------------------------------------------------------------- bench rigor
+def test_rigor_reps_column_and_low_reps_warning():
+    base = {"size": "small", "mode": "serial", "executor": "pi", "status": "pass",
+            "wall_s": "2.0", "tasks_total": "1", "attempts": "1", "harness_sha": "b"}
+    rows = [dict(base, rep=r) for r in ("1", "2", "3")]
+    rows.append(dict(base, mode="parallel", rep="1"))
+    text = report.build_report(rows, all_shas=True)
+    assert "| reps |" in text
+    assert "| 1 (low-reps) |" in text
+    assert "low-reps" in text.split("## Per capability")[0]
+
+
+def test_rigor_noise_on_overlapping_cis():
+    base = {"size": "small", "executor": "pi", "status": "pass", "wall_s": "2.0",
+            "tasks_total": "1", "attempts": "1"}
+    rows = [dict(base, mode=m, rep=r, harness_sha=s)
+            for s in ("a", "b") for r in ("1", "2", "3") for m in ("serial", "parallel")]
+    text = report.build_report(rows, all_shas=True)
+    assert "noise" in text.lower()
+    assert "CIs overlap" in text
+
+
+def test_rigor_speedup_bootstrap_ci():
+    rows = []
+    for rep in ("1", "2", "3"):
+        rows.append(dict(size="noisy", mode="serial", executor="pi", rep=rep, status="pass",
+                         wall_s="1.0", harness_sha="b", tasks_total="1", attempts="1"))
+        rows.append(dict(size="noisy", mode="parallel", executor="pi", rep=rep, status="pass",
+                         wall_s="1.0", harness_sha="b", tasks_total="1", attempts="1"))
+        rows.append(dict(size="real", mode="serial", executor="pi", rep=rep, status="pass",
+                         wall_s="2.0", harness_sha="b", tasks_total="1", attempts="1"))
+        rows.append(dict(size="real", mode="parallel", executor="pi", rep=rep, status="pass",
+                         wall_s="1.0", harness_sha="b", tasks_total="1", attempts="1"))
+    text = report.build_report(rows)
+    assert "1.00x (noise)" in text
+    assert "2.00x" in text
+
+
+def test_rigor_speed_report_spread_and_low_rep_note():
+    speed_dir = SUITE_DIR.parent / "speed"
+    if str(speed_dir) not in sys.path:
+        sys.path.insert(0, str(speed_dir))
+    saved = sys.modules.pop("report", None)
+    try:
+        import report as speed_report  # noqa: PLC0415 (speed report shadows the suite one)
+    finally:
+        if saved is not None:
+            sys.modules["report"] = saved
+    base = {"tests_passed": "1", "tests_total": "1", "output": "2", "input": "3",
+            "cache_read": "0", "tool_calls": "1", "turns": "1", "task": "small"}
+    rows = [dict(base, harness="pi", wall_s=w) for w in ("10", "14")]
+    rows.append(dict(base, harness="opencode", wall_s="9", task="medium"))
+    text = speed_report.build_report(rows)
+    assert "| 10-14 |" in text
+    assert "Low-rep:" in text
