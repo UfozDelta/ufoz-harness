@@ -1,8 +1,8 @@
 """The claude executor: `claude -p` per task, behind the Executor interface.
 
 Same contract as the pi executor, but Claude writes the code. For fair A/B benchmarks:
-same plan, same guards, only the executor differs. `.pi/executor.md` plus AGENTS.md are
-appended as the system prompt so it acts as executor, not as the CLAUDE.md orchestrator.
+same plan, same guards, only the executor differs. `.pi/executor.md` is appended as the
+system prompt so it acts as executor, not as the CLAUDE.md orchestrator.
 Sessions are warm: the first task gets a fresh `--session-id`, every later task in the same
 plan `--resume`s it.
 """
@@ -35,13 +35,10 @@ def _deny_bash():
 
 
 def _executor_prompt(rules=None):
-    """The rules the executor must follow: `rules` alone when given, else .pi/executor.md
-    plus AGENTS.md, both as text."""
+    """The rules the executor must follow: `rules` alone when given, else .pi/executor.md."""
     if rules:
         return Path(rules).read_text(encoding="utf-8")
-    text = Path(".pi/executor.md").read_text(encoding="utf-8")
-    agents = Path("AGENTS.md")
-    return f"{text}\n\n{agents.read_text(encoding='utf-8')}" if agents.exists() else text
+    return Path(".pi/executor.md").read_text(encoding="utf-8")
 
 
 def use_agent(model):
@@ -156,7 +153,8 @@ def run_claude_exec(brief, log, timeout, feedback=None, session=None, model="son
     usage = {**dict.fromkeys(TOKEN_KEYS, 0), "cost": 0.0}
     cmd = _claude_cmd(prompt, model, session, resume, rules)
     with open(log, "wb") as f:
-        p = subprocess.Popen(cmd, cwd=os.getcwd(), stdin=subprocess.DEVNULL,
+        p = subprocess.Popen(cmd, cwd=os.getcwd(), env=dict(os.environ, CLAUDE_CODE_DISABLE_CLAUDE_MDS="1"),
+                             stdin=subprocess.DEVNULL,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         state = {"limited": False, "error": False, "ctx": 0}
 
@@ -207,7 +205,8 @@ def quota_ok(timeout=90, model="haiku"):
            "--output-format", "stream-json", "--verbose",
            "--setting-sources", "project,local", "--strict-mcp-config"]
     with tempfile.TemporaryFile() as out:
-        p = subprocess.Popen(cmd, cwd=os.getcwd(), stdin=subprocess.DEVNULL,
+        p = subprocess.Popen(cmd, cwd=os.getcwd(), env=dict(os.environ, CLAUDE_CODE_DISABLE_CLAUDE_MDS="1"),
+                             stdin=subprocess.DEVNULL,
                              stdout=out, stderr=subprocess.STDOUT)
         try:
             p.wait(timeout=timeout)
