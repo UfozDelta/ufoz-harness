@@ -167,6 +167,15 @@ def contract_fingerprint(task):
     text = hidden_contract(task)
     return hashlib.sha1(text.encode()).hexdigest() if text else "-"
 
+
+def spec_with_contract(task):
+    """The planner's spec body: the acceptance contract (first-class) ahead of the spec,
+    or the plain spec text when the task has no hidden tests."""
+    ensure_contract(task)
+    spec = (BENCH / "tasks" / task / "spec.md").read_text(encoding="utf-8")
+    contract = BENCH / "tasks" / task / CONTRACT_FILENAME
+    return contract.read_text(encoding="utf-8") + spec if contract.exists() else spec
+
 ARM_PROMPTS = {
     "A": "Read CLAUDE.md and follow it: implement the frozen plan yourself, task by task.",
     "B": "Read CLAUDE.md and follow it: delegate each task to the executor subagent, in order.",
@@ -382,7 +391,7 @@ def run_planner_arm(task, variant, rep):
     shutil.copy2(ROOT / ".harness" / "CHECK_PATTERNS.md", wt / ".harness" / "CHECK_PATTERNS.md")  # untracked
     body = (BENCH / "planners" / f"planner_{variant}.md").read_text(encoding="utf-8").split("---", 2)[2].lstrip()
     (wt / "planner_prompt.md").write_text(body, encoding="utf-8")
-    spec = (BENCH / "tasks" / task / "spec.md").read_text(encoding="utf-8")
+    spec = spec_with_contract(task)
     prompt = (f"Write the plan for this spec. Use slug bench-plan. This is a benchmark: plan the WHOLE spec "
               f"in this one plan (every page and route, up to 10 tasks), no later phases.\n\n{spec}")
     cmd = ["claude", "-p", prompt, "--model", "opus", "--output-format", "json",
@@ -520,14 +529,14 @@ def _planner_body():
 def opus_plan(task, rep, kind):
     """One Opus planning run per (task, rep, kind), cached, so A/C/S1 build from the SAME plan.
     Every arm that uses it is charged its full cost and minutes."""
-    cache = BENCH / "runs" / task / "_plans" / f"{kind}-{rep}"
+    cache = BENCH / "runs" / task / "_plans" / f"{kind}-{rep}-{contract_fingerprint(task)}"
     meta = cache / "meta.json"
     if meta.exists():
         return cache, json.loads(meta.read_text(encoding="utf-8"))
     wt = make_worktree(task, "plan", f"{kind}-{rep}", copy_plan=False, overlay_name="PLAN")
     (wt / "planner_prompt.md").write_text(_planner_body() + (LANES_ADDENDUM if kind == "lanes" else ""),
                                           encoding="utf-8")
-    spec = (BENCH / "tasks" / task / "spec.md").read_text(encoding="utf-8")
+    spec = spec_with_contract(task)
     prompt = (f"Write the plan for this spec. Use slug bench-plan. This is a benchmark: plan the WHOLE spec in this one "
               f"plan (every page and route, up to 10 tasks), no later phases.\n\n{spec}")
     data = _claude(prompt, wt, "opus", 1800, ["--append-system-prompt-file", "planner_prompt.md",
