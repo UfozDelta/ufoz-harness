@@ -87,6 +87,24 @@ def _local_spec(plan_dir, spec_path):
     return dst
 
 
+def _local_contract(plan_dir, spec_path):
+    """Copy the acceptance contract (if the spec has one) into the plan dir so backends
+    that deny reads outside the repo can read it. Returns the path to point PLAN_REQUEST.md
+    at, or None when there is no contract. The spec is made local too, so both planner
+    inputs always travel together."""
+    _local_spec(plan_dir, spec_path)
+    src = Path(spec_path).parent / "contract.md"
+    if not src.exists():
+        return None
+    dst = plan_dir / "contract.md"
+    try:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+    except OSError:
+        return None
+    return dst
+
+
 def _build_map():
     """Keep .harness/context/REPO_MAP.md fresh: --check, and rebuild it if it is stale."""
     try:
@@ -113,8 +131,12 @@ def run_planner(slug, spec_path, plans_root=PLANS_ROOT, backend=None, model=None
     log = plan_dir / "logs" / "planner.log"
     feedback = plan_dir / "items" / "planner.feedback.md"
     local_spec = _local_spec(plan_dir, spec_path)
+    local_contract = _local_contract(plan_dir, spec_path)
+    contract_line = (f"Acceptance contract: {Path(local_contract).as_posix()}\n"
+                     "Read it too; it is binding.\n") if local_contract is not None else ""
     request = _write(plan_dir / "PLAN_REQUEST.md",
-                     f"Plan this work. The spec is at: {Path(local_spec).as_posix()}\nRead it first.\n\n{_contract(_planner_body())}")
+                     f"Plan this work. The spec is at: {Path(local_spec).as_posix()}\nRead it first.\n"
+                     f"{contract_line}\n{_contract(_planner_body())}")
     rules = _write(plan_dir / "planner_rules.md", _planner_body())
 
     _build_map()
