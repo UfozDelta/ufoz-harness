@@ -153,6 +153,10 @@ def lint(plan, tasks, passed):
             if not any(f.endswith((".ts", ".tsx", ".mts", ".cts")) or Path(f).name == "tsconfig.json"
                        for f in files):
                 warns.append(f"{tid}: tsc but no TS files")
+        if (t.get("expect") is not None and not uses_checks_script(plan, acceptance)
+                and not (plan / "checks").is_dir()):
+            warns.append(f"{tid}: loose expect {t['expect']!r} matches any output;"
+                         " add a checks/ script")
         if t.get("build_gate") is True:
             if i != len(tasks) - 1:
                 errs.append(f"{tid}: build_gate must be the last task")
