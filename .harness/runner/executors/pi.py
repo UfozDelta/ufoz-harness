@@ -9,7 +9,8 @@ import uuid
 from pathlib import Path
 
 from .. import skills
-from ..procs import ANSI, EXIT_RATE_LIMIT, EXIT_TIMEOUT, stop_process_tree, zero_usage
+from ..procs import (ANSI, EXIT_RATE_LIMIT, EXIT_TIMEOUT, assign_job, close_job, create_job,
+                     register_job, stop_process_tree, zero_usage)
 from .base import ExecResult, Executor
 
 RATE_LIMIT = b"Rate limit exceeded"
@@ -61,9 +62,20 @@ def run_pi(brief, log, timeout, feedback=None, session=None, raw_prompt=None, ru
     with open(log, "wb") as f:
         p = subprocess.Popen(cmd, cwd=os.getcwd(), env=env, stdin=subprocess.DEVNULL,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        job = create_job()
+        if job is not None and assign_job(job, p.pid):
+            register_job(p.pid, job)
+        elif job is not None:
+            close_job(job)
         seen = {"rl_since": None}
 
         def pump():
+            try:
+                _pump_lines(p, f, seen, usage)
+            except (ValueError, OSError):
+                pass
+
+        def _pump_lines(p, f, seen, usage):
             for line in p.stdout:
                 try:
                     event = json.loads(line)
@@ -108,16 +120,30 @@ def run_pi(brief, log, timeout, feedback=None, session=None, raw_prompt=None, ru
         t.start()
         deadline = time.time() + timeout
         while True:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                limited = seen["rl_since"] and time.time() - seen["rl_since"] > RATE_LIMIT_GIVEUP
+                code = EXIT_RATE_LIMIT if limited else EXIT_TIMEOUT
+                break
             try:
-                code = p.wait(timeout=5)
+                code = p.wait(timeout=5 if remaining > 5 else remaining)
                 break
             except subprocess.TimeoutExpired:
                 limited = seen["rl_since"] and time.time() - seen["rl_since"] > RATE_LIMIT_GIVEUP
-                if limited or time.time() > deadline:
-                    stop_process_tree(p)
+                if limited or time.time() >= deadline:
                     code = EXIT_RATE_LIMIT if limited else EXIT_TIMEOUT
                     break
-        t.join(5)
+        if code in (EXIT_RATE_LIMIT, EXIT_TIMEOUT):
+            stop_process_tree(p)
+            try:
+                p.kill()
+            except Exception:
+                pass
+            try:
+                p.stdout.close()
+            except Exception:
+                pass
+        t.join(1)
         return code, usage, session
 
 
