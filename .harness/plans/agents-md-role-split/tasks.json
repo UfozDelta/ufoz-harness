@@ -1,0 +1,16 @@
+{"slug": "agents-md-role-split", "tasks": [
+  {"id": "T1", "deps": [], "red_first": false, "files": ["AGENTS.md"],
+   "acceptance": "python -c \"from pathlib import Path; a=Path('AGENTS.md').read_text(encoding='utf-8'); assert 'You are the executor' not in a; assert 'Think before coding' in a; assert 'Plan -> execute loop' in a; assert '.harness/HARNESS.md' in a\""},
+  {"id": "T2", "deps": [], "red_first": false, "files": [".pi/executor.md"],
+   "acceptance": "python -c \"from pathlib import Path; t=Path('.pi/executor.md').read_text(encoding='utf-8'); assert 'quirks.md' in t; assert 'hash-locked' in t; assert 'smoke command' in t; assert 're-runs the acceptance' in t\""},
+  {"id": "T3", "deps": [], "red_first": false, "files": [".harness/runner/executors/pi.py"],
+   "acceptance": "python -c \"from pathlib import Path; t=Path('.harness/runner/executors/pi.py').read_text(encoding='utf-8'); ls=[l for l in t.splitlines() if l.startswith('DEFAULT_MODEL')]; assert ls and 'opencode/deepseek-v4.1-flash' in ls[0]; b=t.split('def run_pi',1)[1].split('def quota_ok',1)[0]; assert '--no-context-files' in b\""},
+  {"id": "T4", "deps": [], "red_first": false, "files": [".harness/runner/executors/opencode.py"],
+   "acceptance": "python -c \"from pathlib import Path; t=Path('.harness/runner/executors/opencode.py').read_text(encoding='utf-8'); d=[l for l in t.splitlines() if l.startswith('DEFAULT_MODEL')]; assert d and 'opencode/deepseek-v4.1-flash' in d[0]; p=[l for l in t.splitlines() if 'HARNESS_OPENCODE_PROFILE' in l]; assert p and 'noproj' in p[0]\""},
+  {"id": "T5", "deps": [], "red_first": false, "files": [".harness/runner/executors/claude.py"],
+   "acceptance": "python -c \"from pathlib import Path; t=Path('.harness/runner/executors/claude.py').read_text(encoding='utf-8'); assert 'AGENTS.md' not in t; assert t.count('CLAUDE_CODE_DISABLE_CLAUDE_MDS') == 2; assert t.count('env=dict(os.environ,') == 2\""},
+  {"id": "T6", "deps": [], "red_first": false, "files": ["opencode.json", ".opencode/agent/planner.md"],
+   "acceptance": "python -c \"import json; from pathlib import Path; c=json.loads(Path('opencode.json').read_text(encoding='utf-8')); assert c['instructions'] == ['.harness/MAIN.md', '.harness/HARNESS.md']; assert c['agent']['orchestrator']['model'] == 'opencode/deepseek-v4.1-flash'; p=Path('.opencode/agent/planner.md').read_text(encoding='utf-8'); assert 'model: opencode/deepseek-v4.1-flash' in p\""},
+  {"id": "T7", "deps": ["T1", "T2", "T3", "T4", "T5", "T6"], "red_first": false, "files": [".harness/plans/agents-md-role-split/SUMMARY.md"],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/agents-md-role-split/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\""}
+]}

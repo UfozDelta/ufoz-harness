@@ -1,0 +1,17 @@
+{
+  "slug": "agents-md-role-split",
+  "task": "T3",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 10.3,
+  "accept_s": 0.1,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 16450,
+    "output": 617,
+    "reasoning": 104,
+    "cache_read": 46862,
+    "cost": 0.005956571999999999
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "backend": "pi",
+  "model": "opencode/deepseek-v4.1-flash",
+  "created_at": "2026-10-16T16:06:37",
+  "seconds": 150.0,
+  "attempts": 1,
+  "tokens": {
+    "input": 72582,
+    "output": 19610,
+    "reasoning": 13446,
+    "cache_read": 610178,
+    "cost": 0.048968
+  },
+  "lint_ok": true
+}
