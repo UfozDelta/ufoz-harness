@@ -173,12 +173,14 @@ opencode --agent orchestrator</pre>
         <pre>python .harness/build_map.py --check || python .harness/build_map.py</pre>
       </div>
       <div class="cell t-pi"><span class="tag"><span class="dot d-pi"></span>pi</span>
-        <p>Writes <code>.harness/plans/&lt;slug&gt;/SPEC.md</code>, then hands it to the planner backend:</p>
+        <p>Large work: run pi with <code>--append-system-prompt .pi/planner.md</code>; it writes and lints the plan in-session.</p>
+        <p>Fallback: write <code>.harness/plans/&lt;slug&gt;/SPEC.md</code>, then hand it to the planner backend:</p>
         <pre>python .harness/run_plan.py &lt;slug&gt; --plan .harness/plans/&lt;slug&gt;/SPEC.md</pre>
         <p class="note">Writes and lints the plan, retrying twice on lint errors. Runs no tasks.</p>
       </div>
       <div class="cell t-oc"><span class="tag"><span class="dot d-oc"></span>opencode</span>
-        <p>Same as pi: <code>SPEC.md</code>, then <code>run_plan.py &lt;slug&gt; --plan</code>.</p>
+        <p>Large work: call <code>@planner</code> (subagent, same contract as Claude's).</p>
+        <p>Fallback: same as pi: <code>SPEC.md</code>, then <code>run_plan.py &lt;slug&gt; --plan</code>.</p>
         <p class="note">Planner backend comes from <code>HARNESS_PLANNER</code>, not from which main session you use.</p>
       </div>
     </div>

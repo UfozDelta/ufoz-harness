@@ -1,0 +1,17 @@
+{
+  "slug": "plan-check-gap",
+  "task": "T2",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 87.4,
+  "accept_s": 0.4,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 13806,
+    "output": 1501,
+    "reasoning": 7944,
+    "cache_read": 587648,
+    "cost": 0.0
+  }
+}

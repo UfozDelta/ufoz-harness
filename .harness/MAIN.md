@@ -29,7 +29,8 @@ really done.
 **Roles.** You (the main session) decide, review, and accept. The planner backend writes the plan; the
 executor backend (`opencode/space-bunny-free`, free, effort `medium`) writes the code, driven by
 `.harness/run_plan.py`; `--executor opencode` a warm `opencode serve`, `--executor llama` a local
-llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model), `--executor claude`
+llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model), `--executor ollama` a local
+Ollama server driven by pi (`HARNESS_OLLAMA_MODEL` picks the model), `--executor claude`
 `claude -p`. The main session never writes code for delegable work. Nobody commits: no agent
 runs `git add/commit/push/reset/checkout/stash/clean/rebase`; the user reviews commits separately.
 
@@ -53,7 +54,10 @@ paths and refuses to run.
 ### Loop
 
 1. **Decide.** State assumptions and success criteria; settle the design with the user.
-2. **Plan.** Write a spec file describing the work (goal, context, files, must-haves, constraints, a
+2. **Plan.** Large work: call `@planner` (opencode subagent, `.opencode/agent/planner.md`)
+   or run pi with `--append-system-prompt .pi/planner.md`; both write
+   `.harness/plans/<slug>/plan.md` + `tasks.json` and lint it themselves. Fallback without an
+   in-session planner: write a spec file describing the work (goal, context, files, must-haves, constraints, a
    one-line smoke command per task). It goes at `.harness/plans/<slug>/SPEC.md` (create the directory
    yourself before running `--plan`), then run
    `python .harness/run_plan.py <slug> --plan <spec.md>`. It writes `.harness/plans/<slug>/plan.md`,

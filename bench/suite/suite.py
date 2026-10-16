@@ -28,7 +28,13 @@ TASKS = discover_tasks()
 SIZES = sorted(TASKS)
 LEGACY_SIZES = ["small", "medium", "large"]
 MODES = ["serial", "parallel", "multi", "window"]
-EXECUTORS = ["pi", "opencode", "llama", "claude"]
+EXECUTORS = ["pi", "opencode", "llama", "ollama", "claude"]
+
+# Local executors are reached over a URL, not a CLI on PATH; preflight checks the URL is up.
+LOCAL_URLS = {
+    "llama": ("HARNESS_LLAMA_URL", "http://127.0.0.1:8080"),
+    "ollama": ("HARNESS_OLLAMA_URL", "http://127.0.0.1:11434"),
+}
 
 # Final results.csv column order.
 COLUMNS = [
@@ -63,8 +69,7 @@ def build_matrix(sizes, modes, executors, reps, seed=0):
                 executor, model = (arm, "") if isinstance(arm, str) else arm
                 for rep in range(1, reps + 1):
                     unsupported = (
-                        (mode == "parallel" and not _thread_safe(executor))
-                        or (mode in ("multi", "parallel") and executor == "llama")
+                        (mode in ("multi", "parallel") and not _thread_safe(executor))
                         or (mode == "window" and size != "small")
                         or (mode == "multi" and size not in LEGACY_SIZES)
                     )
@@ -94,8 +99,9 @@ def preflight_executor(name, model=None):
 
     The result is cached per (executor, model): the claude probe is a real model call, so
     without the cache a rate-limited arm pays the probe on every cell of the batch."""
-    if name == "llama":
-        url = os.environ.get("HARNESS_LLAMA_URL") or "http://127.0.0.1:8080"
+    if name in LOCAL_URLS:
+        env, default = LOCAL_URLS[name]
+        url = os.environ.get(env) or default
         try:
             with urllib.request.urlopen(url, timeout=3):
                 return True

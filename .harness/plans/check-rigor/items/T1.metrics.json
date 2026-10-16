@@ -1,0 +1,17 @@
+{
+  "slug": "check-rigor",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 71.8,
+  "accept_s": 5.6,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 14946,
+    "output": 1958,
+    "reasoning": 4378,
+    "cache_read": 168320,
+    "cost": 0.0
+  }
+}

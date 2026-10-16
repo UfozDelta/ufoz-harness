@@ -1,0 +1,10 @@
+{"slug": "check-rigor", "tasks": [
+  {"id": "T1", "deps": [], "files": [".harness/runner/plan.py", ".harness/runner/lint.py", "tests/test_lint_red_first.py"],
+   "acceptance": "python -m pytest tests/test_lint_red_first.py tests/test_lint.py -q"},
+  {"id": "T2", "deps": ["T1"], "files": [".harness/runner/lint.py", "tests/test_lint_expect.py"],
+   "acceptance": "python -m pytest tests/test_lint_expect.py -q"},
+  {"id": "T3", "deps": ["T1"], "files": [".harness/CHECK_PATTERNS.md", ".claude/agents/planner.md"],
+   "acceptance": "python -c \"from pathlib import Path; a=Path('.harness/CHECK_PATTERNS.md').read_text(encoding='utf-8'); b=Path('.claude/agents/planner.md').read_text(encoding='utf-8'); assert 'red_first' in a and 'checks' in a and 'red_first' in b, 'docs not updated'\""},
+  {"id": "T4", "deps": ["T1", "T2", "T3"], "files": [".harness/plans/check-rigor/SUMMARY.md"],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/check-rigor/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\""}
+]}

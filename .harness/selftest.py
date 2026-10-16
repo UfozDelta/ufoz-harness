@@ -209,7 +209,7 @@ def main():
         print(f"unit tests: FAIL\n{out}")
         sys.exit(1)
     print("unit tests: OK")
-    for tool, needs in (("opencode", "opencode"), ("llama", "llama-server")):
+    for tool, needs in (("opencode", "opencode"), ("llama", "llama-server"), ("ollama", "ollama")):
         # optional: only the matching --executor needs it
         if shutil.which(needs) is None:
             print(f"  note: {needs} not on PATH (--executor {tool} unavailable)")

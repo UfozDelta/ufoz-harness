@@ -74,6 +74,16 @@ def test_preflight_llama_false_when_unreachable(monkeypatch):
     assert preflight_executor("llama") is False
 
 
+def test_preflight_ollama_false_when_unreachable(monkeypatch):
+    monkeypatch.setenv("HARNESS_OLLAMA_URL", "http://127.0.0.1:9/nope")
+
+    def _boom(*_a, **_k):
+        raise OSError("unreachable")
+
+    monkeypatch.setattr(suite.urllib.request, "urlopen", _boom)
+    assert preflight_executor("ollama") is False
+
+
 # ---------------------------------------------------------------------- resume
 def _fake_cells_module(calls):
     mod = types.ModuleType("cells")

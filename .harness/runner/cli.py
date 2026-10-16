@@ -72,6 +72,8 @@ def build_parser():
                     help="Who writes the code, optionally with a model (claude:sonnet). Backends: pi, "
                          "claude (`claude -p`), opencode (its HTTP server), llama (pi "
                          "driving a local llama.cpp router: HARNESS_LLAMA_URL/HARNESS_LLAMA_MODEL), "
+                         "ollama (pi driving a local Ollama server: "
+                         "HARNESS_OLLAMA_URL/HARNESS_OLLAMA_MODEL), "
                          "agent (agent:haiku: the main session spawns @claude-executor; run this "
                          "command once to prepare the worktree, again to grade it).")
     ap.add_argument("--plan", metavar="SPEC.md",

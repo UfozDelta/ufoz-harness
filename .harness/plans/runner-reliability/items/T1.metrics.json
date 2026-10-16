@@ -1,0 +1,17 @@
+{
+  "slug": "runner-reliability",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 75.8,
+  "accept_s": 3.5,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 10941,
+    "output": 2915,
+    "reasoning": 3896,
+    "cache_read": 95872,
+    "cost": 0.0
+  }
+}

@@ -10,8 +10,8 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 |---|---|---|---|---|
 | 1 Decide | you + main session | scope, assumptions, success criteria | agreement | 2 |
 | 2 Plan (small) | main session | writes `plan.md` + `tasks.json` | `.harness/plans/<slug>/` | 3 |
-| 2 Plan (large) | `@planner` (sonnet) | `build_map.py`, explores, writes plan, runs `--lint` | same + `Unverified:` list | 3 |
-| 2 Plan (no Claude) | `run_plan.py <slug> --plan spec.md` | planner backend writes + lints the plan | same | 3 |
+| 2 Plan (large) | `@planner`: Claude Code subagent (sonnet), opencode subagent (`.opencode/agent/planner.md`), or pi with `.pi/planner.md` as system prompt | `build_map.py`, explores, writes plan, runs `--lint` | same + `Unverified:` list | 3 |
+| 2 Plan (fallback, no in-session planner) | `run_plan.py <slug> --plan spec.md` | planner backend writes + lints the plan | same | 3 |
 | 3 Approve | main session → you | `--lint`, shows summary + `Unverified:` | your go | 4 |
 | 4 Execute | runner + executor | runs every task through the guards (section 4) | reports, logs, metrics, `SUMMARY.md` | 5 |
 | 5 Verify | main session | reads `SUMMARY.md`, reports, `git diff` | verdict | 6 |
@@ -44,8 +44,9 @@ Every path through the harness, in tables. `mermaid.md` has the happy path as a 
 | `claude` | `claude -p` per task, `--resume` | sonnet → `--executor claude:<model>` | yes | allowed | billed | claude CLI |
 
 | `llama` | pi with a throwaway `PI_CODING_AGENT_DIR` | the only model on the router → `HARNESS_LLAMA_MODEL` / `--executor llama:<model>` | yes | refused | free, local | running `llama-server` router |
+| `ollama` | pi with a throwaway `PI_CODING_AGENT_DIR` | the only model on the server → `HARNESS_OLLAMA_MODEL` / `--executor ollama:<model>` | yes | refused | free, local | running Ollama server |
 
-Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `claude`. No `llama` planner.
+Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `claude`. No `llama`/`ollama` planner.
 
 ## 4. One task through the guards
 
@@ -80,12 +81,14 @@ Planner backends (`--planner`, `HARNESS_PLANNER`): `pi` (default), `opencode`, `
 | Situation | What happens |
 |---|---|
 | `--session` with `--fresh` or `--parallel > 1` | exits 1 before anything runs |
-| `--parallel > 1` with `llama` | exits 1 before the run lock |
+| `--parallel > 1` with `llama` or `ollama` | exits 1 before the run lock |
 | Second run of the same plan while one runs | refused by `run.lock` |
 
 | `llama`: server down | exits with the `llama-server` start command |
 | `llama`: several models, none chosen | exits listing the model ids |
 | `llama`: model unloaded | `POST /models/load`, waits up to 300 s |
+| `ollama`: server down | exits with the `ollama serve` start command |
+| `ollama`: several models, none chosen | exits listing the model ids |
 | Executor claims `DONE:` but check fails | ignored; only the runner's grade counts |
 | Last task | writes `SUMMARY.md` and runs the build smoke |
 | Not a git repo | the run stays in place (`not a git repo: running in place`) |

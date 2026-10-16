@@ -1,0 +1,35 @@
+{
+  "slug": "bench-rigor",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": ["bench/speed/report.py"],
+      "acceptance": "python -c \"import sys; sys.path.insert(0, 'bench/speed'); import report as r; base = {'tests_passed': '1', 'tests_total': '1', 'output': '2', 'input': '3', 'cache_read': '0', 'tool_calls': '1', 'turns': '1', 'task': 'small'}; rows = [dict(base, harness='pi', wall_s=w) for w in ('10', '14')] + [dict(base, harness='opencode', wall_s='9', task='medium')]; t = r.build_report(rows); assert 'wall_s min-max' in t, t; assert '| 10-14 |' in t, t; assert 'Low-rep' in t, t\""
+    },
+    {
+      "id": "T2",
+      "deps": [],
+      "files": ["bench/suite/report.py"],
+      "acceptance": "python -c \"import sys; sys.path.insert(0, 'bench/suite'); import report; rows = [{'size': 'small', 'mode': 'serial', 'executor': 'pi', 'rep': r, 'status': 'pass', 'wall_s': '2.0', 'tasks_total': '1', 'attempts': '1', 'harness_sha': 'b'} for r in ('1', '2', '3')] + [{'size': 'small', 'mode': 'parallel', 'executor': 'pi', 'rep': '1', 'status': 'pass', 'wall_s': '1.0', 'tasks_total': '1', 'attempts': '1', 'harness_sha': 'b'}]; t = report.build_report(rows, all_shas=True); assert '| reps |' in t, t; assert '| 1 (low-reps) |' in t, t\""
+    },
+    {
+      "id": "T3",
+      "deps": ["T2"],
+      "files": ["bench/suite/report.py"],
+      "acceptance": "python -c \"import sys; sys.path.insert(0, 'bench/suite'); import report; rows = [{'size': 'small', 'mode': m, 'executor': 'pi', 'rep': r, 'status': 'pass', 'wall_s': '2.0', 'tasks_total': '1', 'attempts': '1', 'harness_sha': s} for s in ('a', 'b') for r in ('1', '2', '3') for m in ('serial', 'parallel')]; t = report.build_report(rows, all_shas=True); assert 'CIs overlap' in t, t; assert 'noise' in t.lower(), t\""
+    },
+    {
+      "id": "T4",
+      "deps": ["T2", "T3"],
+      "files": ["tests/test_harness_suite.py"],
+      "acceptance": "python -m pytest tests/test_harness_suite.py -q -k \"rigor\""
+    },
+    {
+      "id": "T5",
+      "deps": ["T1", "T4"],
+      "files": [".harness/plans/bench-rigor/SUMMARY.md"],
+      "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/bench-rigor/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\""
+    }
+  ]
+}

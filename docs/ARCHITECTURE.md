@@ -9,11 +9,12 @@ diagram see [mermaid.md](mermaid.md).
 | Component | Process | Model | Writes | Trusted to grade? |
 |---|---|---|---|---|
 | Main session | Claude Code (`CLAUDE.md`), or pi / opencode (`.harness/MAIN.md`) | Opus, or Bunny | plans (small tasks), review notes | no, it reads runner output |
-| `@planner` | Claude Code subagent | Sonnet (`.claude/agents/planner.md`) | only `.harness/plans/<slug>/` | no |
-| Planner (`--plan`) | one executor backend (`HARNESS_PLANNER`, default pi) | Bunny, or sonnet for claude | only `.harness/plans/<slug>/` | no |
+| `@planner` | Claude Code subagent (`.claude/agents/planner.md`), opencode subagent (`.opencode/agent/planner.md`), or pi with `.pi/planner.md` as system prompt | Sonnet (Claude) or Bunny (opencode/pi) | only `.harness/plans/<slug>/` | no |
+| Planner (`--plan`, fallback) | one executor backend (`HARNESS_PLANNER`, default pi) | Bunny, or sonnet for claude | only `.harness/plans/<slug>/` | no |
 | Executor | `node ~/.pi/agent/bin/pi-launcher.js -p` | Bunny (`opencode/space-bunny-free`, OpenCode Zen; `.pi/executor.md`) | only the task's `files` | no |
 
 | Executor (llama) | `pi-launcher.js -p` with `PI_CODING_AGENT_DIR` = a throwaway dir | local GGUF on a user-started `llama-server` router (`HARNESS_LLAMA_MODEL`) | only the task's `files` | no |
+| Executor (ollama) | `pi-launcher.js -p` with `PI_CODING_AGENT_DIR` = a throwaway dir | local model on a user-started Ollama server (`HARNESS_OLLAMA_MODEL`) | only the task's `files` | no |
 | Runner | `python .harness/run_plan.py` | none | reports, feedback, logs, metrics | **yes**, the only grader |
 | Reviewer (optional) | `claude -p --model sonnet` | Sonnet | `REVIEW.md` | advisory only |
 
@@ -181,6 +182,15 @@ a `models.json` with one custom provider `llamacpp` (`openai-completions` on `<u
 `PI_CODING_AGENT_DIR` pointing there (`run_pi(..., env=)`), so the model is `llamacpp/<id>`
 and `~/.pi/agent` is never read or written. `probe()` is `GET /health`; `stop()` removes the dir.
 
+**`--executor ollama`**: pi, unchanged, pointed at a user-started Ollama server (`ollama.py`, a
+`PiExecutor` subclass). `start()` attaches: `GET /api/tags` (unreachable -> exit with the start
+command), picks the model (`--executor ollama:<model>`, else `HARNESS_OLLAMA_MODEL`, else the only
+one listed; several -> exit listing ids). There is no load step: Ollama loads a model on first use.
+It then writes a `models.json` with one custom provider `ollama` (`openai-completions` on `<url>/v1`,
+cost 0, `contextWindow` 32768) into a throwaway dir and runs pi with `PI_CODING_AGENT_DIR` pointing
+there (`run_pi(..., env=)`), so the model is `ollama/<id>` and `~/.pi/agent` is never read or written.
+`probe()` is `GET /api/tags`; `stop()` removes the dir.
+
 Why not pi's built-in `llama.cpp` provider: its model list only fills from an interactive
 `/login llama.cpp` / `/llama`, so `-p` mode says `Model "llama.cpp/<id>" not found` even with
 `LLAMA_BASE_URL` set (pi issue #9559, closed not planned). Measured live (llama.cpp b11193,
@@ -195,7 +205,7 @@ without counting as stray; each owner's own acceptance covers those files. Pi ta
 independently.
 
 Not every executor can run this way: `Executor.thread_safe` (base.py, default `True`) is
-`False` on `llama` (one local model slot). `cli.py` checks `REGISTRY[args.executor].thread_safe`
+`False` on `llama` and `ollama` (one local model slot). `cli.py` checks `REGISTRY[args.executor].thread_safe`
 before the run lock is even acquired and exits with an error if `--parallel > 1` is combined
 with one of these — refused up front rather than racing two tasks on the same session.
 
@@ -214,8 +224,8 @@ Who writes the code is pluggable: `executors/base.py` defines `ExecResult` and t
 template — `probe`, `wait_for_quota`, `start`/`stop` via the context manager, class attrs
 `name`/`has_sessions`/`thread_safe`). `procs.zero_usage()` is the shared zero-token/zero-cost
 usage dict every executor returns on a hard failure.
-`executors/__init__.py` holds `REGISTRY = {pi, claude, opencode, llama}` and `get(name, **opts)`;
-`pi.py`, `claude.py`, `opencode.py` and `llama.py` implement it
+`executors/__init__.py` holds `REGISTRY = {pi, claude, opencode, llama, ollama}` and `get(name, **opts)`;
+`pi.py`, `claude.py`, `opencode.py`, `llama.py` and `ollama.py` implement it
 (opencode = one server driven over HTTP+SSE, `.pi/executor.md` travels as the
 prompt's `system` field, and the throwaway `XDG_CONFIG_HOME` config is derived from the
 patterns in `.pi/deny.json`). Core modules only import `executors.get`, never a backend module.
@@ -231,6 +241,11 @@ text, `[toolCall ...]` and `[tool error]` lines, and a rate-limit event (or a us
 `result`) exits `75` so `wait_for_quota()` probes again. See 3.3 for the pi counterpart.
 
 ### 3.6 The planner command (`run_plan.py --plan <spec.md>`)
+
+Prefer an in-session planner when the main session has one: `@planner` under Claude Code
+(`.claude/agents/planner.md`) or opencode (`.opencode/agent/planner.md`), or pi with
+`--append-system-prompt .pi/planner.md`. All three follow the same Layout + Rules contract.
+`--plan` is the fallback when there is no in-session planner.
 
 `runner/planner.py` (`run_planner(slug, spec_path, plans_root, backend, model)`) plans a slug
 from a spec file without a main session: it writes `PLAN_REQUEST.md` (the spec path plus the
@@ -312,6 +327,8 @@ Where the money goes: the executor is free, so Claude cost = planner + main sess
 | `HARNESS_PLANNER_MODEL` | model for the planner backend; unset = sonnet for claude, else the backend's own default (Bunny for pi/opencode) |
 | `HARNESS_LLAMA_URL` | llama executor: `llama-server` router URL, default `http://127.0.0.1:8080` |
 | `HARNESS_LLAMA_MODEL` | llama executor: router model id; unset = the only model the router lists |
+| `HARNESS_OLLAMA_URL` | ollama executor: Ollama server URL, default `http://127.0.0.1:11434` |
+| `HARNESS_OLLAMA_MODEL` | ollama executor: server model id; unset = the only model the server lists |
 | `HARNESS_WORKTREE` | `0` runs plans in place instead of in `.worktrees/<slug>` |
 | `HARNESS_WINDOW` | `0` skips the live Windows Terminal window |
 
@@ -335,7 +352,7 @@ All of them can also be set in `.harness/.env` (template: `.harness/.env.example
 - The opencode and claude logs write a step only when it finishes, so a slow model looks
   idle in the log.
 - The claude executor's new warm-session / `stream-json` path has not been run live yet.
-- The llama executor never starts `llama-server`; the run fails fast if it is down. Pi's
+- The llama and ollama executors never start their servers; the run fails fast if one is down. Pi's
   `--thinking` level is sent but ignored (the provider is declared `reasoning: false`), and
   `--session <id>` from an earlier run cannot resume, because each run gets a fresh
   `PI_CODING_AGENT_DIR`.

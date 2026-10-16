@@ -3,11 +3,12 @@ a backend module directly."""
 from .base import ExecResult, Executor
 from .claude import ClaudeExecutor
 from .llama import LlamaExecutor
+from .ollama import OllamaExecutor
 from .opencode import OpenCodeExecutor
 from .pi import PiExecutor
 
 REGISTRY = {"pi": PiExecutor, "claude": ClaudeExecutor,
-            "opencode": OpenCodeExecutor, "llama": LlamaExecutor}
+            "opencode": OpenCodeExecutor, "llama": LlamaExecutor, "ollama": OllamaExecutor}
 
 
 def get(name, **opts) -> Executor:

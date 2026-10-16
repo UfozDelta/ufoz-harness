@@ -29,7 +29,9 @@ ships **no** `.claude/settings.json`, so installing never overwrites your permis
 
 - `CLAUDE.md` (Claude Code main-session rules), `.harness/MAIN.md` + `opencode.json` (pi / opencode).
 - Agents in `.claude/agents/`: `planner` (writes the plan), `reviewer` (post-run checklist),
-  `claude-executor` (Claude as the executor, Haiku by default).
+  `claude-executor` (Claude as the executor, Haiku by default); plus the same planner
+  contract as an opencode subagent (`.opencode/agent/planner.md`) and a pi system
+  prompt (`.pi/planner.md`).
 - The runner: `.harness/run_plan.py` and `.harness/runner/`, plus `selftest.py` and the build map.
 - The pi executor (`.pi/`), the shared deny list `.pi/deny.json`, and
   `.harness/hooks/git_guard.py`, the hook that keeps `@claude-executor` off git state.
@@ -40,7 +42,7 @@ ships **no** `.claude/settings.json`, so installing never overwrites your permis
 ## Two ways to run a plan
 
 **Runner mode (pi / opencode).** `python .harness/run_plan.py <slug>` drives a free executor (pi by
-default, or `--executor opencode|llama|claude`) in its own worktree
+default, or `--executor opencode|llama|ollama|claude`) in its own worktree
 `.worktrees/<slug>` **on a clean tree** (no uncommitted changes or untracked files). The runner checks the grader lock, file scope and suppression comments, and
 retries and repairs a failing task. `python .harness/run_plan.py <slug> --land` merges it into your tree with `--ff-only`.
 
@@ -69,7 +71,8 @@ scope and acceptance checks afterwards.
 
 Other executors are optional: opencode on PATH for `--executor opencode`, the claude CLI for
 `--executor claude`, and a local
-`llama-server` for `--executor llama`. The default pi executor needs none of them.
+`llama-server` for `--executor llama`, or an Ollama server for `--executor ollama`. The default pi
+executor needs none of them.
 
 ## Configuration
 

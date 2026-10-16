@@ -7,8 +7,9 @@ delegable work, which keeps its context small and the bill low.
 
 Executors: `pi` (default, Bunny `opencode/space-bunny-free`, one warm session per
 plan, $0), `opencode` (warm `opencode serve`, also free on Bunny), `claude` (bills
-you; for comparisons), and `llama` (pi against a local `llama-server`
-you start). Pick one with `--executor <name>`; the others are optional.
+you; for comparisons), `llama` (pi against a local `llama-server` you start), and
+`ollama` (pi against a local Ollama server you start). Pick one with `--executor <name>`;
+the others are optional.
 
 ## How it works
 
@@ -16,7 +17,7 @@ you start). Pick one with `--executor <name>`; the others are optional.
 main session (Claude)          decides with you, approves plans, reviews results
    │
    ▼
-@planner (sonnet subagent)     explores (Bash for inspection only), writes the plan,
+@planner (Claude/opencode subagent, or pi with .pi/planner.md)     explores (Bash for inspection only), writes the plan,
    │                           runs --lint itself, lists Verified/Unverified facts
    ▼
 .harness/plans/<slug>/         plan.md (Decisions + one `## T<n>` section per task:
@@ -83,7 +84,7 @@ python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff
 | `--only T2` | run one task |
 | `--review` | cheap Sonnet review pass after a fresh full run → `REVIEW.md` |
 | `--relock-only` | re-record the check hashes after you edited a check; runs nothing |
-| `--executor pi\|opencode\|claude\|llama` | which executor writes the code (default pi) |
+| `--executor pi\|opencode\|claude\|llama\|ollama` | which executor writes the code (default pi) |
 | `--stats` | cost and time totals (see below) |
 | `--timeout S` | per-task executor timeout, default 900 |
 
@@ -112,7 +113,7 @@ python .harness/run_plan.py <slug> --land  (merges the worktree branch with --ff
 Copy `.harness/.env.example` to `.harness/.env` (gitignored) and uncomment what you
 want to change; a real env var in your shell wins over the file. `HARNESS_MODEL`
 overrides the executor model, `HARNESS_PI` the path to pi, `HARNESS_LLAMA_URL` the
-`llama-server` router.
+`llama-server` router and `HARNESS_OLLAMA_URL` the Ollama server.
 
 ## Guardrails
 
@@ -131,7 +132,9 @@ CLAUDE.md                    main-session rules and the plan → execute loop
 AGENTS.md                    executor rules (~10 lines on purpose; add a line only when a failure earns it)
 .claude/settings.strict.json optional hard git/--land denies for the main session
 .harness/hooks/git_guard.py  keeps @claude-executor off git state
-.claude/agents/planner.md    plan writer (sonnet)
+.claude/agents/planner.md    plan writer (single source for all planners)
+.opencode/agent/planner.md   same contract as an opencode subagent
+.pi/planner.md               same contract as a pi system prompt
 .claude/agents/reviewer.md   post-run checklist reviewer (sonnet), used by --review
 .claude/skills/              caveman, adhd, animation/design skills
 .pi/executor.md               pi executor (`opencode/space-bunny-free`, free)
@@ -155,4 +158,4 @@ AGENTS.md                    executor rules (~10 lines on purpose; add a line on
 - Claude Code, Python 3 (stdlib only), git.
 - pi installed with its `~/.pi/agent/bin/pi-launcher.js` (or `pi` on PATH), using the free
   `opencode/space-bunny-free` model. Override per run with `HARNESS_MODEL=provider/model`.
-- Optional, only for the executor you pick: opencode on PATH, the claude CLI, or llama.cpp plus a `llama-server` you start.
+- Optional, only for the executor you pick: opencode on PATH, the claude CLI, llama.cpp plus a `llama-server` you start, or Ollama plus an `ollama serve` you start.

@@ -8,6 +8,7 @@ Portable: copy `.harness/`, `.pi/`, `.claude/agents/`, add `@.harness/HARNESS.md
 plans. The pi executor (`opencode/muse-spark-1.3`, cheap, effort `medium`) writes the code, driven by
 `.harness/run_plan.py`; `--executor BACKEND[:MODEL]` picks who codes (e.g. `claude:sonnet`); `--executor opencode` a warm `opencode serve`,
 `--executor llama` a local llama.cpp router driven by pi (`HARNESS_LLAMA_MODEL` picks the model),
+`--executor ollama` a local Ollama server driven by pi (`HARNESS_OLLAMA_MODEL` picks the model),
 `--executor claude` `claude -p`, `--executor agent:haiku` the `@claude-executor` agent (below). Executors and `@planner` never touch git or land: enforced by `.pi/deny.json`, the runner's HEAD check, and
 `.harness/hooks/git_guard.py` (registered on `@claude-executor` and `@planner`). The main session is not restricted:
 it may commit and run `--land` itself. Confirm first only for outward-facing or destructive actions (push, force, delete).

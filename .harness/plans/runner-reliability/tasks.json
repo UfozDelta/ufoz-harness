@@ -1,0 +1,35 @@
+{
+  "slug": "runner-reliability",
+  "tasks": [
+    {
+      "id": "T1",
+      "deps": [],
+      "files": [".harness/runner/procs.py", "tests/test_procs.py"],
+      "acceptance": "python -m pytest tests/test_procs.py -q -k detached_grandchild"
+    },
+    {
+      "id": "T2",
+      "deps": ["T1"],
+      "files": [".harness/runner/executors/pi.py", "tests/test_pi_executor.py"],
+      "acceptance": "python -m pytest tests/test_pi_executor.py -q -k never_exits"
+    },
+    {
+      "id": "T3",
+      "deps": [],
+      "files": [".harness/runner/skills.py", "tests/test_skills.py"],
+      "acceptance": "python -m pytest tests/test_skills.py -q -k one_skill_arg"
+    },
+    {
+      "id": "T4",
+      "deps": ["T1"],
+      "files": [".harness/runner/task_runner.py", "tests/test_task_runner.py"],
+      "acceptance": "python -m pytest tests/test_task_runner.py -q -k outer_deadline"
+    },
+    {
+      "id": "T5",
+      "deps": ["T1", "T2", "T3", "T4"],
+      "files": [".harness/plans/runner-reliability/SUMMARY.md"],
+      "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/runner-reliability/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\""
+    }
+  ]
+}

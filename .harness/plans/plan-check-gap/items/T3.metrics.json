@@ -1,0 +1,17 @@
+{
+  "slug": "plan-check-gap",
+  "task": "T3",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 58.4,
+  "accept_s": 0.3,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 8702,
+    "output": 1962,
+    "reasoning": 3630,
+    "cache_read": 762240,
+    "cost": 0.0
+  }
+}

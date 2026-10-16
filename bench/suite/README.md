@@ -87,9 +87,9 @@ on the working tree; digging through git history is out of scope here.
 | `unsupported` | the matrix never planned it (see below) |
 | `skipped` | `preflight_executor` said the executor is not reachable |
 
-`build_matrix` marks a cell `unsupported` (never runs it) when: `mode == "parallel"` and the
-executor's registry class is not `thread_safe`; `mode` in `("multi", "parallel")` and the
-executor is `llama`; or `mode == "window"` and `size != "small"`; or `mode == "multi"` on a non-legacy task.
+`build_matrix` marks a cell `unsupported` (never runs it) when: `mode` in `("multi", "parallel")`
+and the executor's registry class is not `thread_safe`; or `mode == "window"` and `size != "small"`;
+or `mode == "multi"` on a non-legacy task.
 
 ## Cleanup safety
 

@@ -1,0 +1,17 @@
+{
+  "slug": "bench-rigor",
+  "task": "T1",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 49.3,
+  "accept_s": 0.2,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 14226,
+    "output": 1370,
+    "reasoning": 2659,
+    "cache_read": 104320,
+    "cost": 0.0
+  }
+}

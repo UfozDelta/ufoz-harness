@@ -122,7 +122,7 @@ python .harness/run_plan.py <slug>
    │  per task, in order:
    │    lock unchanged?            else RESULT: lock-mismatch
    │    check fails before work?   else RESULT: check-invalid (the check proves nothing)
-   │    executor (pi / opencode / claude / llama) does the brief
+   │    executor (pi / opencode / claude / llama / ollama) does the brief
    │    runner runs the check itself
    │    file touched outside the task's `files`?  → fail
    │    new @ts-ignore / @ts-nocheck / eslint-disable line?  → fail
@@ -183,20 +183,21 @@ you read the reports and the diff, then run --land. Nobody in this chain commits
 | `--status` | task states, the first failure's tail and the next command; runs nothing |
 | `--pending` | list worktrees not landed yet; runs nothing |
 | `--no-window` | a real run opens a shared Windows Terminal window with a live tab (Windows only, on by default; this or `HARNESS_WINDOW=0` opts out) |
-| `--executor BACKEND[:MODEL]` | which executor writes the code, with an optional model: pi, opencode, claude, llama, or `agent:haiku` (the `@claude-executor` agent; run twice, see Claude mode). Default pi; see [Executors](#executors) and [Requirements](#requirements) |
+| `--executor BACKEND[:MODEL]` | which executor writes the code, with an optional model: pi, opencode, claude, llama, ollama, or `agent:haiku` (the `@claude-executor` agent; run twice, see Claude mode). Default pi; see [Executors](#executors) and [Requirements](#requirements) |
 | `--stats` | cost and time totals (see [Test and measure](#test-and-measure)) |
 | `--timeout S` | per-task executor timeout, default 900 |
 | `--fresh` | a new executor session per task instead of one warm session for the plan |
 | `--session ID` | continue an existing executor session (refused with `--fresh` or `--parallel > 1`) |
 | `--plan SPEC.md` | have the planner backend write and lint the plan for `<slug>`; runs no tasks ([details](#main-session-without-claude)) |
 | `--planner BACKEND[:MODEL]` | planner backend and model for `--plan` (default `HARNESS_PLANNER` / `HARNESS_PLANNER_MODEL`, else pi) |
-| `--parallel N` | run up to N tasks at once (DAG scheduler, no shared files); refused for `llama` (one local model slot, not thread-safe) |
+| `--parallel N` | run up to N tasks at once (DAG scheduler, no shared files); refused for `llama` and `ollama` (one local model slot, not thread-safe) |
 | `--no-worktree` | run in place instead of in its own git worktree (the worktree is the default for a real run; `HARNESS_WORKTREE=0` opts out globally) |
 
 ## Executors
 
-All four runner executors follow the same brief and guards; pick one with `--executor <name>`.
-pi, opencode and claude keep one warm session per plan (llama too, since it is pi underneath). The main
+All runner executors follow the same brief and guards; pick one with `--executor <name>`.
+pi, opencode and claude keep one warm session per plan (llama and ollama too, since they are pi
+underneath). The main
 session never writes code for delegable work, which keeps its context small and the bill low.
 
 - **pi** (default): writes code with Bunny (`opencode/space-bunny-free`, an OpenCode Zen model),
@@ -213,6 +214,18 @@ session never writes code for delegable work, which keeps its context small and 
   and `HARNESS_LLAMA_URL` the server (default `http://127.0.0.1:8080`). Pi's built-in llama.cpp
   provider needs an interactive `/login`, so the executor writes its own `models.json` into a
   throwaway `PI_CODING_AGENT_DIR`; your `~/.pi/agent` is never touched. Free, offline, warm
+  session, but only as good as the local model.
+
+</details>
+
+<details>
+<summary>ollama details</summary>
+
+- **ollama**: pi against a local model served by an Ollama server you start yourself. `HARNESS_OLLAMA_MODEL`
+  picks the model (default: the only one the server lists) and `HARNESS_OLLAMA_URL` the server (default
+  `http://127.0.0.1:11434`). Ollama's OpenAI-compatible API needs no interactive `/login`, so the executor
+  writes its own `models.json` into a throwaway `PI_CODING_AGENT_DIR`; your `~/.pi/agent` is never touched.
+  Unlike llama there is no router/load step: Ollama loads the model on first use. Free, offline, warm
   session, but only as good as the local model.
 
 </details>
@@ -288,7 +301,9 @@ the lint output as feedback), writes `planner.json`, and exits 0 iff the plan li
 execute later with `python .harness/run_plan.py <slug>`.
 
 Under Claude Code the main session follows `CLAUDE.md` and plans with `@planner`
-(`.claude/agents/planner.md`); `--plan` reuses that file's layout and rules.
+(`.claude/agents/planner.md`); opencode has the same `@planner` as a subagent
+(`.opencode/agent/planner.md`), pi uses `.pi/planner.md` as a system prompt.
+`--plan` reuses that file's layout and rules as the fallback.
 
 ## Configuration
 
@@ -311,6 +326,8 @@ change. A real env var already set in your shell always wins over the same key i
 | `HARNESS_ARM_LABEL` | unset | bench only: cosmetic arm label written into the results csv |
 | `HARNESS_LLAMA_URL` | `http://127.0.0.1:8080` | llama executor: the `llama-server` router to attach to |
 | `HARNESS_LLAMA_MODEL` | unset | llama executor: router model id; unset = the only model the router lists |
+| `HARNESS_OLLAMA_URL` | `http://127.0.0.1:11434` | ollama executor: the Ollama server to attach to |
+| `HARNESS_OLLAMA_MODEL` | unset | ollama executor: server model id; unset = the only model the server lists |
 
 </details>
 
@@ -384,8 +401,10 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
   calling, served as `llama-server --models-dir <dir> --jinja --port 8080`. The executor loads the
   model itself. A small model on CPU is slow and weak: Qwen3-1.7B ran the pipeline end to end but
   failed a one-function task (it garbled file paths).
+- For `--executor ollama`: Ollama (`ollama serve`) and a tool-calling model (`ollama pull qwen3`).
+  The executor only attaches; Ollama loads the model on first use.
 
-Full form: `--executor pi|claude|opencode|llama` (pi is the default).
+Full form: `--executor pi|claude|opencode|llama|ollama` (pi is the default).
 
 ## Files
 
@@ -404,12 +423,17 @@ docs/harness-flow.svg        the data-flow diagram shown above
 docs/hero.svg, bench-cost.svg README banner and benchmark chart
 docs/mode-claude.svg         Claude mode diagram (native subagent executor)
 docs/mode-runner.svg         Runner mode diagram (pi / opencode)
+docs/pi.svg                  pi setup: main session, planner, executor, runner, land
+docs/opencode.svg            opencode setup: same, with the opencode serve executor
+docs/claude.svg              Claude Code setup: @planner + @claude-executor
 docs/bench-flow.svg          Benchmark cell flow diagram
 docs/harness.css             shared style for the docs pages
 .claude/settings.json        allow the runner (no denies; see settings.strict.json)
 .claude/settings.strict.json optional: the same allows plus hard git/--land denies
 .harness/hooks/git_guard.py  PreToolUse hook that keeps @claude-executor off git state
-.claude/agents/planner.md    plan writer (sonnet)
+.claude/agents/planner.md    plan writer (sonnet; single source for all planners)
+.opencode/agent/planner.md   same contract as an opencode subagent
+.pi/planner.md               same contract as a pi system prompt
 .claude/agents/claude-executor.md  native executor subagent (haiku default), see Run modes
 .claude/agents/reviewer.md   post-run checklist reviewer (sonnet), used by --review
 .claude/agents/validator.md  blind A/B code-quality judge (opus), used by the lab bench
@@ -439,3 +463,32 @@ packages/ufoz-harness/       npm package that installs the kit into another proj
 ```
 
 </details>
+
+## Setup diagrams
+
+The same loop, drawn per main session: what calls what, where each process runs, and who grades.
+Everything after Plan is identical; only the main session, the planner and the executor change.
+
+### pi
+
+<img src="docs/pi.svg" alt="pi setup: a pi main session on .harness/MAIN.md, planner via .pi/planner.md, run_plan.py drives a free pi executor in a worktree, the runner grades, you land" width="100%">
+
+pi has no native subagent, so the planner is a second `pi` call with `.pi/planner.md` as its
+system prompt (`--plan SPEC.md` is the fallback). The runner drives a free `pi` executor
+(`node ~/.pi/agent/bin/pi-launcher.js -p`) in `.worktrees/<slug>`, one warm session per plan.
+
+### opencode
+
+<img src="docs/opencode.svg" alt="opencode setup: an opencode orchestrator session on .harness/MAIN.md, planner via the @planner subagent, run_plan.py drives one opencode serve over HTTP+SSE as the executor, the runner grades, you land" width="100%">
+
+The main session is `opencode --agent orchestrator` (`MAIN.md` as its prompt) and plans with the
+`@planner` subagent. The runner drives a second `opencode serve` as the executor over HTTP+SSE,
+with `.pi/executor.md` as its system prompt.
+
+### Claude Code
+
+<img src="docs/claude.svg" alt="Claude Code setup: Claude decides, the @planner sonnet subagent plans, execution runs with the free pi or opencode executor or all-Claude via @claude-executor, the runner grades, you land" width="100%">
+
+Claude Code decides and plans (`@planner`, sonnet). Execution can stay free (`run_plan.py <slug>`
+drives pi/opencode) or stay in Claude: `run_plan.py <slug> --executor agent:haiku` makes the
+worktree, the main session spawns `@claude-executor` in it, and the rerun grades and lands it.

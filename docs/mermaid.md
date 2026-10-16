@@ -2,9 +2,9 @@
 
 ```mermaid
 flowchart TD
-    A[You + main session<br/>agree scope and success criteria] --> B["@planner subagent<br/>writes plan.md + tasks.json<br/>--lint rejects node TS loads and missing tsc"]
+    A[You + main session<br/>agree scope and success criteria] --> B["Planner: @planner subagent (Claude, opencode)<br/>or pi with .pi/planner.md<br/>writes plan.md + tasks.json<br/>--lint rejects node TS loads and missing tsc"]
     B --> C[Main session shows plan summary<br/>+ Unverified list]
-    C -->|you say go| D["run_plan.py in .worktrees/slug<br/>one warm executor session<br/>pi (default) / opencode / claude / llama"]
+    C -->|you say go| D["run_plan.py in .worktrees/slug<br/>one warm executor session<br/>pi (default) / opencode / claude / llama / ollama"]
 
     subgraph Task["Per task, in order"]
         D --> E[Executor does the task]
@@ -26,10 +26,10 @@ flowchart TD
 ```
 
 - Claude cost: planner call(s) + a thin main session. The executor is free with pi or
-  opencode on Bunny, or with llama on a local GGUF;
+  opencode on Bunny, or with llama/ollama on a local GGUF;
   `--executor claude` bills Claude.
 - Checks: `tsc --noEmit` / one-line smoke per task. Full build only in the last task, never a gate.
 - Stray files, lock edits and timeouts skip the repair pass.
-- `--parallel N` is refused for `llama` (one
+- `--parallel N` is refused for `llama` and `ollama` (one
   local model slot, not thread-safe).
 - Every path in table form: `FLOWS.md`.
