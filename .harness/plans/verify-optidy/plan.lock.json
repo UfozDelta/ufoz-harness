@@ -1,0 +1,6 @@
+{
+  ".harness/plans/verify-optidy/tasks.json": "25d8a65fb929570bf7cf983d5ab5c38c0abde3afccbca98587f6ff3c1ac27713",
+  ".harness/plans/verify-optidy/checks/check_t1.py": "32f73a2565ab78591a9ce982885626367be4f2e214ecb56aa8ea37315c98c00f",
+  ".harness/plans/verify-optidy/checks/check_t2.py": "cf0d330fbc6a02d06c3792f0d84d01ba657e2b07455502b1a90735dc19ae5d65",
+  ".harness/plans/verify-optidy/checks/check_t3.py": "cb32ca00e96e76d5deb0bc8e2c9376aab9a5268bf8e3ca408b5155de2f6fc977"
+}
