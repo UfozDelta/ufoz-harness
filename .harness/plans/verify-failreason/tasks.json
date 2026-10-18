@@ -1,0 +1,8 @@
+{"slug": "verify-failreason", "tasks": [
+  {"id": "T1", "deps": [], "files": ["bench/verify/backends.py"],
+   "acceptance": "python .harness/plans/verify-failreason/checks/check_t1.py"},
+  {"id": "T2", "deps": ["T1"], "files": ["bench/verify/verify.py"],
+   "acceptance": "python .harness/plans/verify-failreason/checks/check_t2.py"},
+  {"id": "T3", "deps": ["T2"], "files": [".harness/plans/verify-failreason/SUMMARY.md"],
+   "acceptance": "python .harness/plans/verify-failreason/checks/check_t3.py"}
+]}
