@@ -96,6 +96,8 @@ python .harness/run_plan.py <slug> --land     # you
 
 ## How it works
 
+<img src="docs/harness-map.svg" alt="Harness map, top to bottom: decide, plan, run in a worktree through one of four executors, check with guards and acceptance, then land, fix or discard" width="100%">
+
 ![Harness data flow](docs/harness-flow.svg)
 
 Only the main session changes between Claude Code, pi and opencode. More diagrams (open the
@@ -419,6 +421,7 @@ docs/ARCHITECTURE.md         runner internals: guards, retry/repair, executor ca
 docs/session-flows.html      start-to-finish flow for Claude Code, pi and opencode
 docs/flows.html              FLOWS.md as pictures
 docs/harness-flow.svg        the data-flow diagram shown above
+docs/harness-map.svg         top-down map of the whole harness (decide to land)
 docs/hero.svg, bench-cost.svg README banner and benchmark chart
 docs/mode-claude.svg         Claude mode diagram (native subagent executor)
 docs/mode-runner.svg         Runner mode diagram (pi / opencode)

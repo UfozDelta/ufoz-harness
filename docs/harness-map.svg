@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 830 920" width="830" height="920" role="img" aria-label="Harness map, top to bottom: a request reaches the main session, which handles it, skips the harness, or plans it. The plan is linted and approved, run_plan.py runs it in a worktree through one of four executors, every task passes guards and an acceptance command, then the main session verifies and lands, fixes or discards.">
+  <style>
+    svg{--bg:#f5f6f4;--panel:#ffffff;--ink:#1c2321;--muted:#5d6864;--line:#dde2df;--code-bg:#eef1ef;--accent:#1f6f5c;--accent-bg:#e1f0ea;--warn:#a8480c;font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+    @media (prefers-color-scheme: dark){svg{--bg:#131816;--panel:#1b2220;--ink:#e4e9e6;--muted:#9aa6a1;--line:#2c3531;--code-bg:#232c29;--accent:#5cc0a3;--accent-bg:#1b3029;--warn:#f0a35e}}
+    .bg{fill:var(--bg)}
+    .box rect{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+    .box.hot rect{fill:var(--accent-bg);stroke:var(--accent);stroke-width:2}
+    .box.dim rect{fill:var(--code-bg)}
+    .box text{fill:var(--ink);font-size:14px;font-weight:600;text-anchor:middle}
+    .box text.sub{fill:var(--muted);font-size:11.5px;font-weight:400;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+    .ar path{stroke:var(--muted);stroke-width:1.4;fill:none}
+    .ar path.bad{stroke:var(--warn)}
+    .head{fill:var(--muted)}
+    .lbl{fill:var(--muted);font-size:11.5px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+    .lbl.bad{fill:var(--warn)}
+    .stage{fill:var(--accent);font-size:11px;font-weight:700;letter-spacing:.14em;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+    .wt{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5}
+    .rule{stroke:var(--line);stroke-width:1}
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ahw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path fill="var(--warn)" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+  <rect class="bg" width="830" height="920" rx="10"/>
+
+  <!-- stage gutter -->
+  <text class="stage" x="20" y="127">DECIDE</text>
+  <text class="stage" x="20" y="222">PLAN</text>
+  <text class="stage" x="20" y="472">RUN</text>
+  <text class="stage" x="20" y="676">CHECK</text>
+  <text class="stage" x="20" y="866">LAND</text>
+  <line class="rule" x1="14" y1="165" x2="816" y2="165"/>
+  <line class="rule" x1="14" y1="414" x2="816" y2="414"/>
+  <line class="rule" x1="14" y1="722" x2="816" y2="722"/>
+
+  <g transform="translate(70,0)">
+    <rect class="wt" x="10" y="424" width="740" height="290" rx="8"/>
+    <text class="lbl" x="22" y="442">.worktrees/&lt;slug&gt;  own git worktree</text>
+
+    <g class="box dim"><rect x="280" y="16" width="200" height="48" rx="6"/><text x="380" y="45">User request</text></g>
+    <g class="ar"><path d="M380 64V92" marker-end="url(#ah)"/></g>
+
+    <g class="box hot"><rect x="260" y="96" width="240" height="56" rx="6"/><text x="380" y="120">Main session</text><text class="sub" x="380" y="139">decide · review · accept</text></g>
+    <g class="box"><rect x="20" y="96" width="190" height="56" rx="6"/><text x="115" y="120">Handled in main</text><text class="sub" x="115" y="139">design · security · debug</text></g>
+    <g class="box"><rect x="550" y="96" width="190" height="56" rx="6"/><text x="645" y="120">"do it here"</text><text class="sub" x="645" y="139">skip harness, inline</text></g>
+    <g class="ar"><path d="M258 124H212" marker-end="url(#ah)"/><path d="M502 124H548" marker-end="url(#ah)"/></g>
+
+    <g class="ar">
+      <path d="M380 152V176H240V196" marker-end="url(#ah)"/>
+      <path d="M380 152V176H520V196" marker-end="url(#ah)"/>
+    </g>
+    <text class="lbl" x="392" y="170">delegable</text>
+    <g class="box"><rect x="140" y="198" width="200" height="52" rx="6"/><text x="240" y="221">Small task</text><text class="sub" x="240" y="239">main writes the plan</text></g>
+    <g class="box"><rect x="420" y="198" width="200" height="52" rx="6"/><text x="520" y="221">Large task</text><text class="sub" x="520" y="239">@planner, sonnet</text></g>
+
+    <g class="ar">
+      <path d="M240 250V272H380V290" marker-end="url(#ah)"/>
+      <path d="M520 250V272H380"/>
+    </g>
+    <g class="box"><rect x="270" y="292" width="220" height="52" rx="6"/><text x="380" y="315">plans/&lt;slug&gt;/</text><text class="sub" x="380" y="333">plan.md · tasks.json</text></g>
+    <g class="ar"><path d="M380 344V366" marker-end="url(#ah)"/></g>
+    <g class="box"><rect x="270" y="368" width="220" height="40" rx="6"/><text x="380" y="393">--lint, then user: go</text></g>
+    <g class="ar"><path d="M380 408V448" marker-end="url(#ah)"/></g>
+
+    <g class="box hot"><rect x="250" y="450" width="260" height="52" rx="6"/><text x="380" y="473">run_plan.py</text><text class="sub" x="380" y="491">clean tree · hash lock · warm session</text></g>
+
+    <g class="ar">
+      <path d="M380 502V522H102V546" marker-end="url(#ah)"/>
+      <path d="M380 522H287V546" marker-end="url(#ah)"/>
+      <path d="M380 522H473V546" marker-end="url(#ah)"/>
+      <path d="M380 522H658V546" marker-end="url(#ah)"/>
+    </g>
+    <g class="box"><rect x="20" y="548" width="165" height="72" rx="6"/><text x="102" y="572">pi + opencode</text><text class="sub" x="102" y="590">default, free model</text><text class="sub" x="102" y="606">warm opencode serve</text></g>
+    <g class="box"><rect x="205" y="548" width="165" height="72" rx="6"/><text x="287" y="572">Local model</text><text class="sub" x="287" y="590">llama.cpp or Ollama</text><text class="sub" x="287" y="606">driven by pi</text></g>
+    <g class="box"><rect x="390" y="548" width="165" height="72" rx="6"/><text x="473" y="572">claude -p</text><text class="sub" x="473" y="590">claude:sonnet etc.</text><text class="sub" x="473" y="606">headless</text></g>
+    <g class="box"><rect x="575" y="548" width="165" height="72" rx="6"/><text x="658" y="572">@claude-executor</text><text class="sub" x="658" y="590">agent:haiku</text><text class="sub" x="658" y="606">inside the session</text></g>
+
+    <g class="ar">
+      <path d="M102 620V638H380"/>
+      <path d="M287 620V638"/>
+      <path d="M473 620V638"/>
+      <path d="M658 620V638H380"/>
+      <path d="M380 638V656" marker-end="url(#ah)"/>
+    </g>
+    <g class="box"><rect x="250" y="658" width="260" height="48" rx="6"/><text x="380" y="679">Guards + acceptance</text><text class="sub" x="380" y="696">file scope · shell cmd exits 0</text></g>
+    <g class="ar"><path class="bad" d="M512 672H552V696H512" marker-end="url(#ahw)"/></g>
+    <text class="lbl bad" x="558" y="689">fail: retry once</text>
+
+    <g class="ar"><path d="M380 706V758" marker-end="url(#ah)"/></g>
+    <g class="box"><rect x="240" y="760" width="280" height="52" rx="6"/><text x="380" y="783">Verify</text><text class="sub" x="380" y="801">SUMMARY · reports · diff · @reviewer</text></g>
+
+    <g class="ar">
+      <path d="M380 812V828H130V844" marker-end="url(#ah)"/>
+      <path d="M380 828V844" marker-end="url(#ah)"/>
+      <path d="M380 828H630V844" marker-end="url(#ah)"/>
+    </g>
+    <g class="box hot"><rect x="30" y="846" width="200" height="52" rx="6"/><text x="130" y="869">Accept: --land</text><text class="sub" x="130" y="887">worktree → main tree</text></g>
+    <g class="box"><rect x="280" y="846" width="200" height="52" rx="6"/><text x="380" y="869">Fix plan, rerun</text><text class="sub" x="380" y="887">passed tasks are skipped</text></g>
+    <g class="box"><rect x="530" y="846" width="200" height="52" rx="6"/><text x="630" y="869">Discard</text><text class="sub" x="630" y="887">drop the worktree</text></g>
+  </g>
+</svg>
