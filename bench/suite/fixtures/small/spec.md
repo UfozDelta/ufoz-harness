@@ -8,7 +8,8 @@ filter-then-offset-then-limit, response stays `list[Item]` and gains an `X-Total
 T2: `app/tag_store.py` (`Tag`, `reset_tag_store`, `next_id`, `tags`, `get_tag`, `find_by_name`, `add_tag`,
 `attach_item`), an empty `app/routers/__init__.py`, and `app/routers/tags.py` with `GET /tags`,
 `GET /tags/{tag_id}` (404 `Tag not found`), `POST /tags` (201, 409 `Tag already exists` on a duplicate name,
-422 on an empty name) and `POST /tags/{tag_id}/items/{item_id}` (404 for an unknown tag or item, idempotent
-re-attach). Item existence is checked with a lazy `from app.main import _items` to avoid a circular import.
+422 on an empty name) and `POST /tags/{tag_id}/items/{item_id}` (404 `Tag not found` for an unknown tag, 404 `Item not found` for an
+unknown item, idempotent re-attach, 200 returning the tag). `Tag` has `id`, `name` and `item_ids: list[int]`
+(attached item ids, default empty); every tag response includes `item_ids`. Item existence is checked with a lazy `from app.main import _items` to avoid a circular import.
 Both tasks have empty `deps` and disjoint files; `app/models.py` and `tests/test_items.py` are never edited,
 and no new dependencies are allowed.

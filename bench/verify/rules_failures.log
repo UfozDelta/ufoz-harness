@@ -4,3 +4,4 @@ verify-pi-pi-pi-r1: [toolCall read] {"path": ".pi/executor.md", "offset": null, 
 verify-pi-pi-pi-r3: [toolCall bash] {"command": "cd \"C:/Users/F3L/AppData/Local/Temp/ufoz-bench/verify-pi-pi-pi-r3\" && cat .pi/executor.md && echo \"=== CHECK_PATTERNS ===\" && cat .harness/CHECK_PATTERNS.md", "timeout": 30}
 verify-opencode-pi-opencode-r3: [0m→ [0mRead .pi/executor.md
 verify-pi-pi-pi-r2: [toolCall bash] {"command": "cd \"C:/Users/F3L/AppData/Local/Temp/ufoz-bench/verify-pi-pi-pi-r2\" && echo \"===deny.json===\" && cat .pi/deny.json && echo \"===executor.md===\" && cat .pi/executor.md && echo \"===pla
+verify-opencode-pi-opencode-r2: [0m→ [0mRead .pi/executor.md
