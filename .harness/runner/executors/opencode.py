@@ -354,6 +354,7 @@ class OpenCodeExecutor(Executor):
                     usage["output"] += tokens.get("output", 0) or 0
                     usage["reasoning"] += tokens.get("reasoning", 0) or 0
                     usage["cache_read"] += (tokens.get("cache") or {}).get("read", 0) or 0
+                    usage["cache_write"] += (tokens.get("cache") or {}).get("write", 0) or 0
                     usage["cost"] += part.get("cost", 0) or 0
                 elif part.get("type") == "text":
                     if part.get("messageID") in seen["non_assistant"]:

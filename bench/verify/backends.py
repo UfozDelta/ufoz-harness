@@ -4,6 +4,7 @@ Pure data + command builders + the rule-role isolation check. Nothing here runs 
 cell; `verify.py` is the only entry point. `preflight` deliberately imports the
 suite lazily so `--dry` never pays for the executor registry / task discovery.
 """
+import json
 import random
 import re
 import shutil
@@ -38,11 +39,18 @@ MAIN_RULES = {
 # The single file the executor agent must follow.
 EXECUTOR_RULES = ".pi/executor.md"
 
+# Usage of one phase (orchestrator, planner or executor). A field the backend cannot report is None.
+USAGE_FIELDS = ("in", "out", "reason", "cache_read", "cache_write", "cost", "turns", "tool_calls")
+# Per-phase CSV columns, written as `<phase>_<field>`.
+PHASE_FIELDS = ("wall_s", "in", "out", "reason", "cache_read", "cache_write", "tool_calls")
+
 # Final results.csv column order; the resume slug goes in front of these.
 COLUMNS = [
     "ts", "orchestrator", "planner", "executor", "rep", "status", "rules_ok",
     "plan_ok", "wall_s", "tasks_passed", "tasks_total", "plan_cost", "exec_cost",
     "harness_sha", "model", "seed",
+] + [f"{phase}_{field}" for phase in ("orch", "plan", "exec") for field in PHASE_FIELDS] + [
+    "orch_cost", "orch_turns", "plan_attempts", "plan_cached", "exec_attempts", "usage_json",
 ]
 CSV_FIELDS = ["slug"] + COLUMNS
 
@@ -110,13 +118,96 @@ def orchestrator_command(backend, model, brief):
     """
     if backend == "claude":
         return ["claude", "-p", brief, "--allowedTools", "Bash,Read,Write,Edit",
-                "--model", model]
+                "--model", model, "--output-format", "stream-json", "--verbose"]
     if backend == "pi":
         launcher = Path.home() / ".pi" / "agent" / "bin" / "pi-launcher.js"
-        return ["node", str(launcher), "-p", brief, "--model", model]
+        return ["node", str(launcher), "-p", brief, "--model", model, "--mode", "json"]
     if backend == "opencode":
         return [_opencode_bin(), "run", "--agent", "orchestrator", brief]
     raise ValueError(f"unknown orchestrator backend: {backend!r}")
+
+
+def _empty_usage():
+    return dict.fromkeys(USAGE_FIELDS)
+
+
+def _add(usage, field, value):
+    """Add a reported value. A None (not reported) leaves the field as it was."""
+    if value is None:
+        return
+    usage[field] = (usage[field] or 0) + value
+
+
+def _render_call(name, args):
+    return f"[toolCall {name}] {json.dumps(args or {})[:200]}"
+
+
+def _claude_event(usage, event, out):
+    kind = event.get("type")
+    if kind == "assistant":
+        tools = 0
+        for block in (event.get("message") or {}).get("content") or []:
+            if block.get("type") == "text" and block.get("text"):
+                out.append(block["text"])
+            elif block.get("type") == "tool_use":
+                tools += 1
+                out.append(_render_call(block.get("name"), block.get("input")))
+        usage["tool_calls"] = (usage["tool_calls"] or 0) + tools
+    elif kind == "result":
+        u = event.get("usage") or {}
+        _add(usage, "in", u.get("input_tokens"))
+        _add(usage, "out", u.get("output_tokens"))
+        _add(usage, "cache_read", u.get("cache_read_input_tokens"))
+        _add(usage, "cache_write", u.get("cache_creation_input_tokens"))
+        _add(usage, "cost", event.get("total_cost_usd"))
+        _add(usage, "turns", event.get("num_turns"))
+
+
+def _pi_event(usage, event, out):
+    message = event.get("message") or {}
+    if event.get("type") != "message_end" or message.get("role") != "assistant":
+        return
+    u = message.get("usage") or {}
+    _add(usage, "in", u.get("input"))
+    _add(usage, "out", u.get("output"))
+    _add(usage, "reason", u.get("reasoning"))
+    _add(usage, "cache_read", u.get("cacheRead"))
+    _add(usage, "cache_write", u.get("cacheWrite"))
+    _add(usage, "cost", (u.get("cost") or {}).get("total"))
+    _add(usage, "turns", 1)
+    tools = 0
+    for part in message.get("content") or []:
+        if part.get("type") == "text" and part.get("text"):
+            out.append(part["text"])
+        elif part.get("type") == "toolCall":
+            tools += 1
+            out.append(_render_call(part.get("name"), part.get("arguments")))
+    usage["tool_calls"] = (usage["tool_calls"] or 0) + tools
+
+
+def parse_stream(backend, text):
+    """(usage, rendered) for one orchestrator run.
+
+    claude (`stream-json`) and pi (`--mode json`) emit JSON events: their usage is summed
+    and the assistant text and tool calls are rendered as plain lines, so `check_rules`
+    reads the same text as before. Any other line passes through unchanged. opencode, or
+    output with no usage events, gives all-None usage.
+    """
+    usage = _empty_usage()
+    handler = {"claude": _claude_event, "pi": _pi_event}.get(backend)
+    if handler is None:
+        return usage, text
+    out = []
+    for line in (text or "").splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            event = None
+        if not isinstance(event, dict):
+            out.append(line)
+            continue
+        handler(usage, event, out)
+    return usage, "\n".join(out)
 
 
 def preflight(backend, model=None):

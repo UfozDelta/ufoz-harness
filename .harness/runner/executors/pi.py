@@ -98,6 +98,7 @@ def run_pi(brief, log, timeout, feedback=None, session=None, raw_prompt=None, ru
                     usage["output"] += u.get("output", 0) or 0
                     usage["reasoning"] += u.get("reasoning", 0) or 0
                     usage["cache_read"] += u.get("cacheRead", 0) or 0
+                    usage["cache_write"] += u.get("cacheWrite", 0) or 0
                     usage["cost"] += (u.get("cost") or {}).get("total", 0) or 0
                     for part in message.get("content", []):
                         if part.get("type") == "text" and part.get("text"):

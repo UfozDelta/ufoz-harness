@@ -150,7 +150,7 @@ def run_planner(slug, spec_path, plans_root=PLANS_ROOT, backend=None, model=None
             result = executor.run(request, log, TIMEOUT, feedback if attempt else None, session, rules=rules)
             attempts += 1
             session = result.session
-            for key in ("input", "output", "reasoning", "cache_read"):
+            for key in ("input", "output", "reasoning", "cache_read", "cache_write"):
                 usage[key] = usage.get(key, 0) + result.usage.get(key, 0)
             usage["cost"] = usage.get("cost", 0.0) + (result.usage.get("cost") or 0.0)
             stray = _out_of_scope(before, guards.snapshot(), prefixes)
@@ -173,6 +173,7 @@ def run_planner(slug, spec_path, plans_root=PLANS_ROOT, backend=None, model=None
             "attempts": attempts, "tokens": {"input": usage.get("input", 0), "output": usage.get("output", 0),
                                              "reasoning": usage.get("reasoning", 0),
                                              "cache_read": usage.get("cache_read", 0),
+                                             "cache_write": usage.get("cache_write", 0),
                                              "cost": round(usage.get("cost", 0.0), 6)},
             "lint_ok": bool(lint_ok)}
     (plan_dir / "planner.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

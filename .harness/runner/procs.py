@@ -6,7 +6,7 @@ import subprocess
 import time
 
 ANSI = re.compile(rb"\x1b\[[0-9;]*[A-Za-z]")
-TOKEN_KEYS = ("input", "output", "reasoning", "cache_read")
+TOKEN_KEYS = ("input", "output", "reasoning", "cache_read", "cache_write")
 # executor exit codes, so the run loop can branch without magic numbers per executor
 EXIT_RATE_LIMIT = 75
 EXIT_TIMEOUT = 124

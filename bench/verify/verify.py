@@ -7,6 +7,8 @@ runner`, `run_plan.py <slug> --plan SPEC.md --planner P[:m]` (the deterministic 
 """
 import argparse
 import csv
+import json
+import os
 import subprocess
 import sys
 import time
@@ -62,7 +64,8 @@ def parse_args(argv=None):
 
 def _matrix(args):
     orchestrators = _arms(args.orchestrators) or list(backends.ORCHESTRATORS)
-    planners = _arms(args.planners) or list(backends.PLANNERS)
+    # headless: the orchestrator plans, so the planner axis is unused; one arm unless asked
+    planners = _arms(args.planners) or (list(backends.PLANNERS) if args.plan_via == "runner" else ["pi"])
     executors = _arms(args.executors) or list(backends.EXECUTORS)
     cells = backends.build_matrix(orchestrators, planners, executors, args.reps,
                                   seed=args.seed)
@@ -121,6 +124,67 @@ def _plan_brief(cell, project):
             f"{_read_text(spec)}")
 
 
+def _cell(value):
+    """A CSV cell. None means the backend did not report it: blank, never 0."""
+    return "" if value is None else value
+
+
+def _fill_phase(row, phase, data):
+    for field in backends.PHASE_FIELDS:
+        row[f"{phase}_{field}"] = _cell(data.get(field))
+
+
+def _planner_phase(plan_dir):
+    """(phase usage, attempts) from the runner's planner.json; None when there is none (cached plan)."""
+    path = Path(plan_dir) / "planner.json"
+    if not path.is_file():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    tokens = data.get("tokens") or {}
+    usage = dict.fromkeys(backends.USAGE_FIELDS)
+    for field, key in (("in", "input"), ("out", "output"), ("reason", "reasoning"),
+                       ("cache_read", "cache_read"), ("cache_write", "cache_write"),
+                       ("cost", "cost")):
+        usage[field] = tokens.get(key)
+    return {"wall_s": data.get("seconds"), **usage}, data.get("attempts")
+
+
+def _exec_usage(slug, wt):
+    """Executor usage for one slug, read from the worktree before --land. Token totals come
+    from metrics.jsonl rows (a key no row carries stays None); tool calls are the `[toolCall`
+    lines in the executor's pi logs."""
+    usage = dict.fromkeys(backends.USAGE_FIELDS, None)
+    usage["attempts"] = 0
+    keys = (("in", "input"), ("out", "output"), ("reason", "reasoning"),
+            ("cache_read", "cache_read"), ("cache_write", "cache_write"), ("cost", "cost"))
+    for line in _read_text(Path(wt) / ".harness" / "metrics.jsonl").splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("slug") != slug or "kind" in row or not row.get("task"):
+            continue
+        tokens = row.get("tokens")
+        if not isinstance(tokens, dict):
+            continue
+        usage["attempts"] += int(row.get("attempts") or 0)
+        for field, key in keys:
+            if tokens.get(key) is not None:
+                usage[field] = (usage[field] or 0) + tokens[key]
+    logs = sorted((Path(wt) / ".harness" / "plans" / slug / "logs").glob("T*.pi.log"))
+    if logs:
+        usage["tool_calls"] = sum(_read_text(path).count("[toolCall") for path in logs)
+    return usage
+
+
+def _write_usage(repo_root, slug, phases):
+    """Per-phase usage of one cell as bench/verify/usage/<slug>__<stamp>.json; returns its repo-relative path."""
+    path = Path(repo_root) / "bench" / "verify" / "usage" / f"{slug}__{time.strftime('%Y%m%d-%H%M%S')}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(phases, indent=2) + "\n", encoding="utf-8")
+    return path.relative_to(repo_root).as_posix()
+
+
 def run_cell(cell, args, repo_root=REPO_ROOT):
     cells = _cells()
     slug = cell["slug"]
@@ -132,11 +196,14 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
                 "model": cell["model"], "seed": cell["seed"]})
     started = time.time()
     project = None
+    phases = {}  # phase name -> usage dict, written to bench/verify/usage/ by finish()
     plan_backend = cell["planner"] if args.plan_via == "runner" else cell["orchestrator"]
 
     def finish(status):
         row["status"] = status
         row["wall_s"] = round(time.time() - started, 1)
+        if phases:
+            row["usage_json"] = _write_usage(repo_root, slug, phases)
         return row
 
     needed = [(cell["planner"], cell["planner_model"]),
@@ -154,19 +221,35 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
         if args.plan_via == "runner":
             cell["plan_source"] = "planner"
             try:
-                row["plan_cost"] = cells.plan_for_project(
+                cost = cells.plan_for_project(
                     cell, project, repo_root, kit_hash=cell.get("kit_hash", ""))
             except Exception as exc:
                 _write_log(plan_dir, "plan.log", f"plan error: {exc}\n")
                 return finish("fail")
+            # a cached plan runs no planner: cost 0, no planner.json, so its plan columns stay blank
+            row["plan_cached"] = "false" if cost else "true"
+            row["plan_cost"] = cost if cost else ""
+            planned = _planner_phase(plan_dir) if cost else None
+            if planned:
+                phases["plan"] = planned[0]
+                _fill_phase(row, "plan", planned[0])
+                row["plan_attempts"] = _cell(planned[1])
         else:
             cmd = backends.orchestrator_command(cell["orchestrator"],
                                                 cell["orchestrator_model"],
                                                 _plan_brief(cell, project))
             if cell["orchestrator"] == "opencode":  # else it plans in the repo it was last attached to
                 cmd += ["--dir", str(project), "--model", cell["orchestrator_model"]]
+            orch_started = time.time()
             code, output, timed_out = _run_cmd(cmd, project, args.cell_timeout)
-            _write_log(plan_dir, "plan.log", output)
+            orch_wall = time.time() - orch_started
+            _write_log(plan_dir, "plan.raw.jsonl", output)
+            usage, rendered = backends.parse_stream(cell["orchestrator"], output)
+            _write_log(plan_dir, "plan.log", rendered)
+            phases["orch"] = {"wall_s": round(orch_wall, 1), **usage}
+            _fill_phase(row, "orch", phases["orch"])
+            row["orch_cost"] = _cell(usage["cost"])
+            row["orch_turns"] = _cell(usage["turns"])
             if timed_out:
                 return finish("timeout")
             if not ((plan_dir / "plan.md").is_file() and (plan_dir / "tasks.json").is_file()):
@@ -185,15 +268,24 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
 
         spec = (f"{cell['executor']}:{cell['executor_model']}"
                 if cell["executor_model"] else cell["executor"])
+        exec_started = time.time()
         code, output, timed_out = _run_cmd(
             [sys.executable, ".harness/run_plan.py", slug, "--executor", spec, "--no-window"],
             project, args.cell_timeout)
+        exec_wall = time.time() - exec_started
         _write_log(plan_dir, "exec.log", output)
         if timed_out:
             return finish("timeout")
 
         # --land removes the worktree and its metrics, so read the totals before it
-        metrics = cells._metrics(slug, project / ".worktrees" / slug, project)
+        wt = project / ".worktrees" / slug
+        metrics = cells._metrics(slug, wt, project)
+        exec_usage = _exec_usage(slug, wt)
+        if cell["executor"] == "claude":  # claude folds cache writes into `in`: not reported
+            exec_usage["cache_write"] = None
+        phases["exec"] = {"wall_s": round(exec_wall, 1), **exec_usage}
+        _fill_phase(row, "exec", phases["exec"])
+        row["exec_attempts"] = _cell(exec_usage["attempts"])
 
         code, output, timed_out = _run_cmd(
             [sys.executable, ".harness/run_plan.py", slug, "--land"], project,
@@ -250,15 +342,36 @@ def _existing_cost(path):
     try:
         with open(path, newline="", encoding="utf-8") as fh:
             for row in csv.DictReader(fh):
-                total += _num(row.get("plan_cost")) + _num(row.get("exec_cost"))
+                total += (_num(row.get("orch_cost")) + _num(row.get("plan_cost"))
+                          + _num(row.get("exec_cost")))
     except OSError:
         pass
     return total
 
 
+def migrate_csv(path):
+    """Rewrite a results.csv under an older header to `backends.CSV_FIELDS`: old values kept,
+    new columns blank. Temp file then rename, so the old file survives a crash."""
+    path = Path(path)
+    if not path.is_file() or path.stat().st_size == 0:
+        return
+    with open(path, newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        if reader.fieldnames == backends.CSV_FIELDS:
+            return
+        rows = list(reader)
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=backends.CSV_FIELDS, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+    os.replace(tmp, path)
+
+
 def _append_row(path, row):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    migrate_csv(path)
     fresh = not path.exists() or path.stat().st_size == 0
     with open(path, "a", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=backends.CSV_FIELDS, extrasaction="ignore")
