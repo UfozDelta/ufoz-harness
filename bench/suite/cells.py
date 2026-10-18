@@ -818,6 +818,22 @@ def _score_project(cell, row, project, repo_root, reports):
     row["status"] = "pass" if ok else "fail"
 
 
+def score_project(cell, project, repo_root=REPO_ROOT):
+    """Score a landed temp project: gather the worktree reports and metrics, then fill
+    a row and let `_score_project` decide its status. Returns the row dict."""
+    project = Path(project)
+    slug = cell["slug"]
+    row = _blank(cell)
+    wt = project / ".worktrees" / slug
+    root = wt if wt.is_dir() else project  # --land removes the worktree; reports land in the project
+    reports = sorted(_plan_dir(root, slug).glob("items/*.report.md"))
+    metrics = _metrics(slug, root, project)
+    row.update({k: metrics[k] for k in METRIC_FIELDS})
+    _score_project(cell, row, project, repo_root, reports)
+    row["harness_sha"] = _harness_sha(repo_root)
+    return row
+
+
 def _run_project(cell, repo_root, cell_timeout):
     """Isolated path: a temp git project with the kit installed and the plan committed,
     run_plan inside it, then --land and score the landed tree. A project failure is an
@@ -1210,3 +1226,14 @@ def plan_for_project(cell, project, repo_root=REPO_ROOT, kit_hash="", runner=sub
     _must_git(project, "commit", "-q", "--allow-empty", "-m", "plan")
     cell["base_commit"] = _must_git(project, "rev-parse", "HEAD")
     return cost
+
+
+def commit_plan(cell, project):
+    """Retag the plan already written into `project` to this cell's slug, commit it as
+    `plan`, record the base commit, and return that sha."""
+    slug = cell["slug"]
+    _retag_plan(_plan_dir(project, slug), slug)
+    _must_git(project, "add", "-A")
+    _must_git(project, "commit", "-q", "--allow-empty", "-m", "plan")
+    cell["base_commit"] = _must_git(project, "rev-parse", "HEAD")
+    return cell["base_commit"]
