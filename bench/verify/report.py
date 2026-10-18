@@ -30,6 +30,22 @@ def _int(value):
         return 0
 
 
+def _float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _mean(values):
+    values = [v for v in values if v is not None]
+    return sum(values) / len(values) if values else None
+
+
+def _fmt(value, spec):
+    return "-" if value is None else format(value, spec)
+
+
 def _key(row):
     return (row.get("orchestrator", ""), row.get("planner", ""), row.get("executor", ""))
 
@@ -52,11 +68,15 @@ def build_report(rows):
             key = _key(row)
             if key not in combos:
                 combos[key] = {"pass": 0, "fail": 0, "other": 0, "total": 0,
-                               "rules_ok": 0, "plan_ok": 0}
+                               "rules_ok": 0, "plan_ok": 0, "wall": [], "cost": []}
                 order.append(key)
             bucket = combos[key]
             bucket["total"] += 1
             totals["total"] += 1
+            bucket["wall"].append(_float(row.get("wall_s")))
+            costs = [_float(row.get("plan_cost")), _float(row.get("exec_cost"))]
+            bucket["cost"].append(None if all(c is None for c in costs)
+                                  else sum(c for c in costs if c is not None))
             status = str(row.get("status", "")).strip().lower()
             if status == "pass":
                 bucket["pass"] += 1
@@ -77,13 +97,15 @@ def build_report(rows):
         lines = ["# verify-bench results", "",
                  f"Cells recorded: {totals['total']}", "",
                  "## Combinations", "",
-                 "| orchestrator | planner | executor | pass | fail | other | rules_ok | plan_ok | total |",
-                 "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+                 "| orchestrator | planner | executor | pass | fail | other | rules_ok | plan_ok | total | mean wall s | mean cost $ |",
+                 "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
         for key in order:
             bucket = combos[key]
             lines.append(f"| {key[0]} | {key[1]} | {key[2]} | {bucket['pass']} | "
                          f"{bucket['fail']} | {bucket['other']} | {bucket['rules_ok']} | "
-                         f"{bucket['plan_ok']} | {bucket['total']} |")
+                         f"{bucket['plan_ok']} | {bucket['total']} | "
+                         f"{_fmt(_mean(bucket['wall']), '.0f')} | "
+                         f"{_fmt(_mean(bucket['cost']), '.3f')} |")
         lines += ["", "## Totals", "",
                   f"- pass: {totals['pass']}",
                   f"- fail: {totals['fail']}",
