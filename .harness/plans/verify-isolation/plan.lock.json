@@ -1,0 +1,6 @@
+{
+  ".harness/plans/verify-isolation/tasks.json": "d214ddf8517b06df4c4ff701fcb83621d8ceeac39ae307044b59b93c3712dca6",
+  ".harness/plans/verify-isolation/checks/check_t1.py": "964bbac794ec96318bc2e05a570162d79350522d19f66a41dffa406b389c14ec",
+  ".harness/plans/verify-isolation/checks/check_t2.py": "d82082d58f0a54542995ae98e56abfbeaa2b82387182d54979b120c26c8c8266",
+  ".harness/plans/verify-isolation/checks/check_t3.py": "814f50d93b7aa626d33043a03ebdb9de4dc2959a149ec925e2f08236d75f8869"
+}
