@@ -139,11 +139,15 @@ def _link(name, target):
 def _lf_agents(target):
     """git on Windows (core.autocrlf) checks the worktree out with CRLF, and Claude Code then
     cannot find agent files that have a hooks block (`--agent claude-executor` fails). Agent
-    files are LF in the repo, so rewrite them LF here; git sees LF as clean under autocrlf."""
-    for f in (target / ".claude" / "agents").glob("*.md"):
+    files are LF in the repo, so rewrite them LF here. Under autocrlf git still flags the LF
+    rewrite as modified and `--land` refuses, so mark the files skip-worktree."""
+    files = list((target / ".claude" / "agents").glob("*.md"))
+    for f in files:
         raw = f.read_bytes()
         if b"\r\n" in raw:
             f.write_bytes(raw.replace(b"\r\n", b"\n"))
+    if files:
+        _git("-C", str(target), "update-index", "--skip-worktree", *(str(f) for f in files))
 
 
 def _dirty_paths(slug=None):
