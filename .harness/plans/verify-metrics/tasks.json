@@ -1,0 +1,12 @@
+{"slug": "verify-metrics", "tasks": [
+  {"id": "T1", "deps": [], "files": [".harness/runner/procs.py", ".harness/runner/executors/pi.py", ".harness/runner/executors/opencode.py", ".harness/runner/planner.py"],
+   "acceptance": "python .harness/plans/verify-metrics/checks/check_t1.py"},
+  {"id": "T2", "deps": [], "files": ["bench/verify/backends.py"],
+   "acceptance": "python .harness/plans/verify-metrics/checks/check_t2.py"},
+  {"id": "T3", "deps": ["T1", "T2"], "files": ["bench/verify/verify.py"],
+   "acceptance": "python .harness/plans/verify-metrics/checks/check_t3.py"},
+  {"id": "T4", "deps": ["T2"], "files": ["bench/verify/report.py"],
+   "acceptance": "python .harness/plans/verify-metrics/checks/check_t4.py"},
+  {"id": "T5", "deps": ["T1", "T2", "T3", "T4"], "files": ["bench/verify/results.csv", "bench/verify/RESULTS.md", ".harness/plans/verify-metrics/SUMMARY.md"],
+   "acceptance": "python .harness/plans/verify-metrics/checks/check_t5.py"}
+]}

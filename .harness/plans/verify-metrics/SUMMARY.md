@@ -1,0 +1,2 @@
+verify-bench now records per-phase (orch/plan/exec) wall time, tokens, cache read/write, tool calls and cost. Files: bench/verify/{backends,verify,report}.py, runner procs/pi/opencode/planner (cache_write). backends.parse_stream reads claude/pi JSON orchestrator output; verify.py migrates results.csv and writes usage/<slug>.json; report adds cache hit, cost per pass, per-axis tables. Null: opencode orchestrator usage, claude exec cache_write.
+BUILD: pass

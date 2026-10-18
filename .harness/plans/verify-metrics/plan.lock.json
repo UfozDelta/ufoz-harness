@@ -1,0 +1,8 @@
+{
+  ".harness/plans/verify-metrics/tasks.json": "363c17a0893ad831e3d852ff5873343bec66471f48a94c476e2806714e85c753",
+  ".harness/plans/verify-metrics/checks/check_t1.py": "a1853070f8e4f46ab31fe194bee0aeac91e0e2c6ae56565ee52722eb210bb2dd",
+  ".harness/plans/verify-metrics/checks/check_t2.py": "18e071db5fda26fbd8b3f9d98eb3e64ede1140a50619d3396a08eb80cf8fe275",
+  ".harness/plans/verify-metrics/checks/check_t3.py": "ff2cd93b85c9f5c15811061e6bdc632991cd3bc45c8ec1a15e29a625df883962",
+  ".harness/plans/verify-metrics/checks/check_t4.py": "b22998eefc793623b9aa35c28e821e4c1f3d9ce9d9ff04c87dcfbcdc3ec2aece",
+  ".harness/plans/verify-metrics/checks/check_t5.py": "6351d2393ea0974eb436d90f0a53bf3cae70c667de6c86f6d0873f04354feae5"
+}
