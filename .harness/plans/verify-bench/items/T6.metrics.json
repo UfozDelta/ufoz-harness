@@ -1,0 +1,17 @@
+{
+  "slug": "verify-bench",
+  "task": "T6",
+  "result": "fail",
+  "attempts": 2,
+  "repairs": 0,
+  "exec_s": 1606.8,
+  "accept_s": 10156.9,
+  "retry_s": 10593.0,
+  "tokens": {
+    "input": 7302,
+    "output": 4370,
+    "reasoning": 3199,
+    "cache_read": 499788,
+    "cost": 0.010433328
+  }
+}

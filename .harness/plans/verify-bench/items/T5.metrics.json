@@ -1,0 +1,17 @@
+{
+  "slug": "verify-bench",
+  "task": "T5",
+  "result": "pass",
+  "attempts": 1,
+  "repairs": 0,
+  "exec_s": 17.9,
+  "accept_s": 0.3,
+  "retry_s": 0.0,
+  "tokens": {
+    "input": 2419,
+    "output": 1625,
+    "reasoning": 245,
+    "cache_read": 272808,
+    "cost": 0.004312548
+  }
+}

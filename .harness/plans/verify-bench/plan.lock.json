@@ -1,0 +1,6 @@
+{
+  ".harness/plans/verify-bench/tasks.json": "38316f72f82fcc2edcb37ca94d540c0b2826daea45a26438621ae218c37d2c37",
+  ".harness/plans/verify-bench/checks/check_t3.py": "83ea41ac02b602d1e82a9bc0e01639184f8455678bcbcc71dd3c9e3be50adec6",
+  ".harness/plans/verify-bench/checks/check_t4.py": "9be07f1f005d1a916dc904b5f6a13783d85a8b374b5b6e8893c420704775d8ba",
+  ".harness/plans/verify-bench/checks/check_t6.py": "71bec1433aff8ffeee5a7779ecfcbe9e949467fc1cfdc9c6d902409e1e819b6c"
+}
