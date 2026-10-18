@@ -1,0 +1,16 @@
+{"slug": "verify-bench", "tasks": [
+  {"id": "T1", "deps": [], "files": ["bench/verify/backends.py"],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'bench/verify'); import backends as b; m=b.build_matrix(b.ORCHESTRATORS,b.PLANNERS,b.EXECUTORS,1); assert len(m)==27; assert {'verify-pi-pi-pi-r1','verify-claude-opencode-claude-r1'} <= {c['slug'] for c in m}; assert b.EXECUTOR_RULES=='.pi/executor.md'; assert b.MAIN_RULES['claude']=='CLAUDE.md'; print('BACKENDS OK')\""},
+  {"id": "T2", "deps": [], "files": ["bench/suite/cells.py"],
+   "acceptance": "python -c \"import sys; sys.path.insert(0,'bench/suite'); import cells; assert callable(cells.commit_plan) and callable(cells.score_project); print('CELLS OK')\""},
+  {"id": "T3", "deps": ["T1", "T2"], "files": ["bench/verify/verify.py"],
+   "acceptance": "python .harness/plans/verify-bench/checks/check_t3.py"},
+  {"id": "T4", "deps": [], "files": ["bench/verify/report.py"],
+   "acceptance": "python .harness/plans/verify-bench/checks/check_t4.py"},
+  {"id": "T5", "deps": [], "files": ["bench/verify/README.md"],
+   "acceptance": "python -c \"from pathlib import Path; t=Path('bench/verify/README.md').read_text(encoding='utf-8'); assert '27' in t and '--plan-via runner' in t and 'non-deterministic' in t; print('README OK')\""},
+  {"id": "T6", "deps": ["T1", "T2", "T3"], "files": ["bench/verify/selfcheck.py", "bench/verify/results.csv"],
+   "acceptance": "python .harness/plans/verify-bench/checks/check_t6.py"},
+  {"id": "T7", "deps": ["T1", "T2", "T3", "T4", "T5", "T6"], "files": [".harness/plans/verify-bench/SUMMARY.md"],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/verify-bench/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\""}
+]}

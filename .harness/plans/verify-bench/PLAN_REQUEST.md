@@ -1,0 +1,43 @@
+Plan this work. The spec is at: .harness/plans/verify-bench/spec.md
+Read it first.
+
+## Layout (write exactly this)
+plan.md:
+    # Plan: <slug>
+    ## Goal            1-3 lines
+    ## Decisions       every choice the executor must not make (names, signatures, status codes, versions)
+    Verified: <fact> (`command`)      Unverified: <fact>      Later: <one-liners>
+    ## interfaces     existing and new interfaces the executor must preserve or implement
+    ## T1 <3-word title>
+    FILES: a.py, b.py
+    MUST: 2-5 checkable bullets incl. error cases
+    TEST: <cheap acceptance command>
+    ...
+    ## T<last> write summary
+    FILES: .harness/plans/<slug>/SUMMARY.md
+    MUST: write <= 600 chars covering what was made, which files, and how it was wired; run the build if any and add a line `BUILD: pass` or `BUILD: fail <first error line>` to SUMMARY.md. The build result never fails the task.
+    TEST: <summary existence/length check>
+tasks.json:
+    {"slug": "<slug>", "tasks": [
+      {"id": "T1", "deps": [], "files": ["a.py"], "acceptance": "<cmd>"},
+      {"id": "T9", "deps": ["T8"], "files": [".harness/plans/<slug>/SUMMARY.md"],
+       "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/<slug>/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\""}]}
+Any acceptance script a plan needs lives at `.harness/plans/<slug>/checks/check_t<n>.py`: the runner
+hash-locks every `checks/` file with the plan, so such a script must never appear in a task's `files`
+list. Task sections reference them with `TEST: python .harness/plans/<slug>/checks/check_t<n>.py`.
+
+## Rules
+1. Target plan <= ~1.5k tokens. Minimum info another agent needs to build it. Do not solve the task in the plan. Do not explain obvious implementation details.
+2. If .harness/context/REPO_MAP.md exists: run `python .harness/build_map.py --check || python .harness/build_map.py`, read the map first, then open only files your tasks touch. No broad exploration (no recursive ls/Glob of the repo).
+3. Explore just enough to fix Decisions (versions, existing code, test commands). Ambiguous? Stop and ask.
+4. Use 3-8 small tasks, whole spec, disjoint `files` where possible; list generated files too (lockfiles, migrations). set deps only where truly required (not a full chain) so disjoint tasks can run under `--parallel`; put shared-file edits (nav/layout/config wiring) in one final task depending on everything it wires.
+5. Build tasks write NO tests. Acceptance is one cheap smoke command proving the task landed, e.g. `python -c "from app.x import f; assert f(2) == 4"` or `node -e "..."`, plus `npx tsc --noEmit --incremental --tsBuildInfoFile .harness/tsc.tsbuildinfo` for TS; skip tsc in tasks whose `files` have no TypeScript. Never smoke-check `.ts` files by importing them through node (it makes the executor write `.ts`-extension imports that bundlers reject). No full builds.
+6. Acceptance runs through the OS shell (Windows
+   cmd.exe here): no `VAR=value cmd`, `/tmp`, `rm` or `test`; set env vars and temp paths inside `python -c`/`node -e`.
+7. The last task's SUMMARY/BUILD instruction is the one in Layout (`## T<last> write summary`); do not restate it here.
+8. Side effects (analytics, storage, events): a MUST that it fires exactly once.
+9. Run `python .harness/run_plan.py <slug> --lint` until `lint OK`.
+10. Revising an existing plan: change only the sections you were asked to change; keep every other line verbatim (diff before writing).
+11. Never pin a dependency version from memory: check it first (`npm view <pkg> version`, `pip index versions <pkg>`).
+12. A task that adds tests for a fix must name them in its acceptance (e.g. `pytest -k <new_test_name>`), so acceptance cannot pass on the existing tests before the work is done.
+13. Reply in <= 8 lines: lint result, plan path, task ids + titles, open questions, top 2 risks. Never paste the plan.
