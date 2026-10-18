@@ -43,6 +43,8 @@ def build_report(rows):
         rows = list(rows or [])
         if not rows:
             return STUB
+        # a rerun appends a new row for the same slug: only the latest counts
+        rows = list({row.get("slug") or id(row): row for row in rows}.values())
         combos = {}
         order = []
         totals = {"pass": 0, "fail": 0, "other": 0, "total": 0, "rules_ok": 0, "plan_ok": 0}

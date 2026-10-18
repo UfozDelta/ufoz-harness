@@ -5,6 +5,7 @@ cell; `verify.py` is the only entry point. `preflight` deliberately imports the
 suite lazily so `--dry` never pays for the executor registry / task discovery.
 """
 import random
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -131,7 +132,7 @@ def check_rules(phase, backend, log_text, project):
 
     The main rules file must look like an orchestrator file ("think before coding",
     no executor marker); `.pi/executor.md` must look like an executor file. A plan
-    log that names the executor file, or an exec log that names `AGENTS.md`, is a
+    log that reads the executor file, or an exec log that reads `AGENTS.md`, is a
     leak. Returns (ok, offending_line); offending_line is "" when ok. The caller
     (verify.py) owns appending `<slug>: <line>` to rules_failures.log, since only it
     knows the slug.
@@ -157,7 +158,13 @@ def check_rules(phase, backend, log_text, project):
     phase = (phase or "").lower()
     forbidden = EXECUTOR_RULES if phase == "plan" else ("AGENTS.md" if phase == "exec" else "")
     if forbidden:
+        # only an actual read counts: a log line that merely names the file (e.g. printed
+        # MAIN.md text) is not a leak
+        name = re.escape(forbidden)
+        access = re.compile(
+            r"(?i)(read\s+\S*" + name + r"|\b(cat|head|tail|sed|type|less|more|nl)\b[^\n]*" + name
+            + r"|toolcall read\][^\n]*" + name + r")")
         for raw in (log_text or "").splitlines():
-            if forbidden in raw:
+            if access.search(raw):
                 return False, raw.strip()
     return True, ""

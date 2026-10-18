@@ -1,0 +1,5 @@
+verify-opencode-claude-claude-r1: [0m$ [0mcat .pi/executor.md 2>/dev/null | head -160
+verify-opencode-opencode-pi-r1: [0m→ [0mRead .pi/executor.md
+verify-opencode-opencode-opencode-r1: - The executor (`.pi/executor.md` with the `.pi/deny.json` deny list) is denied git state commands and runs
+verify-opencode-claude-claude-r1: - The executor (`.pi/executor.md` with the `.pi/deny.json` deny list) is denied git state commands and runs
+verify-opencode-claude-opencode-r1: [0m→ [0mRead .pi/executor.md
