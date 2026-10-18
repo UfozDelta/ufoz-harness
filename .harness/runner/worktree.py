@@ -20,7 +20,7 @@ time_sleep = time.sleep
 WORKTREES_DIR = ".worktrees"
 SHARED_DIRS = ("node_modules", ".venv", ".opencode/node_modules")
 ENV_FILE = ".harness/.env"
-OPENCODE_PKG = (".opencode/package.json", ".opencode/package-lock.json")
+OPENCODE_PKG = (".opencode/.gitignore", ".opencode/package.json", ".opencode/package-lock.json")
 IDENTITY = {"GIT_AUTHOR_NAME": "harness", "GIT_AUTHOR_EMAIL": "harness@localhost",
             "GIT_COMMITTER_NAME": "harness", "GIT_COMMITTER_EMAIL": "harness@localhost"}
 
