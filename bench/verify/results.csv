@@ -1,0 +1,13 @@
+slug,ts,orchestrator,planner,executor,rep,status,rules_ok,plan_ok,wall_s,tasks_passed,tasks_total,plan_cost,exec_cost,harness_sha,model,seed
+verify-pi-pi-pi-r1,2026-10-17T07:09:59,pi,pi,pi,1,infra_error,,,0.7,,,,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-17T10:25:23,pi,pi,pi,1,infra_error,,,2.9,,,,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-17T13:22:07,pi,pi,pi,1,infra_error,,,1.9,,,,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:18:00,pi,pi,pi,1,infra_error,,,0.3,,,,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:18:04,pi,pi,pi,1,infra_error,,,0.3,,,,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:18:18,pi,pi,pi,1,infra_error,,,0.3,,,,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:18:26,pi,pi,pi,1,fail,,true,197.5,,,0.026741,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:25:03,pi,pi,pi,1,fail,,true,80.4,,,0.0,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:27:08,pi,pi,pi,1,infra_error,true,true,83.9,0,0,0.0,0.0,4220099+76f3e2,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:28:39,pi,pi,pi,1,infra_error,true,true,110.3,0,0,0.0,0.0,4220099+76f3e2,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:31:03,pi,pi,pi,1,pass,true,true,103.1,0,0,0.0,0.0,4220099+c3ffed,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:33:05,pi,pi,pi,1,pass,true,true,93.2,0,0,0.0,0.0,4220099+c3ffed,opencode/deepseek-v4.1-flash,0

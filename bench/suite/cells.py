@@ -825,8 +825,9 @@ def score_project(cell, project, repo_root=REPO_ROOT):
     slug = cell["slug"]
     row = _blank(cell)
     wt = project / ".worktrees" / slug
-    reports = sorted(_plan_dir(wt, slug).glob("items/*.report.md"))
-    metrics = _metrics(slug, wt, project)
+    root = wt if wt.is_dir() else project  # --land removes the worktree; reports land in the project
+    reports = sorted(_plan_dir(root, slug).glob("items/*.report.md"))
+    metrics = _metrics(slug, root, project)
     row.update({k: metrics[k] for k in METRIC_FIELDS})
     _score_project(cell, row, project, repo_root, reports)
     row["harness_sha"] = _harness_sha(repo_root)
