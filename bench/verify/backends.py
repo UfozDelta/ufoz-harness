@@ -5,6 +5,7 @@ cell; `verify.py` is the only entry point. `preflight` deliberately imports the
 suite lazily so `--dry` never pays for the executor registry / task discovery.
 """
 import random
+import shutil
 import sys
 from pathlib import Path
 
@@ -90,6 +91,16 @@ def build_matrix(orchestrators, planners, executors, reps, seed=0):
     return cells
 
 
+def _opencode_bin():
+    """Native binary when it sits beside the npm `.cmd` wrapper: subprocess cannot exec the
+    wrapper by bare name, and the wrapper would mangle a multi-line brief."""
+    found = shutil.which("opencode")
+    if not found:
+        return "opencode"
+    native = Path(found).parent / "node_modules" / "opencode-ai" / "bin" / "opencode.exe"
+    return str(native) if native.exists() else found
+
+
 def orchestrator_command(backend, model, brief):
     """The fixed headless command that lets an orchestrator write the plan.
 
@@ -103,7 +114,7 @@ def orchestrator_command(backend, model, brief):
         launcher = Path.home() / ".pi" / "agent" / "bin" / "pi-launcher.js"
         return ["node", str(launcher), "-p", brief, "--model", model]
     if backend == "opencode":
-        return ["opencode", "run", "--agent", "orchestrator", brief]
+        return [_opencode_bin(), "run", "--agent", "orchestrator", brief]
     raise ValueError(f"unknown orchestrator backend: {backend!r}")
 
 

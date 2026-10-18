@@ -163,6 +163,8 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
             cmd = backends.orchestrator_command(cell["orchestrator"],
                                                 cell["orchestrator_model"],
                                                 _plan_brief(cell, project))
+            if cell["orchestrator"] == "opencode":  # else it plans in the repo it was last attached to
+                cmd += ["--dir", str(project), "--model", cell["orchestrator_model"]]
             code, output, timed_out = _run_cmd(cmd, project, args.cell_timeout)
             _write_log(plan_dir, "plan.log", output)
             if timed_out:
