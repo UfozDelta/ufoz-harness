@@ -11,3 +11,6 @@ verify-pi-pi-pi-r1,2026-10-18T00:27:08,pi,pi,pi,1,infra_error,true,true,83.9,0,0
 verify-pi-pi-pi-r1,2026-10-18T00:28:39,pi,pi,pi,1,infra_error,true,true,110.3,0,0,0.0,0.0,4220099+76f3e2,opencode/deepseek-v4.1-flash,0
 verify-pi-pi-pi-r1,2026-10-18T00:31:03,pi,pi,pi,1,pass,true,true,103.1,0,0,0.0,0.0,4220099+c3ffed,opencode/deepseek-v4.1-flash,0
 verify-pi-pi-pi-r1,2026-10-18T00:33:05,pi,pi,pi,1,pass,true,true,93.2,0,0,0.0,0.0,4220099+c3ffed,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:41:43,pi,pi,pi,1,fail,,true,148.0,,,0.029083,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:44:15,pi,pi,pi,1,fail,,true,107.4,,,0.0,,,opencode/deepseek-v4.1-flash,0
+verify-pi-pi-pi-r1,2026-10-18T00:46:07,pi,pi,pi,1,pass,true,true,105.0,3,3,0.0,0.013509,e9d2563+5b6c99,opencode/deepseek-v4.1-flash,0

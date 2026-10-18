@@ -20,6 +20,7 @@ time_sleep = time.sleep
 WORKTREES_DIR = ".worktrees"
 SHARED_DIRS = ("node_modules", ".venv", ".opencode/node_modules")
 ENV_FILE = ".harness/.env"
+OPENCODE_PKG = (".opencode/package.json", ".opencode/package-lock.json")
 IDENTITY = {"GIT_AUTHOR_NAME": "harness", "GIT_AUTHOR_EMAIL": "harness@localhost",
             "GIT_COMMITTER_NAME": "harness", "GIT_COMMITTER_EMAIL": "harness@localhost"}
 
@@ -224,7 +225,8 @@ def ensure(slug, exclude=(), orphan=False):
     _lf_agents(target)
     for name in SHARED_DIRS:
         _link(name, target)
-    if Path(ENV_FILE).is_file():
-        (target / ENV_FILE).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(ENV_FILE, target / ENV_FILE)
+    for name in (ENV_FILE, *OPENCODE_PKG):  # gitignored, so the checkout lacks them
+        if Path(name).is_file() and not (target / name).exists():
+            (target / name).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(name, target / name)
     return target

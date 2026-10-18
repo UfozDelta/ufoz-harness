@@ -143,3 +143,9 @@ Each entry: what happened → fix applied (or open).
 - `run_plan.py <slug> --plan <spec>` refreshes the tracked `.harness/context/REPO_MAP.md`, so the tree is dirty and the next run's `_require_clean_tree` refuses ("uncommitted changes") → restored REPO_MAP by hand before running; fix: add `.harness/context/` to `worktree._dirty_paths`'s ignored prefixes (like `.harness/plans/<slug>/`).
 - `worktree._lf_agents` rewrites `.claude/agents/*.md` to LF (Claude Code cannot read CRLF agent files), but under `core.autocrlf=true` git then reports them modified, so `--land` refuses ("uncommitted changes in the worktree would be lost") → fix: `git update-index --assume-unchanged` after the rewrite, or exclude `.claude/agents/` from the land dirty check.
 - Plan `agents-md-role-split` (main rules in AGENTS.md, executors stop auto-loading project rule files, defaults → `opencode/deepseek-v4.1-flash`): 7/7 first try; build smoke `BUILD: fail test_preflight_executor_true_for_local_executors` is pre-existing (no `claude` CLI here). `agent:haiku` path still does not get `CLAUDE_CODE_DISABLE_CLAUDE_MDS` (Open).
+
+## 2026-10-18 verify-bench
+- worktree lacked gitignored .opencode/package*.json, so kit export failed → worktree.py copies them in when missing (fixed).
+- `_lf_agents` LF rewrite blocked `--land` under autocrlf → skip-worktree on those files (fixed).
+- `score_project` ran after `--land` removed the worktree (no reports/metrics) → reads project plan dir; verify.py takes metrics before land (fixed).
+- stale `run.lock` after a killed run blocks `--land` ("run in progress") → delete it once the pid is dead (Open).

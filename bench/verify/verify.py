@@ -190,6 +190,9 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
         if timed_out:
             return finish("timeout")
 
+        # --land removes the worktree and its metrics, so read the totals before it
+        metrics = cells._metrics(slug, project / ".worktrees" / slug, project)
+
         code, output, timed_out = _run_cmd(
             [sys.executable, ".harness/run_plan.py", slug, "--land"], project,
             args.cell_timeout)
@@ -200,6 +203,7 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
             return finish("fail")
 
         scored = cells.score_project(cell, project, repo_root)
+        scored.update({k: metrics[k] for k in ("tasks_passed", "tasks_total", "cost")})
         for key in ("tasks_passed", "tasks_total", "harness_sha", "tampered",
                     "regression_passed", "regression_total", "tests_passed", "tests_total"):
             row[key] = scored.get(key, row.get(key, ""))
