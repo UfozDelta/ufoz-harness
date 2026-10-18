@@ -104,13 +104,36 @@ def _run_cmd(cmd, cwd, timeout):
         return None, out, True
 
 
+def _record_failure(slug, text):
+    backends.RULES_FAILURES.parent.mkdir(parents=True, exist_ok=True)
+    with open(backends.RULES_FAILURES, "a", encoding="utf-8") as fh:
+        fh.write(f"{slug}: {text}\n")
+
+
 def _rules_check(phase, backend, log_text, project, slug):
     ok, offending = backends.check_rules(phase, backend, log_text, project)
     if not ok:
-        backends.RULES_FAILURES.parent.mkdir(parents=True, exist_ok=True)
-        with open(backends.RULES_FAILURES, "a", encoding="utf-8") as fh:
-            fh.write(f"{slug}: {offending}\n")
+        _record_failure(slug, offending)
     return ok
+
+
+def _escape_check(log_text, slug):
+    """True when the log shows no escape out of this cell's directory or into hidden tests."""
+    ok, offending = backends.check_escape(log_text, slug)
+    if not ok:
+        _record_failure(slug, f"escape: {offending}")
+    return ok
+
+
+def _wipe_stale(cells, slug):
+    """Delete other verify- cells' projects from the shared temp root, so a cell cannot read them.
+    `_kit`, `_specs` and `suite-` dirs are left alone (suite runs share the root)."""
+    root = Path(cells.TEMP_ROOT)
+    if not root.is_dir():
+        return
+    for path in root.iterdir():
+        if path.is_dir() and path.name.startswith("verify-") and path.name != slug:
+            shutil.rmtree(path, ignore_errors=True)
 
 
 def _plan_brief(cell, project):
@@ -119,7 +142,8 @@ def _plan_brief(cell, project):
     plan_dir = Path(project) / ".harness" / "plans" / slug
     plan_dir.mkdir(parents=True, exist_ok=True)
     spec = FIXTURES / cell["size"] / "spec.md"
-    return (f"Plan the work described by the spec below. Write the plan to "
+    return (f"Plan the work described by the spec below. Work only inside the current "
+            f"directory and never read paths outside it. Write the plan to "
             f".harness/plans/{slug}/plan.md and its tasks to "
             f".harness/plans/{slug}/tasks.json (the plan slug is {slug}).\n\n"
             f"{_read_text(spec)}")
@@ -244,6 +268,7 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
             return finish("skipped", "skipped_preflight")
 
     try:
+        _wipe_stale(cells, slug)
         project = cells.make_project(cell, repo_root)
         plan_dir = project / ".harness" / "plans" / slug
 
@@ -279,6 +304,8 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
             _fill_phase(row, "orch", phases["orch"])
             row["orch_cost"] = _cell(usage["cost"])
             row["orch_turns"] = _cell(usage["turns"])
+            if not _escape_check(output, slug):
+                return finish("fail", "escaped_cwd")
             if timed_out:
                 return finish("timeout", "timeout_orch")
             if not ((plan_dir / "plan.md").is_file() and (plan_dir / "tasks.json").is_file()):
@@ -339,7 +366,11 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
         exec_text = _read_text(plan_dir / "logs" / "exec.log")
         rules_ok = _rules_check("plan", plan_backend, plan_text, project, slug)
         rules_ok = _rules_check("exec", cell["executor"], exec_text, project, slug) and rules_ok
-        row["rules_ok"] = "true" if rules_ok else "false"
+        plan_escape_ok = _escape_check(plan_text, slug)
+        escape_ok = _escape_check(exec_text, slug) and plan_escape_ok
+        row["rules_ok"] = "true" if rules_ok and escape_ok else "false"
+        if not escape_ok and status == "pass":
+            return finish("fail", "escaped_cwd")
         return finish(status, _score_reason(scored))
     except Exception as exc:  # a broken cell is infra, never a crash of the matrix
         print(f"  cell error: {exc}")

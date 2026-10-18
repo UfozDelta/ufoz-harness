@@ -260,3 +260,25 @@ def check_rules(phase, backend, log_text, project):
             if access.search(raw):
                 return False, raw.strip()
     return True, ""
+
+
+# A path under the shared bench temp root naming another cell's project or suite dir.
+_ESCAPE_CELL = re.compile(r"(?i)ufoz-bench[\\/]+((?:verify|suite)-[^\\/\s'\"`:,)]*)")
+# Hidden grader material, which a cell must never read.
+_ESCAPE_HIDDEN = re.compile(r"(?i)hidden_tests|test_hidden|suite[\\/]fixtures")
+
+
+def check_escape(log_text, slug):
+    """Cell-isolation check for one phase's log text.
+
+    An escape names another cell's project (`ufoz-bench/verify-*` or `suite-*` other than
+    `slug`) or hidden grader material. Returns (ok, offending_line): ok is True and the line
+    is "" when the log is clean. The caller (verify.py) owns recording the escape.
+    """
+    for raw in (log_text or "").splitlines():
+        for match in _ESCAPE_CELL.finditer(raw):
+            if match.group(1).lower() != (slug or "").lower():
+                return False, raw.strip()
+        if _ESCAPE_HIDDEN.search(raw):
+            return False, raw.strip()
+    return True, ""
