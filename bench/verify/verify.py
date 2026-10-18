@@ -143,7 +143,8 @@ def _plan_brief(cell, project):
     plan_dir.mkdir(parents=True, exist_ok=True)
     spec = FIXTURES / cell["size"] / "spec.md"
     return (f"Plan the work described by the spec below. Work only inside the current "
-            f"directory and never read paths outside it. Write the plan to "
+            f"directory and never read paths outside it. Do not read anything under .pi/. "
+            f"Write the plan to "
             f".harness/plans/{slug}/plan.md and its tasks to "
             f".harness/plans/{slug}/tasks.json (the plan slug is {slug}).\n\n"
             f"{_read_text(spec)}")
