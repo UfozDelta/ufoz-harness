@@ -30,3 +30,5 @@ bench/speed/latency.jsonl
 bench/speed/run.log
 .harness/bench/data/
 .harness/bench/tasks/*/contract.md
+# per-cell logs saved by verify-bench
+bench/verify/logs/

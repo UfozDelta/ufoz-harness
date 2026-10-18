@@ -1,0 +1,25 @@
+{
+  "orch": {
+    "wall_s": 89.9,
+    "in": 29715,
+    "out": 26606,
+    "reason": 20784,
+    "cache_read": 503168,
+    "cache_write": 0,
+    "cost": 0.043860708000000005,
+    "turns": 15,
+    "tool_calls": 20
+  },
+  "exec": {
+    "wall_s": 82.4,
+    "in": 11614,
+    "out": 3760,
+    "reason": 318,
+    "cache_read": 108692,
+    "cache_write": 0,
+    "cost": 0.008648352,
+    "turns": null,
+    "tool_calls": 14,
+    "attempts": 3
+  }
+}
