@@ -51,6 +51,7 @@ COLUMNS = [
     "harness_sha", "model", "seed",
 ] + [f"{phase}_{field}" for phase in ("orch", "plan", "exec") for field in PHASE_FIELDS] + [
     "orch_cost", "orch_turns", "plan_attempts", "plan_cached", "exec_attempts", "usage_json",
+    "fail_reason", "tests_passed", "tests_total", "regression_passed", "regression_total", "logs_dir",
 ]
 CSV_FIELDS = ["slug"] + COLUMNS
 

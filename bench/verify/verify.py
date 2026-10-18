@@ -9,6 +9,7 @@ import argparse
 import csv
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -185,6 +186,31 @@ def _write_usage(repo_root, slug, phases):
     return path.relative_to(repo_root).as_posix()
 
 
+def _score_reason(scored):
+    """Why a scored cell did not pass, as a short code; "" when it passed."""
+    status = scored.get("status")
+    if status == "pass":
+        return ""
+    if status == "infra_error":
+        return "no_reports"
+    if _num(scored.get("tasks_passed")) < _num(scored.get("tasks_total")):
+        return "tasks_failed"
+    if _num(scored.get("tests_passed")) < _num(scored.get("tests_total")):
+        return "tests_failed"
+    if _num(scored.get("regression_passed")) < _num(scored.get("regression_total")):
+        return "regression_failed"
+    return "tests_failed"  # all counts met but no tests counted: the scorer needs total > 0
+
+
+def _save_logs(repo_root, slug, src, sub, stamp):
+    """Copy a plan dir to bench/verify/logs/<slug>__<stamp>/<sub>. A failed copy is skipped, never raised."""
+    dest = Path(repo_root) / "bench" / "verify" / "logs" / f"{slug}__{stamp}" / sub
+    try:
+        shutil.copytree(src, dest, dirs_exist_ok=True)
+    except OSError:
+        pass
+
+
 def run_cell(cell, args, repo_root=REPO_ROOT):
     cells = _cells()
     slug = cell["slug"]
@@ -195,12 +221,15 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
                 "executor": cell["executor"], "rep": cell["rep"],
                 "model": cell["model"], "seed": cell["seed"]})
     started = time.time()
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    wt_saved = False  # the worktree's plan dir is copied before --land removes it
     project = None
     phases = {}  # phase name -> usage dict, written to bench/verify/usage/ by finish()
     plan_backend = cell["planner"] if args.plan_via == "runner" else cell["orchestrator"]
 
-    def finish(status):
+    def finish(status, reason=""):
         row["status"] = status
+        row["fail_reason"] = reason
         row["wall_s"] = round(time.time() - started, 1)
         if phases:
             row["usage_json"] = _write_usage(repo_root, slug, phases)
@@ -212,7 +241,7 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
         needed.insert(0, (cell["orchestrator"], cell["orchestrator_model"]))
     for backend, model in needed:
         if not backends.preflight(backend, model):
-            return finish("skipped")
+            return finish("skipped", "skipped_preflight")
 
     try:
         project = cells.make_project(cell, repo_root)
@@ -225,7 +254,7 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
                     cell, project, repo_root, kit_hash=cell.get("kit_hash", ""))
             except Exception as exc:
                 _write_log(plan_dir, "plan.log", f"plan error: {exc}\n")
-                return finish("fail")
+                return finish("fail", "plan_error")
             # a cached plan runs no planner: cost 0, no planner.json, so its plan columns stay blank
             row["plan_cached"] = "false" if cost else "true"
             row["plan_cost"] = cost if cost else ""
@@ -251,9 +280,9 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
             row["orch_cost"] = _cell(usage["cost"])
             row["orch_turns"] = _cell(usage["turns"])
             if timed_out:
-                return finish("timeout")
+                return finish("timeout", "timeout_orch")
             if not ((plan_dir / "plan.md").is_file() and (plan_dir / "tasks.json").is_file()):
-                return finish("fail")
+                return finish("fail", "no_plan_files")
             cells.commit_plan(cell, project)
 
         code, output, timed_out = _run_cmd(
@@ -261,10 +290,10 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
             args.cell_timeout)
         _write_log(plan_dir, "lint.log", output)
         if timed_out:
-            return finish("timeout")
+            return finish("timeout", "timeout_lint")
         row["plan_ok"] = "true" if code == 0 else "false"
         if code != 0:
-            return finish("fail")
+            return finish("fail", "lint_failed")
 
         spec = (f"{cell['executor']}:{cell['executor_model']}"
                 if cell["executor_model"] else cell["executor"])
@@ -275,7 +304,7 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
         exec_wall = time.time() - exec_started
         _write_log(plan_dir, "exec.log", output)
         if timed_out:
-            return finish("timeout")
+            return finish("timeout", "timeout_exec")
 
         # --land removes the worktree and its metrics, so read the totals before it
         wt = project / ".worktrees" / slug
@@ -287,14 +316,16 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
         _fill_phase(row, "exec", phases["exec"])
         row["exec_attempts"] = _cell(exec_usage["attempts"])
 
+        _save_logs(repo_root, slug, wt / ".harness" / "plans" / slug, "wt", stamp)
+        wt_saved = True
         code, output, timed_out = _run_cmd(
             [sys.executable, ".harness/run_plan.py", slug, "--land"], project,
             args.cell_timeout)
         _write_log(plan_dir, "land.log", output)
         if timed_out:
-            return finish("timeout")
+            return finish("timeout", "timeout_land")
         if code != 0:
-            return finish("fail")
+            return finish("fail", "land_failed")
 
         scored = cells.score_project(cell, project, repo_root)
         scored.update({k: metrics[k] for k in ("tasks_passed", "tasks_total", "cost")})
@@ -309,11 +340,17 @@ def run_cell(cell, args, repo_root=REPO_ROOT):
         rules_ok = _rules_check("plan", plan_backend, plan_text, project, slug)
         rules_ok = _rules_check("exec", cell["executor"], exec_text, project, slug) and rules_ok
         row["rules_ok"] = "true" if rules_ok else "false"
-        return finish(status)
+        return finish(status, _score_reason(scored))
     except Exception as exc:  # a broken cell is infra, never a crash of the matrix
         print(f"  cell error: {exc}")
-        return finish("infra_error")
+        return finish("infra_error", "cell_exception")
     finally:
+        if project is not None:
+            if not wt_saved:  # the cell stopped before land: the worktree still holds its logs
+                _save_logs(repo_root, slug, project / ".worktrees" / slug / ".harness" / "plans" / slug,
+                           "wt", stamp)
+            _save_logs(repo_root, slug, project / ".harness" / "plans" / slug, "project", stamp)
+            row["logs_dir"] = f"bench/verify/logs/{slug}__{stamp}"
         if project is not None and not args.keep:
             cells.cleanup_project(cell)
 
