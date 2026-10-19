@@ -149,3 +149,13 @@ Each entry: what happened → fix applied (or open).
 - `_lf_agents` LF rewrite blocked `--land` under autocrlf → skip-worktree on those files (fixed).
 - `score_project` ran after `--land` removed the worktree (no reports/metrics) → reads project plan dir; verify.py takes metrics before land (fixed).
 - stale `run.lock` after a killed run blocks `--land` ("run in progress") → delete it once the pid is dead (Open).
+
+## 2026-10-19 verify-bench matrix
+- Fixture spec never said `Tag` exposes `item_ids` or that a missing item 404s `Item not found`, so planners guessed and hidden tests failed (25/28) → spec.md states both (fixed).
+- Worktrees lacked opencode's untracked `.opencode/.gitignore`, so `.opencode/package*.json` showed as untracked and blocked commit/land → worktree.py copies it in (fixed; only new worktrees benefit, delete the stray files from an older one).
+- opencode orchestrators wandered into sibling temp projects and read other cells' `test_hidden.py` → stale `verify-*` dirs wiped per cell, `check_escape` flags it, brief says stay in cwd and avoid `.pi/` (fixed).
+- `check_escape` slug match took a trailing `>`/`.` as part of the slug, falsely aborting two cells → regex captures `[A-Za-z0-9-]*` only (fixed).
+- `--cell-timeout` did not stop a hung `opencode run` / executor: `subprocess.run` killed only the direct child and `communicate()` then waited on the pipe a grandchild held (runs hung 49 and 112 min) → `_run_cmd` kills the process tree (fixed).
+- Failed cells left no evidence (project wiped, test counts not stored) → `fail_reason`, `tests_*`, `regression_*`, `logs_dir` columns and per-cell saved logs (fixed).
+- opencode planner still sometimes reads `.pi/executor.md` (`rules_ok=false`); the brief now forbids it, enforcement stays the rules check (Open: watch rate).
+- The harness `--lint` runs a task's check against current code, so a check that exercises the bug under repair (hang) takes minutes → keep such checks short or accept the wait (Open).

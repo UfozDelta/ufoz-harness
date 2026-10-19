@@ -360,6 +360,12 @@ then scored on hidden tests, the seed's own tests and a tamper diff. `--plan-sou
   passed 100%; pi's median was 15 s versus 38 s, with about 10x fewer input tokens and half the
   tool calls. That is why pi became the default executor; opencode is back as an optional
   executor (`--executor opencode`) for whole-task runs.
+- `bench/verify/`: the verification matrix, orchestrator x planner x executor over the `small`
+  fixture (27 cells at `--reps 3`; `verify.py`, `report.py` -> `RESULTS.md`). Each row records
+  per-phase time, tokens, cache and cost, a `fail_reason`, hidden-test counts and the saved log
+  dir. Cells are isolated (stale projects wiped, escapes into other cells or hidden tests are
+  flagged) and a timed-out phase has its process tree killed. On 2026-10-19 all 27 cells passed
+  after fixing a spec gap and four harness bugs. See `bench/verify/README.md`.
 - Staged benchmark, post-ts-guard pi arm K-pi2 (3 reps): finished all 6 stages every time, 56,
   57 and 58/59 hidden checks in 15–18 min for $1.13–$1.32, no crashes. Prior opencode K runs
   passed 59/59 in 25–31 min for $1.42–$1.61, or crashed once in 31 min for $1.95. Every pi rep
@@ -460,6 +466,7 @@ opencode.json                opencode `orchestrator` agent (MAIN.md) + `instruct
 .harness/bench/              lab benchmark on larger frozen tasks
 bench/speed/                 executor duel and startup latency (duel.py, latency.py)
 bench/suite/                 capability matrix: executor x size x mode (suite.py)
+bench/verify/                orchestrator x planner x executor verification matrix (verify.py)
 docs/findings.md             benchmark findings
 packages/ufoz-harness/       npm package that installs the kit into another project
 ```
