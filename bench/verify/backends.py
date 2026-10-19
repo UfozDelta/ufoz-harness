@@ -263,7 +263,7 @@ def check_rules(phase, backend, log_text, project):
 
 
 # A path under the shared bench temp root naming another cell's project or suite dir.
-_ESCAPE_CELL = re.compile(r"(?i)ufoz-bench[\\/]+((?:verify|suite)-[^\\/\s'\"`:,)]*)")
+_ESCAPE_CELL = re.compile(r"(?i)ufoz-bench[\\/]+((?:verify|suite)-[A-Za-z0-9-]*)")
 # Hidden grader material, which a cell must never read.
 _ESCAPE_HIDDEN = re.compile(r"(?i)hidden_tests|test_hidden|suite[\\/]fixtures")
 
