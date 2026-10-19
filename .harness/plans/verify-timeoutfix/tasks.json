@@ -1,0 +1,8 @@
+{"slug": "verify-timeoutfix", "tasks": [
+  {"id": "T1", "deps": [], "files": ["bench/verify/backends.py"],
+   "acceptance": "python .harness/plans/verify-timeoutfix/checks/check_t1.py"},
+  {"id": "T2", "deps": [], "files": ["bench/verify/verify.py"],
+   "acceptance": "python .harness/plans/verify-timeoutfix/checks/check_t2.py"},
+  {"id": "T3", "deps": ["T1", "T2"], "files": [".harness/plans/verify-timeoutfix/SUMMARY.md"],
+   "acceptance": "python .harness/plans/verify-timeoutfix/checks/check_t3.py"}
+]}
