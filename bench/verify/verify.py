@@ -6,6 +6,7 @@ is either a headless orchestrator command (non-deterministic) or, with `--plan-v
 runner`, `run_plan.py <slug> --plan SPEC.md --planner P[:m]` (the deterministic fallback).
 """
 import argparse
+import contextlib
 import csv
 import json
 import os
@@ -92,16 +93,19 @@ def _write_log(plan_dir, name, text):
 
 def _run_cmd(cmd, cwd, timeout):
     """Returns (returncode, combined output, timed_out). A timeout never raises."""
+    proc = subprocess.Popen(cmd, cwd=str(cwd), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, encoding="utf-8", errors="replace",
+                            stdin=subprocess.DEVNULL)
     try:
-        proc = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True,
-                              encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL,
-                              timeout=timeout)
-        return proc.returncode, (proc.stdout or "") + (proc.stderr or ""), False
-    except subprocess.TimeoutExpired as exc:
-        out = (exc.stdout or "") + (exc.stderr or "")
-        if isinstance(out, bytes):
-            out = out.decode("utf-8", "replace")
-        return None, out, True
+        out, err = proc.communicate(timeout=timeout)
+        return proc.returncode, (out or "") + (err or ""), False
+    except subprocess.TimeoutExpired:
+        # Kill the whole tree: a grandchild still holding the pipe would block communicate.
+        _cells()._stop_tree(proc)
+        out, err = "", ""
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            out, err = proc.communicate(timeout=30)
+        return None, (out or "") + (err or ""), True
 
 
 def _record_failure(slug, text):
