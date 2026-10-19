@@ -32,7 +32,12 @@ Per cell the flow is: preflight -> `make_project` -> plan -> lint -> execute
 `results.csv` is skipped on resume unless `--force`.
 
 Phase logs are written under the temp project's `.harness/plans/<slug>/logs/`. The temp
-project is removed after each cell unless `--keep` is given.
+project is removed after each cell unless `--keep` is given. Before cleanup every cell, pass
+or fail, copies its plan dir to `bench/verify/logs/<slug>__<stamp>/` (`wt/` = worktree,
+`project/` = landed tree; gitignored); `logs_dir` in the row points at it.
+
+A phase that exceeds `--cell-timeout` has its whole process tree killed (a grandchild
+holding the output pipe used to hang the run) and the cell is recorded as `timeout`.
 
 `report.py` reads `results.csv` and writes `RESULTS.md`:
 
@@ -78,3 +83,25 @@ and opencode) looks like an orchestrator file (`think before coding`, no executo
 and that `.pi/executor.md` looks like an executor file. A plan log naming `.pi/executor.md`,
 or an exec log naming `AGENTS.md`, fails the cell's `rules_ok` and appends the offending
 line to `rules_failures.log`.
+
+## Why a cell did not pass
+
+`fail_reason` (blank on pass) is a short code: `skipped_preflight`, `plan_error`,
+`timeout_orch|lint|exec|land`, `no_plan_files`, `lint_failed`, `land_failed`, `no_reports`,
+`tasks_failed`, `tests_failed`, `regression_failed`, `escaped_cwd`, `cell_exception`.
+`tests_passed/total` and `regression_passed/total` are recorded too. Read the saved logs under
+`logs_dir` before trusting a single fail: cells are non-deterministic and a fail can be a flake.
+
+## Cell isolation
+
+A cell must not read other cells' projects or hidden tests. Three layers:
+
+1. `_wipe_stale` deletes other `verify-*` dirs from the temp root before each cell (`_kit`,
+   `_specs` and non-`verify-` dirs stay).
+2. `backends.check_escape` scans the orchestrator output and the plan/exec logs for paths
+   naming another cell (`ufoz-bench/verify-*|suite-*` other than its own slug) or hidden
+   grader material (`hidden_tests`, `test_hidden`, `suite/fixtures`). A hit records
+   `escaped_cwd`, sets `rules_ok=false` and appends `escape: <line>` to `rules_failures.log`.
+3. `_plan_brief` tells the planner to stay in the cwd and not to read `.pi/`.
+
+Layer 2 is the guarantee; there is no OS sandbox.
