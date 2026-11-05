@@ -1,0 +1,85 @@
+{
+ "slug": "cleanup-backends",
+ "tasks": [
+  {
+   "id": "T1",
+   "deps": [],
+   "files": [
+    ".harness/runner/executors/llama.py",
+    ".harness/runner/executors/ollama.py",
+    ".harness/runner/executors/__init__.py",
+    ".harness/runner/watch.py",
+    ".harness/.env.example",
+    "tests/test_llama_executor.py",
+    "tests/test_ollama_executor.py"
+   ],
+   "acceptance": "python .harness/plans/cleanup-backends/checks/absent.py \"llama|ollama\" .harness/runner/executors/__init__.py .harness/runner/watch.py .harness/.env.example !.harness/runner/executors/llama.py !.harness/runner/executors/ollama.py !tests/test_llama_executor.py !tests/test_ollama_executor.py && python -c \"import sys; sys.path.insert(0,'.harness'); from runner.executors import REGISTRY; assert set(REGISTRY)=={'pi','claude','opencode'}\"",
+   "red_first": false
+  },
+  {
+   "id": "T2",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    ".harness/runner/cli.py",
+    ".harness/runner/check.py",
+    ".harness/runner/executors/claude.py",
+    ".harness/run_plan.py",
+    ".harness/hooks/git_guard.py",
+    ".claude/agents/claude-executor.md",
+    "tests/test_claude_executor.py",
+    "tests/test_prepare.py",
+    "tests/test_check_main.py",
+    "packages/ufoz-harness/export_kit.py"
+   ],
+   "acceptance": "python .harness/plans/cleanup-backends/checks/absent.py \"claude-executor|use_agent|agent:|_agent\\(|llama|ollama|HARNESS_CLAUDE_AGENT\" .harness/runner/cli.py .harness/runner/executors/claude.py .harness/run_plan.py .harness/hooks/git_guard.py packages/ufoz-harness/export_kit.py tests/test_claude_executor.py tests/test_prepare.py !.harness/runner/check.py !.claude/agents/claude-executor.md !tests/test_check_main.py && python -c \"import sys; sys.path.insert(0,'.harness'); import runner.cli\"",
+   "red_first": false
+  },
+  {
+   "id": "T3",
+   "deps": [
+    "T1"
+   ],
+   "files": [
+    ".harness/selftest.py",
+    "bench/suite/suite.py",
+    "tests/test_harness_suite.py",
+    ".claude/skills/harness-band/hooks/register.tsx"
+   ],
+   "acceptance": "python .harness/plans/cleanup-backends/checks/absent.py \"llama|ollama\" .harness/selftest.py bench/suite/suite.py tests/test_harness_suite.py .claude/skills/harness-band/hooks/register.tsx && python -c \"import ast; [ast.parse(open(f,encoding='utf-8').read()) for f in ('.harness/selftest.py','bench/suite/suite.py','tests/test_harness_suite.py')]\" && npx tsc --noEmit --incremental --tsBuildInfoFile .harness/tsc.tsbuildinfo",
+   "red_first": false
+  },
+  {
+   "id": "T4",
+   "deps": [
+    "T2",
+    "T3"
+   ],
+   "files": [
+    ".harness/HARNESS.md",
+    ".harness/MAIN.md",
+    "AGENTS.md",
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/FLOWS.md",
+    "packages/ufoz-harness/README.md",
+    "packages/ufoz-harness/kit_readme.md",
+    "log.md"
+   ],
+   "acceptance": "python .harness/plans/cleanup-backends/checks/absent.py \"llama|ollama|claude-executor|agent:haiku\" .harness/HARNESS.md .harness/MAIN.md AGENTS.md README.md docs/ARCHITECTURE.md docs/FLOWS.md packages/ufoz-harness/README.md packages/ufoz-harness/kit_readme.md && python -c \"import subprocess; d=subprocess.check_output(['git','diff','--numstat','--','log.md'],text=True).split(); assert d[1]=='0', d\"",
+   "red_first": false
+  },
+  {
+   "id": "T5",
+   "deps": [
+    "T4"
+   ],
+   "files": [
+    ".harness/plans/cleanup-backends/SUMMARY.md"
+   ],
+   "acceptance": "python -c \"from pathlib import Path; p=Path('.harness/plans/cleanup-backends/SUMMARY.md'); assert p.exists() and len(p.read_text(encoding='utf-8')) <= 600\"",
+   "red_first": false
+  }
+ ]
+}
